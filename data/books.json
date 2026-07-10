@@ -1,0 +1,440 @@
+{
+  "years": [
+    {
+      "id": 1,
+      "title": "प्रथम वर्ष",
+      "subtitle": "पहिलो वर्ष",
+      "color": "orange",
+      "subjects": {
+        "nepali": [
+          {
+            "id": "nep1_1",
+            "title": "नेपाली साहित्य १",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/nep1.jpg",
+            "description": "प्रथम वर्षको नेपाली साहित्य"
+          },
+          {
+            "id": "nep1_2",
+            "title": "नेपाली साहित्य २",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/nep2.jpg",
+            "description": "प्रथम वर्षको नेपाली साहित्य"
+          },
+          {
+            "id": "nep1_3",
+            "title": "नेपाली साहित्य ३",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/nep3.jpg",
+            "description": "प्रथम वर्षको नेपाली साहित्य"
+          }
+        ],
+        "english": [
+          {
+            "id": "eng1_1",
+            "title": "English Literature I",
+            "author": "Author Name",
+            "cover": "images/year1/eng1.jpg",
+            "description": "First year English literature"
+          },
+          {
+            "id": "eng1_2",
+            "title": "English Literature II",
+            "author": "Author Name",
+            "cover": "images/year1/eng2.jpg",
+            "description": "First year English literature"
+          },
+          {
+            "id": "eng1_3",
+            "title": "English Literature III",
+            "author": "Author Name",
+            "cover": "images/year1/eng3.jpg",
+            "description": "First year English literature"
+          }
+        ],
+        "sanskrit": [
+          {
+            "id": "san1_1",
+            "title": "अनिवार्यसंस्कृतम्",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/san1.jpg",
+            "description": "काव्य, गद्य र  इतिहास"
+          },
+          {
+            "id": "san1_2",
+            "title": "संस्कृत साहित्य २",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/san2.jpg",
+            "description": "प्रथम वर्षको संस्कृत साहित्य"
+          },
+          {
+            "id": "san1_3",
+            "title": "संस्कृत साहित्य ३",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/san3.jpg",
+            "description": "प्रथम वर्षको संस्कृत साहित्य"
+          }
+        ],
+        "vyakaran": [
+          {
+            "id": "vya1_1",
+            "title": "व्याकरण १",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/vya1.jpg",
+            "description": "प्रथम वर्षको व्याकरण"
+          },
+          {
+            "id": "vya1_2",
+            "title": "व्याकरण २",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/vya2.jpg",
+            "description": "प्रथम वर्षको व्याकरण"
+          }
+        ],
+        "jyotish": [
+          {
+            "id": "jyo1_1",
+            "title": "ज्योतिष शास्त्र १",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/jyo1.jpg",
+            "description": "प्रथम वर्षको ज्योतिष शास्त्र"
+          },
+          {
+            "id": "jyo1_2",
+            "title": "ज्योतिष शास्त्र २",
+            "author": "लेखकको नाम",
+            "cover": "images/year1/jyo2.jpg",
+            "description": "प्रथम वर्षको ज्योतिष शास्त्र"
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "title": "द्वितीय वर्ष",
+      "subtitle": "दोस्रो वर्ष",
+      "color": "green",
+      "subjects": {
+        "nepali": [
+          {
+            "id": "nep2_1",
+            "title": "नेपाली साहित्य १",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/nep1.jpg",
+            "description": "द्वितीय वर्षको नेपाली साहित्य"
+          },
+          {
+            "id": "nep2_2",
+            "title": "नेपाली साहित्य २",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/nep2.jpg",
+            "description": "द्वितीय वर्षको नेपाली साहित्य"
+          },
+          {
+            "id": "nep2_3",
+            "title": "नेपाली साहित्य ३",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/nep3.jpg",
+            "description": "द्वितीय वर्षको नेपाली साहित्य"
+          }
+        ],
+        "english": [
+          {
+            "id": "eng2_1",
+            "title": "English Literature I",
+            "author": "Author Name",
+            "cover": "images/year2/eng1.jpg",
+            "description": "Second year English literature"
+          },
+          {
+            "id": "eng2_2",
+            "title": "English Literature II",
+            "author": "Author Name",
+            "cover": "images/year2/eng2.jpg",
+            "description": "Second year English literature"
+          },
+          {
+            "id": "eng2_3",
+            "title": "English Literature III",
+            "author": "Author Name",
+            "cover": "images/year2/eng3.jpg",
+            "description": "Second year English literature"
+          }
+        ],
+        "sanskrit": [
+          {
+            "id": "san2_1",
+            "title": "संस्कृत साहित्य १",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/san1.jpg",
+            "description": "द्वितीय वर्षको संस्कृत साहित्य"
+          },
+          {
+            "id": "san2_2",
+            "title": "संस्कृत साहित्य २",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/san2.jpg",
+            "description": "द्वितीय वर्षको संस्कृत साहित्य"
+          },
+          {
+            "id": "san2_3",
+            "title": "संस्कृत साहित्य ३",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/san3.jpg",
+            "description": "द्वितीय वर्षको संस्कृत साहित्य"
+          }
+        ],
+        "vyakaran": [
+          {
+            "id": "vya2_1",
+            "title": "व्याकरण १",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/vya1.jpg",
+            "description": "द्वितीय वर्षको व्याकरण"
+          },
+          {
+            "id": "vya2_2",
+            "title": "व्याकरण २",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/vya2.jpg",
+            "description": "द्वितीय वर्षको व्याकरण"
+          }
+        ],
+        "jyotish": [
+          {
+            "id": "jyo2_1",
+            "title": "ज्योतिष शास्त्र १",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/jyo1.jpg",
+            "description": "द्वितीय वर्षको ज्योतिष शास्त्र"
+          },
+          {
+            "id": "jyo2_2",
+            "title": "ज्योतिष शास्त्र २",
+            "author": "लेखकको नाम",
+            "cover": "images/year2/jyo2.jpg",
+            "description": "द्वितीय वर्षको ज्योतिष शास्त्र"
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "title": "तृतीय वर्ष",
+      "subtitle": "तेस्रो वर्ष",
+      "color": "blue",
+      "subjects": {
+        "nepali": [
+          {
+            "id": "nep3_1",
+            "title": "नेपाली साहित्य १",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/nep1.jpg",
+            "description": "तृतीय वर्षको नेपाली साहित्य"
+          },
+          {
+            "id": "nep3_2",
+            "title": "नेपाली साहित्य २",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/nep2.jpg",
+            "description": "तृतीय वर्षको नेपाली साहित्य"
+          },
+          {
+            "id": "nep3_3",
+            "title": "नेपाली साहित्य ३",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/nep3.jpg",
+            "description": "तृतीय वर्षको नेपाली साहित्य"
+          }
+        ],
+        "english": [
+          {
+            "id": "eng3_1",
+            "title": "English Literature I",
+            "author": "Author Name",
+            "cover": "images/year3/eng1.jpg",
+            "description": "Third year English literature"
+          },
+          {
+            "id": "eng3_2",
+            "title": "English Literature II",
+            "author": "Author Name",
+            "cover": "images/year3/eng2.jpg",
+            "description": "Third year English literature"
+          },
+          {
+            "id": "eng3_3",
+            "title": "English Literature III",
+            "author": "Author Name",
+            "cover": "images/year3/eng3.jpg",
+            "description": "Third year English literature"
+          }
+        ],
+        "sanskrit": [
+          {
+            "id": "san3_1",
+            "title": "संस्कृत साहित्य १",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/san1.jpg",
+            "description": "तृतीय वर्षको संस्कृत साहित्य"
+          },
+          {
+            "id": "san3_2",
+            "title": "संस्कृत साहित्य २",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/san2.jpg",
+            "description": "तृतीय वर्षको संस्कृत साहित्य"
+          },
+          {
+            "id": "san3_3",
+            "title": "संस्कृत साहित्य ३",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/san3.jpg",
+            "description": "तृतीय वर्षको संस्कृत साहित्य"
+          }
+        ],
+        "vyakaran": [
+          {
+            "id": "vya3_1",
+            "title": "व्याकरण १",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/vya1.jpg",
+            "description": "तृतीय वर्षको व्याकरण"
+          },
+          {
+            "id": "vya3_2",
+            "title": "व्याकरण २",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/vya2.jpg",
+            "description": "तृतीय वर्षको व्याकरण"
+          }
+        ],
+        "jyotish": [
+          {
+            "id": "jyo3_1",
+            "title": "ज्योतिष शास्त्र १",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/jyo1.jpg",
+            "description": "तृतीय वर्षको ज्योतिष शास्त्र"
+          },
+          {
+            "id": "jyo3_2",
+            "title": "ज्योतिष शास्त्र २",
+            "author": "लेखकको नाम",
+            "cover": "images/year3/jyo2.jpg",
+            "description": "तृतीय वर्षको ज्योतिष शास्त्र"
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "title": "चतुर्थ वर्ष",
+      "subtitle": "चौथो वर्ष",
+      "color": "purple",
+      "subjects": {
+        "nepali": [
+          {
+            "id": "nep4_1",
+            "title": "नेपाली साहित्य १",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/nep1.jpg",
+            "description": "चतुर्थ वर्षको नेपाली साहित्य"
+          },
+          {
+            "id": "nep4_2",
+            "title": "नेपाली साहित्य २",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/nep2.jpg",
+            "description": "चतुर्थ वर्षको नेपाली साहित्य"
+          },
+          {
+            "id": "nep4_3",
+            "title": "नेपाली साहित्य ३",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/nep3.jpg",
+            "description": "चतुर्थ वर्षको नेपाली साहित्य"
+          }
+        ],
+        "english": [
+          {
+            "id": "eng4_1",
+            "title": "English Literature I",
+            "author": "Author Name",
+            "cover": "images/year4/eng1.jpg",
+            "description": "Fourth year English literature"
+          },
+          {
+            "id": "eng4_2",
+            "title": "English Literature II",
+            "author": "Author Name",
+            "cover": "images/year4/eng2.jpg",
+            "description": "Fourth year English literature"
+          },
+          {
+            "id": "eng4_3",
+            "title": "English Literature III",
+            "author": "Author Name",
+            "cover": "images/year4/eng3.jpg",
+            "description": "Fourth year English literature"
+          }
+        ],
+        "sanskrit": [
+          {
+            "id": "san4_1",
+            "title": "संस्कृत साहित्य १",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/san1.jpg",
+            "description": "चतुर्थ वर्षको संस्कृत साहित्य"
+          },
+          {
+            "id": "san4_2",
+            "title": "संस्कृत साहित्य २",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/san2.jpg",
+            "description": "चतुर्थ वर्षको संस्कृत साहित्य"
+          },
+          {
+            "id": "san4_3",
+            "title": "संस्कृत साहित्य ३",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/san3.jpg",
+            "description": "चतुर्थ वर्षको संस्कृत साहित्य"
+          }
+        ],
+        "vyakaran": [
+          {
+            "id": "vya4_1",
+            "title": "व्याकरण १",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/vya1.jpg",
+            "description": "चतुर्थ वर्षको व्याकरण"
+          },
+          {
+            "id": "vya4_2",
+            "title": "व्याकरण २",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/vya2.jpg",
+            "description": "चतुर्थ वर्षको व्याकरण"
+          }
+        ],
+        "jyotish": [
+          {
+            "id": "jyo4_1",
+            "title": "ज्योतिष शास्त्र १",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/jyo1.jpg",
+            "description": "चतुर्थ वर्षको ज्योतिष शास्त्र"
+          },
+          {
+            "id": "jyo4_2",
+            "title": "ज्योतिष शास्त्र २",
+            "author": "लेखकको नाम",
+            "cover": "images/year4/jyo2.jpg",
+            "description": "चतुर्थ वर्षको ज्योतिष शास्त्र"
+          }
+        ]
+      }
+    }
+  ]
+}
