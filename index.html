@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+
+  <!-- ══ Primary SEO ══ -->
+  <title>शास्त्री पोर्टल — शास्त्री कक्षाका किताब, अध्याय र नोट अनलाइन</title>
+  <meta name="description" content="शास्त्री पोर्टल — प्रथम देखि चतुर्थ वर्षसम्मका शास्त्री कक्षाका किताब, अध्याय, नेपाली/संस्कृत/अंग्रेजी साहित्य, व्याकरण र ज्योतिष शास्त्रको अध्ययन सामग्री एकै ठाउँमा। सजिलै पढ्नुस्, नोट लेख्नुस्, खोज्नुस्।">
+  <meta name="keywords" content="शास्त्री पोर्टल, शास्त्री कक्षा, संस्कृत साहित्य, नेपाली साहित्य, ज्योतिष शास्त्र, व्याकरण, शास्त्री किताब, Shastri Portal">
+  <meta name="author" content="Pratik Adhikari">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://pratikadhikari98.github.io/Shastri_website/">
+  <!-- ⚠️ माथिको canonical link लाई आफ्नो वास्तविक डोमेनले बदल्नुस् (जस्तै https://yourdomain.com/) -->
+
+  <!-- ══ Google Search Console verification ══ -->
+  <!-- Search Console बाट पाएको verification कोड यहाँ राख्नुस्:
+  <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE_HERE"> -->
+
+  <!-- ══ Open Graph (Facebook/social preview) ══ -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="शास्त्री पोर्टल">
+  <meta property="og:title" content="शास्त्री पोर्टल — शास्त्री कक्षाका किताब, अध्याय र नोट अनलाइन">
+  <meta property="og:description" content="प्रथम देखि चतुर्थ वर्षसम्मका शास्त्री कक्षाका किताब, अध्याय र अध्ययन सामग्री एकै ठाउँमा।">
+  <meta property="og:image" content="images/icon-512.png">
+  <meta property="og:locale" content="ne_NP">
+
+  <!-- ══ Twitter card ══ -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="शास्त्री पोर्टल">
+  <meta name="twitter:description" content="शास्त्री कक्षाका किताब, अध्याय र नोट अनलाइन">
+  <meta name="twitter:image" content="images/icon-512.png">
+
+  <!-- ══ Favicon ══ -->
+  <link rel="icon" type="image/png" sizes="512x512" href="images/icon-512.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="images/icon-512.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="images/icon-512.png">
+  <link rel="shortcut icon" type="image/png" href="images/icon-512.png">
+  <link rel="apple-touch-icon" href="images/icon-512.png">
+  <meta name="theme-color" content="#FF6835">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- PWA meta tags -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="शास्त्री पोर्टल">
+
+  <!-- ★ Apply theme + font BEFORE rendering (prevent FOUC) -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('sp_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      document.documentElement.style.colorScheme = (t === 'dark' || t === 'amoled') ? 'dark' : 'light';
+
+      var sz = parseInt(localStorage.getItem('sp_fontsize') || '16');
+      document.documentElement.style.fontSize = sz + 'px';
+    })();
+  </script>
+</head>
+<body>
+
+<!-- Animated Canvas Background -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- ══ HEADER ══ -->
+<header class="site-header">
+  <div class="header-left">
+    <div class="logo-pill" id="logoPill">
+      <div class="logo-ico" id="logoIco"><img src="images/icons/logo.svg" alt="शास्त्री पोर्टल" style="width:22px;height:22px;display:block"></div>
+      <span class="logo-text-mask"><span class="logo-text" id="logoText" data-i18n="app_name">शास्त्री पोर्टल</span></span>
+    </div>
+  </div>
+  <div class="header-right">
+
+    <!-- SEARCH BUTTON — छुँदा मात्र सर्च बार देखिने -->
+    <button class="hdr-btn" id="searchBtn" title="खोज्नुस्" data-i18n-title="search">🔍</button>
+
+    <!-- 3-DOTS MENU -->
+    <div class="dots-menu-wrap">
+      <button class="hdr-btn" id="dotsBtn" title="थप विकल्प" data-i18n-title="more_options">⋮</button>
+      <div class="dots-menu" id="dotsMenu">
+
+        <!-- Theme section -->
+        <div class="dm-section">
+          <div class="dm-label">🎨 <span data-i18n="dm_theme">Theme छान्नुस्</span></div>
+          <div class="theme-dots" id="themeDots"></div>
+        </div>
+
+        <!-- Dark mode toggle -->
+        <div class="dm-section" style="padding-top:6px;border-top:1px solid var(--divider)">
+          <div class="dm-item">
+            <div class="dm-item-ico">🌙</div>
+            <div>
+              <div class="dm-item-name" data-i18n="dm_dark_mode">रात्रि मोड</div>
+              <div class="dm-item-sub" data-i18n="dm_dark_sub">Midnight Dark theme</div>
+            </div>
+            <div class="dm-tog" id="darkMenuTog"><div class="dm-tog-k"></div></div>
+          </div>
+        </div>
+
+        <!-- Font size -->
+        <div class="dm-slider-row">
+          <div class="dm-slider-head">
+            <span class="dm-slider-lbl">🔤 <span data-i18n="dm_fontsize">अक्षर आकार</span></span>
+            <span class="dm-slider-val" id="fontSizeLbl">16px</span>
+          </div>
+          <input type="range" class="dm-slider" id="fontSizeSlider" min="14" max="20" value="16">
+        </div>
+
+        <!-- Language -->
+        <div class="dm-section" style="padding-top:6px;border-top:1px solid var(--divider)">
+          <div class="dm-label">🌐 <span data-i18n="dm_language">भाषा छान्नुस्</span></div>
+          <div class="lang-chips" id="langChips"></div>
+        </div>
+
+        <!-- Other actions -->
+        <div class="dm-section" style="padding-top:4px;border-top:1px solid var(--divider)">
+          <div class="dm-item" id="shareBtn">
+            <div class="dm-item-ico">🔗</div>
+            <div><div class="dm-item-name" data-i18n="dm_share">Website Share गर्नुस्</div></div>
+          </div>
+          <div class="dm-item" onclick="go('notes');document.getElementById('dotsMenu').classList.remove('open')">
+            <div class="dm-item-ico">📝</div>
+            <div><div class="dm-item-name" data-i18n="my_notes">मेरा नोटहरू</div></div>
+          </div>
+          <div class="dm-item" onclick="go('profile');document.getElementById('dotsMenu').classList.remove('open')">
+            <div class="dm-item-ico">⚙️</div>
+            <div><div class="dm-item-name" data-i18n="dm_settings_profile">सेटिङ र Profile</div></div>
+          </div>
+          <div class="dm-item" onclick="exportData();document.getElementById('dotsMenu').classList.remove('open')">
+            <div class="dm-item-ico">💾</div>
+            <div><div class="dm-item-name" data-i18n="backup_export">Backup Export</div></div>
+          </div>
+        </div>
+
+        <!-- Offline -->
+        <div class="dm-section" style="padding-top:4px;border-top:1px solid var(--divider)">
+          <div class="dm-label">📡 <span data-i18n="dm_offline">अफलाइन</span></div>
+          <div class="dm-item" id="offlineSaveBtn" onclick="saveOfflineData()">
+            <div class="dm-item-ico">📥</div>
+            <div><div class="dm-item-name" data-i18n="dm_offline_save">अफलाइनको लागि Save गर्नुस्</div><div style="font-size:0.68rem;color:var(--text-3);margin-top:1px" data-i18n="dm_offline_save_sub">सबै अध्याय फोनमै राख्नुस्</div></div>
+          </div>
+          <div class="dm-item" onclick="deleteOfflineData()">
+            <div class="dm-item-ico">🗑️</div>
+            <div><div class="dm-item-name" data-i18n="dm_offline_delete">अफलाइन डाटा हटाउनुस्</div></div>
+          </div>
+        </div>
+
+        <!-- App info / Update -->
+        <div class="dm-section" style="padding-top:4px;border-top:1px solid var(--divider)">
+          <div class="dm-label">ℹ️ <span data-i18n="dm_app_info">एप जानकारी</span></div>
+          <div class="dm-item" id="updateAppBtn" onclick="updateApp()">
+            <div class="dm-item-ico">🔄</div>
+            <div>
+              <div class="dm-item-name" data-i18n="dm_update">एप अपडेट गर्नुस्</div>
+              <div class="dm-item-sub"><span data-i18n="dm_version">भर्जन</span> <span id="appVersionLbl"></span> · <span id="appUpdateDateLbl"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Follow / Social — मेनुको सबैभन्दा अन्तिममा -->
+        <div class="dm-section" style="padding-top:8px;padding-bottom:14px;border-top:1px solid var(--divider)">
+          <div class="dm-label">🔗 <span data-i18n="dm_follow">हामीलाई फलो गर्नुस्</span></div>
+          <div class="dm-social-row">
+            <!-- लिंकहरू आफ्नो वास्तविक प्रोफाइलसँग बदल्नुहोस् -->
+            <a class="social-ico gh" href="#" target="_blank" rel="noopener" aria-label="GitHub">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.25c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.5 0-.24-.01-.87-.01-1.71-2.78.63-3.37-1.38-3.37-1.38-.46-1.2-1.11-1.52-1.11-1.52-.9-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.57 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.05a9.34 9.34 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.42.2 2.47.1 2.73.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.79-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .28.18.61.69.5A10.26 10.26 0 0 0 22 12.25C22 6.58 17.52 2 12 2Z"/></svg>
+            </a>
+            <a class="social-ico fb" href="#" target="_blank" rel="noopener" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.9V12h2.6V9.8c0-2.6 1.6-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6V12h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+            </a>
+            <a class="social-ico gm" href="mailto:#" aria-label="Gmail">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3 6 9 7 9-7"/></svg>
+            </a>
+            <a class="social-ico ig" href="#" target="_blank" rel="noopener" aria-label="Instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
+            </a>
+            <a class="social-ico yt" href="#" target="_blank" rel="noopener" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.4-5.2c-.3-1-1-1.8-2-2C18.9 4.4 12 4.4 12 4.4s-6.9 0-8.6.4c-1 .2-1.8 1-2 2C1 8.5 1 12 1 12s0 3.5.4 5.2c.3 1 1 1.8 2 2 1.7.4 8.6.4 8.6.4s6.9 0 8.6-.4c1-.2 1.8-1 2-2 .4-1.7.4-5.2.4-5.2ZM9.8 15.5v-7l6 3.5-6 3.5Z"/></svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</header>
+
+
+<!-- ══ TICKER ══ -->
+<div class="ticker-bar" id="tickerBar">
+  <div class="ticker-badge">📢 <span data-i18n="ticker_news">समाचार</span></div>
+  <div class="ticker-inner-wrap">
+    <div class="ticker-inner" id="tickerInner">
+      <span class="t-item">शास्त्री पोर्टलमा स्वागत छ!</span>
+    </div>
+  </div>
+</div>
+
+<!-- SEARCH — जुनसुकै पेजमा भए पनि, जहाँ छोयो त्यहीँ खुल्ने (home मा गएर होइन) -->
+<div class="search-wrap" id="searchWrap">
+  <div class="search-glass">
+    <span class="s-ico">🔍</span>
+    <input id="sInp" type="search" placeholder="किताब वा विषय खोज्नुस्…" data-i18n-placeholder="search_ph" autocomplete="off">
+    <button class="s-clr" id="sClr">✕</button>
+    <div class="s-drop" id="sDrop"></div>
+  </div>
+</div>
+
+<!-- ════════════════ PAGES ════════════════ -->
+
+<!-- HOME -->
+<div id="p-home" class="page on">
+
+  <div class="content">
+    <div class="sec-head s1"><div class="sec-title" data-i18n="years">वर्षहरू</div></div>
+    <div class="years-stack" id="yearsGrid">
+      <div class="spin-wrap"><div class="spinner"></div></div>
+    </div>
+  </div><!-- close .content -->
+
+  <!-- News Board — chalkboard photo माथि समाचार -->
+  <div class="news-board" id="newsBoard">
+    <img class="nb-img" src="images/news/board.jpg" alt="समाचार">
+    <div class="nb-overlay">
+      <div class="nb-date" id="newsBoardDate"></div>
+      <div class="nb-title" id="newsBoardTitle">लोड हुँदैछ…</div>
+      <div class="nb-desc" id="newsBoardDesc"></div>
+      <div class="nb-dots" id="newsBoardDots"></div>
+    </div>
+  </div>
+
+  <div class="content"><!-- reopen .content -->
+    
+    <div style="height:12px"></div>
+  </div>
+</div>
+
+<!-- YEAR -->
+<div id="p-year" class="page"></div>
+
+<!-- SUBJECT -->
+<div id="p-subject" class="page"></div>
+
+<!-- COURSES -->
+<div id="p-courses" class="page">
+  <div class="content">
+    <div class="sec-head"><div class="sec-title" data-i18n="all_subjects">सबै विषयहरू</div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px">
+      <div class="cf-chip nd" data-key="all"     style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('all')"><span data-i18n="cat_all">सबै</span></div>
+      <div class="cf-chip nd" data-key="nepali"   style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('nepali')">📜 <span data-i18n="cat_nepali">नेपाली</span></div>
+      <div class="cf-chip nd" data-key="english"  style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('english')">📗 <span data-i18n="cat_english">English</span></div>
+      <div class="cf-chip nd" data-key="sanskrit" style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('sanskrit')">🕉️ <span data-i18n="cat_sanskrit">संस्कृत</span></div>
+      <div class="cf-chip nd" data-key="vyakaran" style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('vyakaran')">✏️ <span data-i18n="cat_vyakaran">व्याकरण</span></div>
+      <div class="cf-chip nd" data-key="jyotish"  style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('jyotish')">⭐ <span data-i18n="cat_jyotish">ज्योतिष</span></div>
+    </div>
+    <div id="coursesList"><div class="spin-wrap"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div id="p-notes" class="page">
+  <div class="content">
+    <div class="sec-head"><div class="sec-title" data-i18n="my_notes">मेरा नोटहरू</div></div>
+    <div id="notesList"></div>
+  </div>
+  <button class="fab" id="notesFab">＋</button>
+</div>
+
+<!-- PROFILE -->
+<div id="p-profile" class="page">
+  <div class="content">
+
+    <!-- ── Profile Hero ── -->
+    <div class="prof-hero s1" id="profHero">
+      <!-- Avatar: photo वा emoji -->
+      <div class="p-av" id="profAvWrap" onclick="triggerAvatarPick()">
+        <img id="profAvImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none">
+        <span id="profAvEmoji">👨‍🎓</span>
+        <div class="p-av-edit">✏️</div>
+      </div>
+      <div class="p-name" id="profNameDisp">विद्यार्थी</div>
+      <div class="p-role" id="profRoleDisp">शास्त्री कक्षा पोर्टल</div>
+      <button class="prof-edit-btn" onclick="openProfileEdit()">✏️ <span data-i18n="edit">सम्पादन</span></button>
+      <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarChange(event)">
+    </div>
+
+    <!-- ── Social Links ── -->
+    <div id="socialLinks" style="display:none;margin-bottom:14px">
+      <div class="sett-group">
+        <div class="sett-grp-lbl" data-i18n="contact_social">सम्पर्क / Social</div>
+        <div id="socialLinksBody"></div>
+      </div>
+    </div>
+
+    <div class="sec-head s2"><div class="sec-title" data-i18n="stats">तथ्याङ्क</div></div>
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="sec-head s3"><div class="sec-title" data-i18n="settings">सेटिङहरू</div></div>
+
+    <div class="sett-group s3">
+      <div class="sett-grp-lbl" data-i18n="display">प्रदर्शन</div>
+      <div class="sett-row">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#e8f5e9">🔤</div>
+          <div><div class="sett-name" data-i18n="dm_fontsize">अक्षर आकार</div><div class="sett-desc" id="profFontLbl">16px</div></div>
+        </div>
+        <input type="range" id="profFontSlider" min="14" max="20" value="16" style="width:90px;accent-color:var(--accent)">
+      </div>
+    </div>
+
+    <div class="sett-group s4">
+      <div class="sett-grp-lbl" data-i18n="data">Data</div>
+      <div class="sett-row" onclick="exportData()">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#e3f2fd">📤</div>
+          <div><div class="sett-name" data-i18n="backup_export">Backup Export</div><div class="sett-desc" data-i18n="json_download">JSON download</div></div>
+        </div><span style="color:var(--text-3)">→</span>
+      </div>
+      <div class="sett-row" onclick="document.getElementById('impInp').click()">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#f3e5f5">📥</div>
+          <div><div class="sett-name" data-i18n="backup_import">Backup Import</div><div class="sett-desc" data-i18n="json_restore">JSON restore</div></div>
+        </div><span style="color:var(--text-3)">→</span>
+        <input type="file" id="impInp" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+    </div>
+
+    <div class="sett-group s4b" id="adminLoginBox">
+      <div class="sett-grp-lbl">🔐 Admin</div>
+      <div class="sett-row" onclick="adminLogin()">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#fff3e0">🔐</div>
+          <div><div class="sett-name">Admin Login</div><div class="sett-desc">सूचना/content व्यवस्थापन गर्न Google खाताले लगइन गर्नुस्</div></div>
+        </div><span style="color:var(--text-3)">→</span>
+      </div>
+    </div>
+
+    <div class="sett-group s4b" id="adminPanelBox" style="display:none">
+      <div class="sett-grp-lbl">🔐 Admin Panel — <span id="adminNameDisp"></span></div>
+      <div class="sett-row" onclick="openOv('adminNoticesModal')">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#e8f5e9">📢</div>
+          <div><div class="sett-name">सूचना व्यवस्थापन</div><div class="sett-desc">थप्नुस् / सम्पादन / मेटाउनुस्</div></div>
+        </div><span style="color:var(--text-3)">→</span>
+      </div>
+      <div class="sett-row" onclick="adminBooksOpen()">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#f3e5f5">📚</div>
+          <div><div class="sett-name">किताब व्यवस्थापन</div><div class="sett-desc">थप्नुस् / सम्पादन / मेटाउनुस्</div></div>
+        </div><span style="color:var(--text-3)">→</span>
+      </div>
+      <div class="sett-row" onclick="adminSubjectsOpen()">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#e0f2f1">🏷️</div>
+          <div><div class="sett-name">विषय (Subject) व्यवस्थापन</div><div class="sett-desc">नाम थप्नुस् / सम्पादन गर्नुस्</div></div>
+        </div><span style="color:var(--text-3)">→</span>
+      </div>
+      <div class="sett-row" onclick="adminLogout()">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#ffebee">🚪</div>
+          <div><div class="sett-name">Logout</div></div>
+        </div><span style="color:var(--text-3)">→</span>
+      </div>
+    </div>
+
+    <div class="sec-head" style="margin-top:6px"><div class="sec-title" data-i18n="reading_history">पढ्ने इतिहास</div>
+      <button onclick="App.history=[];localStorage.setItem('sp_history','[]');renderHistory()" style="font-size:0.72rem;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:var(--font)" data-i18n="clear">सफा</button>
+    </div>
+    <div id="histList"></div>
+
+    <!-- ── Copyright ── -->
+    <div class="copyright-block">
+      <div class="copy-logo">📚</div>
+      <div class="copy-title">शास्त्री पोर्टल</div>
+      <div class="copy-year">© 2026 Pratik Adhikari — सर्वाधिकार सुरक्षित</div>
+      <div class="copy-made">Made with ❤️ for शास्त्री विद्यार्थीहरू</div>
+    </div>
+
+    <!-- ── Creator Box ── -->
+    <div class="creator-block">
+      <div class="creator-lbl" data-i18n="creator">निर्माता</div>
+      <div class="creator-name">Pratik Adhikari</div>
+      <div class="creator-socials">
+        <!-- लिंकहरू आफ्नो वास्तविक प्रोफाइलसँग बदल्नुहोस् -->
+        <a class="social-ico fb" href="#" target="_blank" rel="noopener" aria-label="Facebook">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.5 9.9v-7H7.9V12h2.6V9.8c0-2.6 1.6-4 3.9-4 1.1 0 2.3.2 2.3.2v2.5h-1.3c-1.3 0-1.7.8-1.7 1.6V12h2.9l-.5 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg>
+        </a>
+        <a class="social-ico ig" href="#" target="_blank" rel="noopener" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
+        </a>
+        <a class="social-ico yt" href="#" target="_blank" rel="noopener" aria-label="YouTube">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.4-5.2c-.3-1-1-1.8-2-2C18.9 4.4 12 4.4 12 4.4s-6.9 0-8.6.4c-1 .2-1.8 1-2 2C1 8.5 1 12 1 12s0 3.5.4 5.2c.3 1 1 1.8 2 2 1.7.4 8.6.4 8.6.4s6.9 0 8.6-.4c1-.2 1.8-1 2-2 .4-1.7.4-5.2.4-5.2ZM9.8 15.5v-7l6 3.5-6 3.5Z"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- ── सहयोगीहरू (Contributors) — अब data/contributors.js बाट आउँछ ── -->
+    <div class="contrib-block">
+      <div class="creator-lbl" data-i18n="contributors">सहयोगी</div>
+      <div class="contrib-list" id="contribList"></div>
+    </div>
+
+    <div style="height:14px"></div>
+  </div>
+</div>
+
+<!-- ══ BOTTOM NAV ══ -->
+<nav class="bot-nav" id="botNav">
+  <div class="nav-indicator" id="navIndicator"></div>
+  <a class="nav-item on" data-page="home" href="#">
+    <div class="nav-ico">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M5 10.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8.5" fill="#FFDCB0"/>
+        <path d="M3 11.5 12 4l9 7.5" stroke="#FF7A3D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M5 10.5V19a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-8.5" stroke="#FF7A3D" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+        <rect x="10.2" y="14.2" width="3.6" height="5.8" rx="0.6" fill="#B4622E"/>
+      </svg>
+    </div>
+    <div class="nav-lbl" data-i18n="nav_home">होम</div>
+  </a>
+  <a class="nav-item" data-page="notes" href="#">
+    <div class="nav-ico">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4 4h13a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4Z" fill="#CFE4FF"/>
+        <path d="M4 4h13a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4Z" stroke="#2F80ED" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M8 8h8M8 12h8M8 16h5" stroke="#2F80ED" stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="nav-lbl" data-i18n="nav_notes">नोट</div>
+  </a>
+  <a class="nav-item" data-page="profile" href="#">
+    <div class="nav-ico">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" fill="#E4D2FF" stroke="#9B59E0" stroke-width="1.3" stroke-linejoin="round"/>
+        <circle cx="12" cy="12" r="3.1" fill="#9B59E0"/>
+      </svg>
+    </div>
+    <div class="nav-lbl" data-i18n="nav_settings">सेटिङ</div>
+  </a>
+</nav>
+
+<!-- ══ MODALS ══ -->
+<div class="overlay" id="newsModal" onclick="if(event.target===this)closeOv('newsModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <img id="newsMImg" style="width:100%;border-radius:var(--r-md);margin-bottom:12px;display:none" alt="">
+    <div style="font-size:0.76rem;color:var(--text-3);margin-bottom:3px" id="newsMDate"></div>
+    <div class="m-title" id="newsMTitle"></div>
+    <p id="newsMBody" style="font-size:0.85rem;color:var(--text-2);line-height:1.85"></p>
+    <div class="m-btns" style="margin-top:18px">
+      <button class="btn-s" style="width:100%" onclick="closeOv('newsModal')" data-i18n="close">बन्द गर्नुस्</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="noteModal" onclick="if(event.target===this)closeOv('noteModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" id="noteMT" data-i18n="new_note">नयाँ नोट</div>
+    <form id="noteForm">
+      <div class="form-panel">
+      <div class="f-group"><label class="f-label" data-i18n="note_title">शीर्षक *</label><input class="f-input" id="nTitle" type="text" placeholder="नोटको शीर्षक…" data-i18n-placeholder="note_title_ph" required></div>
+      <div class="f-group"><label class="f-label" data-i18n="note_content">सामग्री *</label><textarea class="f-textarea" id="nContent" placeholder="यहाँ लेख्नुस्…" data-i18n-placeholder="note_content_ph" required></textarea></div>
+      <div class="f-group"><label class="f-label" data-i18n="note_subject">विषय (ऐच्छिक)</label><input class="f-input" id="nSubject" type="text" placeholder="जस्तै: नेपाली साहित्य १"></div>
+      </div>
+      <div class="m-btns">
+        <button type="button" class="btn-s" id="closeNoteModal" onclick="closeOv('noteModal')" data-i18n="cancel">रद्द</button>
+        <button type="submit" class="btn-p" data-i18n="save">सुरक्षित</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Text Toolbar: रंग छान्ने inline popup (overlay होइन — toolbar बटनकै छेउमा देखिन्छ) -->
+<div id="colorPopover" class="color-popover">
+  <div class="color-popover-title" id="colorPopoverTitle">रंग छान्नुस्</div>
+  <div class="color-popover-grid" id="colorPopoverGrid"></div>
+</div>
+
+<!-- Text Toolbar: पूरा-स्क्रिन लेख्ने Editor — छुट्टै full-page (overlay/history प्रयोग गर्दैन) -->
+<div id="fsEditorPage" class="fs-editor-page">
+  <div class="fs-editor-head">
+    <button class="fs-editor-back" onclick="mdCloseFullscreen()" aria-label="फर्कनुस्">←</button>
+    <span class="fs-editor-title" id="fsEditorTitle">सम्पादन</span>
+    <button class="fs-editor-done" onclick="mdCloseFullscreen()">✓ भयो</button>
+  </div>
+  <div class="md-toolbar fs-editor-toolbar" id="fsEditorToolbar"></div>
+  <div class="fs-editor-body">
+    <textarea id="fsEditorTa" class="fs-editor-ta" placeholder="यहाँ लेख्नुस्..."></textarea>
+  </div>
+</div>
+
+
+<!-- Admin: सूचना list -->
+<div class="overlay" id="adminNoticesModal" onclick="if(event.target===this)closeOv('adminNoticesModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title">📢 सूचना व्यवस्थापन</div>
+    <div id="adminNoticeList" style="margin:12px 0;max-height:52vh;overflow-y:auto"></div>
+    <div class="m-btns">
+      <button class="btn-p" style="width:100%" onclick="openNoticeForm()">＋ नयाँ सूचना</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin: सूचना add/edit form -->
+<div class="overlay" id="noticeFormModal" onclick="if(event.target===this)closeOv('noticeFormModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" id="noticeFormHeading">नयाँ सूचना</div>
+    <div class="form-panel">
+    <div class="f-group">
+      <label class="f-label">शीर्षक *</label>
+      <input class="f-input" id="noticeFormTitle" type="text" placeholder="सूचनाको शीर्षक">
+    </div>
+    <div class="f-group">
+      <label class="f-label">विवरण *</label>
+      <div class="md-toolbar" id="noticeContentToolbar"></div>
+      <textarea class="f-textarea" id="noticeFormContent" rows="5" placeholder="पूरा विवरण"></textarea>
+    </div>
+    <div class="f-group">
+      <label class="f-label">मिति</label>
+      <input class="f-input" id="noticeFormDate" type="text" placeholder="जस्तै २०८१-०१-१५">
+    </div>
+    <div class="f-group">
+      <label class="f-label">श्रेणी</label>
+      <input class="f-input" id="noticeFormCategory" type="text" placeholder="जस्तै परीक्षा">
+    </div>
+    <div class="f-group">
+      <label class="f-label">फोटो (ऐच्छिक)</label>
+      <input class="f-input" id="noticeFormImage" type="text" placeholder="images/news/xyz.jpg">
+    </div>
+    </div>
+    <div class="m-btns">
+      <button class="btn-s" onclick="closeOv('noticeFormModal')">रद्द</button>
+      <button class="btn-p" onclick="saveNoticeForm()">सुरक्षित गर्नुस्</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin: विषय (Subject) list -->
+<div class="overlay" id="adminSubjectsModal" onclick="if(event.target===this)closeOv('adminSubjectsModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title">🏷️ विषय व्यवस्थापन</div>
+    <div id="adminSubjectsList" style="margin:12px 0;max-height:48vh;overflow-y:auto"></div>
+    <div class="m-btns">
+      <button class="btn-p" style="width:100%" onclick="adminSubjectAddNew()">＋ नयाँ विषय</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin: विषय add/edit form -->
+<div class="overlay" id="subjectFormModal" onclick="if(event.target===this)closeOv('subjectFormModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" id="subjectFormHeading">नयाँ विषय</div>
+    <div class="form-panel">
+    <div class="f-group">
+      <label class="f-label">Key (अंग्रेजी, स्पेस बिना) *</label>
+      <input class="f-input" id="subjectFormKey" type="text" placeholder="जस्तै: ganit">
+    </div>
+    <div class="f-group">
+      <label class="f-label">नाम (Nepali) *</label>
+      <input class="f-input" id="subjectFormLabel" type="text" placeholder="जस्तै: गणित">
+    </div>
+    <div class="f-group">
+      <label class="f-label">छोटो अक्षर (Icon, ऐच्छिक)</label>
+      <input class="f-input" id="subjectFormShort" type="text" placeholder="जस्तै: ग" maxlength="3">
+    </div>
+    </div>
+    <div class="m-btns">
+      <button class="btn-s" onclick="closeOv('subjectFormModal')">रद्द</button>
+      <button class="btn-p" onclick="adminSubjectSave()">सुरक्षित गर्नुस्</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin: किताब list -->
+<div class="overlay" id="adminBooksModal" onclick="if(event.target===this)closeOv('adminBooksModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title">📚 किताब व्यवस्थापन</div>
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px" id="adminBooksYearTabs"></div>
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px" id="adminBooksSubjectTabs"></div>
+    <div id="adminBooksList" style="max-height:42vh;overflow-y:auto"></div>
+    <div class="m-btns">
+      <button class="btn-p" style="width:100%" onclick="adminBookAddNew()">＋ नयाँ किताब</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin: किताब add/edit form -->
+<div class="overlay" id="bookFormModal" onclick="if(event.target===this)closeOv('bookFormModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" id="bookFormHeading">नयाँ किताब</div>
+    <div class="form-panel">
+    <div class="f-group">
+      <label class="f-label">शीर्षक *</label>
+      <input class="f-input" id="bookFormTitle" type="text" placeholder="किताबको नाम">
+    </div>
+    <div class="f-group">
+      <label class="f-label">लेखक</label>
+      <input class="f-input" id="bookFormAuthor" type="text" placeholder="लेखकको नाम">
+    </div>
+    <div class="f-group">
+      <label class="f-label">Cover Image URL</label>
+      <input class="f-input" id="bookFormCover" type="text" placeholder="images/... वा https://...">
+    </div>
+    <div class="f-group">
+      <label class="f-label">विवरण</label>
+      <div class="md-toolbar" id="bookDescToolbar"></div>
+      <textarea class="f-textarea" id="bookFormDesc" rows="6" placeholder="किताबको विवरण"></textarea>
+    </div>
+    <div class="f-group">
+      <label class="f-label">PDF Link</label>
+      <input class="f-input" id="bookFormPdf" type="text" placeholder="pdf/... वा https://...">
+    </div>
+    </div>
+    <div class="m-btns">
+      <button class="btn-s" onclick="closeOv('bookFormModal')">रद्द</button>
+      <button class="btn-p" onclick="adminBookSave()">सुरक्षित गर्नुस्</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin: अध्याय list (एउटा किताबको) -->
+<div class="overlay" id="adminChaptersModal" onclick="if(event.target===this)closeOv('adminChaptersModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" id="adminChaptersTitle">📖 अध्याय</div>
+    <div id="adminChaptersList" style="margin:12px 0;max-height:48vh;overflow-y:auto"></div>
+    <div class="m-btns">
+      <button class="btn-p" style="width:100%" onclick="adminChapterAddNew()">＋ नयाँ अध्याय</button>
+    </div>
+  </div>
+</div>
+
+<!-- Admin: अध्याय add/edit form -->
+<div class="overlay" id="chapterFormModal" onclick="if(event.target===this)closeOv('chapterFormModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" id="chapterFormHeading">नयाँ अध्याय</div>
+    <div class="form-panel">
+    <div class="f-group">
+      <label class="f-label">अध्यायको शीर्षक *</label>
+      <input class="f-input" id="chapterFormTitle" type="text" placeholder="जस्तै: पहिलो अध्याय">
+    </div>
+    <div class="f-group">
+      <label class="f-label">अध्यायको सामग्री</label>
+      <div class="md-toolbar" id="chapterContentToolbar"></div>
+      <textarea class="f-textarea" id="chapterFormContent" rows="10" placeholder="अध्यायको पूरा सामग्री यहाँ लेख्नुस्..."></textarea>
+    </div>
+    </div>
+    <div class="m-btns">
+      <button class="btn-s" onclick="closeOv('chapterFormModal')">रद्द</button>
+      <button class="btn-p" onclick="adminChapterSave()">सुरक्षित गर्नुस्</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Edit Modal -->
+<div class="overlay" id="profileEditModal" onclick="if(event.target===this)closeOv('profileEditModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" data-i18n="edit_profile">👤 Profile सम्पादन</div>
+
+    <!-- Avatar picker -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:12px;background:var(--surface-b);border-radius:var(--r-md)">
+      <div id="editAvPreview" style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden;cursor:pointer" onclick="triggerAvatarPick()">
+        <img id="editAvImg" src="" style="width:100%;height:100%;object-fit:cover;display:none;border-radius:50%">
+        <span id="editAvEmoji">👨‍🎓</span>
+      </div>
+      <div>
+        <div style="font-size:0.84rem;font-weight:700;color:var(--text-1);margin-bottom:4px" data-i18n="profile_photo">प्रोफाइल फोटो</div>
+        <button onclick="triggerAvatarPick()" style="font-size:0.76rem;padding:5px 12px;background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent);border-radius:20px;cursor:pointer;font-family:var(--font);font-weight:700" data-i18n="choose_photo">📷 फोटो छान्नुस्</button>
+        <button onclick="removeAvatar()" style="font-size:0.76rem;padding:5px 10px;background:none;color:var(--text-3);border:none;cursor:pointer;font-family:var(--font);margin-left:4px" data-i18n="remove">हटाउनुस्</button>
+      </div>
+    </div>
+
+    <div class="form-panel">
+    <div class="f-group">
+      <label class="f-label" data-i18n="name">नाम *</label>
+      <input class="f-input" id="editName" type="text" placeholder="तपाईंको नाम">
+    </div>
+    <div class="f-group">
+      <label class="f-label" data-i18n="role">भूमिका / पद</label>
+      <input class="f-input" id="editRole" type="text" placeholder="जस्तै: शास्त्री विद्यार्थी, प्राध्यापक...">
+    </div>
+    </div>
+
+    <!-- Social Links -->
+    <div style="margin-top:4px;margin-bottom:8px">
+      <div style="font-size:0.8rem;font-weight:700;color:var(--text-2);margin-bottom:10px" data-i18n="contact_social_full">🔗 सम्पर्क / Social Links</div>
+      <div class="form-panel">
+      <div class="f-group">
+        <label class="f-label">📧 Email</label>
+        <input class="f-input" id="editEmail" type="email" placeholder="example@email.com">
+      </div>
+      <div class="f-group">
+        <label class="f-label">📘 Facebook</label>
+        <input class="f-input" id="editFacebook" type="url" placeholder="https://facebook.com/yourpage">
+      </div>
+      <div class="f-group">
+        <label class="f-label">📸 Instagram</label>
+        <input class="f-input" id="editInstagram" type="url" placeholder="https://instagram.com/yourhandle">
+      </div>
+      <div class="f-group">
+        <label class="f-label">▶️ YouTube</label>
+        <input class="f-input" id="editYoutube" type="url" placeholder="https://youtube.com/@yourchannel">
+      </div>
+      <div class="f-group">
+        <label class="f-label">🐙 GitHub</label>
+        <input class="f-input" id="editGithub" type="url" placeholder="https://github.com/yourusername">
+      </div>
+      <div class="f-group">
+        <label class="f-label">🌐 Website</label>
+        <input class="f-input" id="editWebsite" type="url" placeholder="https://yourwebsite.com">
+      </div>
+      </div>
+    </div>
+
+    <div class="m-btns">
+      <button class="btn-s" onclick="closeOv('profileEditModal')" data-i18n="cancel">रद्द</button>
+      <button class="btn-p" onclick="saveProfileEdit()" data-i18n="save_settings">सुरक्षित गर्नुस्</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<!-- 🔐 Admin Login — Firebase (Google Sign-In + Firestore) -->
+<!-- Setup: SETUP_GUIDE.md को "Admin Login (Firebase)" खण्ड हेर्नुस् -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+
+<script src="js/main.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/editor-toolbar.js"></script>
+
+<!-- FIX 8: Service Worker registration for PWA install -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(r => console.log('SW registered:', r.scope))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>
