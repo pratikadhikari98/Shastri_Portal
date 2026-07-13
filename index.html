@@ -55,7 +55,7 @@
     (function(){
       var t = localStorage.getItem('sp_theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
-      document.documentElement.style.colorScheme = (t === 'dark' || t === 'amoled') ? 'dark' : 'light';
+      document.documentElement.style.colorScheme = (t === 'dark') ? 'dark' : 'light';
 
       var sz = parseInt(localStorage.getItem('sp_fontsize') || '16');
       document.documentElement.style.fontSize = sz + 'px';
@@ -106,7 +106,13 @@
         <!-- Font size -->
         <div class="dm-slider-row">
           <div class="dm-slider-head">
-            <span class="dm-slider-lbl">🔤 <span data-i18n="dm_fontsize">अक्षर आकार</span></span>
+            <span class="dm-slider-lbl">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="vertical-align:-3px;margin-right:2px">
+                <path d="M3.5 19L8.8 6h1.4l5.3 13M4.8 15h9.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M15.5 19l3.2-8h0.9L22.8 19M16.2 16.3h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+              </svg>
+              <span data-i18n="dm_fontsize">अक्षर आकार</span>
+            </span>
             <span class="dm-slider-val" id="fontSizeLbl">16px</span>
           </div>
           <input type="range" class="dm-slider" id="fontSizeSlider" min="14" max="20" value="16">
@@ -123,10 +129,6 @@
           <div class="dm-item" id="shareBtn">
             <div class="dm-item-ico">🔗</div>
             <div><div class="dm-item-name" data-i18n="dm_share">Website Share गर्नुस्</div></div>
-          </div>
-          <div class="dm-item" onclick="go('notes');document.getElementById('dotsMenu').classList.remove('open')">
-            <div class="dm-item-ico">📝</div>
-            <div><div class="dm-item-name" data-i18n="my_notes">मेरा नोटहरू</div></div>
           </div>
           <div class="dm-item" onclick="go('profile');document.getElementById('dotsMenu').classList.remove('open')">
             <div class="dm-item-ico">⚙️</div>
@@ -191,6 +193,9 @@
   </div>
 </header>
 
+<!-- अध्याय पढ्दा कति बाँकी छ देखाउने पातलो progress bar -->
+<div class="ch-progress-bar" id="chProgressBar"><div class="ch-progress-fill" id="chProgressFill"></div></div>
+
 
 <!-- ══ TICKER ══ -->
 <div class="ticker-bar" id="tickerBar">
@@ -224,8 +229,8 @@
     </div>
   </div><!-- close .content -->
 
-  <!-- News Board — chalkboard photo माथि समाचार -->
-  <div class="news-board" id="newsBoard">
+  <!-- News Board — chalkboard photo को natural ratio अनुसार height, जति अट्छ त्यति मात्र समाचार -->
+  <div class="news-board" id="newsBoard" onclick="openNewsCurrent()">
     <img class="nb-img" src="images/news/board.jpg" alt="समाचार">
     <div class="nb-overlay">
       <div class="nb-date" id="newsBoardDate"></div>
@@ -263,13 +268,12 @@
   </div>
 </div>
 
-<!-- NOTES -->
-<div id="p-notes" class="page">
+<!-- BOOKMARKS -->
+<div id="p-bookmarks" class="page">
   <div class="content">
-    <div class="sec-head"><div class="sec-title" data-i18n="my_notes">मेरा नोटहरू</div></div>
-    <div id="notesList"></div>
+    <div class="sec-head"><div class="sec-title">🔖 Bookmarks</div></div>
+    <div id="bookmarksList"></div>
   </div>
-  <button class="fab" id="notesFab">＋</button>
 </div>
 
 <!-- PROFILE -->
@@ -307,27 +311,15 @@
       <div class="sett-grp-lbl" data-i18n="display">प्रदर्शन</div>
       <div class="sett-row">
         <div class="sett-left">
-          <div class="sett-ico" style="background:#e8f5e9">🔤</div>
+          <div class="sett-ico" style="background:#e8f5e9">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M3.5 19L8.8 6h1.4l5.3 13M4.8 15h9.8" stroke="#2E9E5A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M15.5 19l3.2-8h0.9L22.8 19M16.2 16.3h5" stroke="#2E9E5A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+            </svg>
+          </div>
           <div><div class="sett-name" data-i18n="dm_fontsize">अक्षर आकार</div><div class="sett-desc" id="profFontLbl">16px</div></div>
         </div>
         <input type="range" id="profFontSlider" min="14" max="20" value="16" style="width:90px;accent-color:var(--accent)">
-      </div>
-    </div>
-
-    <div class="sett-group s4">
-      <div class="sett-grp-lbl" data-i18n="data">Data</div>
-      <div class="sett-row" onclick="exportData()">
-        <div class="sett-left">
-          <div class="sett-ico" style="background:#e3f2fd">📤</div>
-          <div><div class="sett-name" data-i18n="backup_export">Backup Export</div><div class="sett-desc" data-i18n="json_download">JSON download</div></div>
-        </div><span style="color:var(--text-3)">→</span>
-      </div>
-      <div class="sett-row" onclick="document.getElementById('impInp').click()">
-        <div class="sett-left">
-          <div class="sett-ico" style="background:#f3e5f5">📥</div>
-          <div><div class="sett-name" data-i18n="backup_import">Backup Import</div><div class="sett-desc" data-i18n="json_restore">JSON restore</div></div>
-        </div><span style="color:var(--text-3)">→</span>
-        <input type="file" id="impInp" accept=".json" style="display:none" onchange="importData(event)">
       </div>
     </div>
 
@@ -424,15 +416,13 @@
     </div>
     <div class="nav-lbl" data-i18n="nav_home">होम</div>
   </a>
-  <a class="nav-item" data-page="notes" href="#">
+  <a class="nav-item" data-page="bookmarks" href="#">
     <div class="nav-ico">
       <svg viewBox="0 0 24 24" fill="none">
-        <path d="M4 4h13a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4Z" fill="#CFE4FF"/>
-        <path d="M4 4h13a2 2 0 0 1 2 2v13a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4Z" stroke="#2F80ED" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M8 8h8M8 12h8M8 16h5" stroke="#2F80ED" stroke-width="1.7" stroke-linecap="round"/>
+        <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1Z" fill="#FFE082" stroke="#F57F17" stroke-width="1.6" stroke-linejoin="round"/>
       </svg>
     </div>
-    <div class="nav-lbl" data-i18n="nav_notes">नोट</div>
+    <div class="nav-lbl">बुकमार्क</div>
   </a>
   <a class="nav-item" data-page="profile" href="#">
     <div class="nav-ico">
@@ -488,14 +478,55 @@
   <div class="fs-editor-head">
     <button class="fs-editor-back" onclick="mdCloseFullscreen()" aria-label="फर्कनुस्">←</button>
     <span class="fs-editor-title" id="fsEditorTitle">सम्पादन</span>
+    <button class="fs-editor-font-btn" onclick="mdOpenFontPicker(this)" title="फन्ट छान्नुस्">Aa</button>
     <button class="fs-editor-done" onclick="mdCloseFullscreen()">✓ भयो</button>
   </div>
-  <div class="md-toolbar fs-editor-toolbar" id="fsEditorToolbar"></div>
+  <div class="fs-editor-toolbar" id="fsEditorToolbar"></div>
   <div class="fs-editor-body">
     <textarea id="fsEditorTa" class="fs-editor-ta" placeholder="यहाँ लेख्नुस्..."></textarea>
   </div>
 </div>
 
+<!-- फन्ट छान्ने inline popup -->
+<div id="fontPopover" class="color-popover">
+  <div class="color-popover-title">फन्ट छान्नुस्</div>
+  <div id="fontPopoverList" style="display:flex;flex-direction:column;gap:4px"></div>
+</div>
+
+
+<!-- सामान्य Confirm Modal (browser को confirm() को ठाउँमा) -->
+<div class="overlay overlay-top" id="confirmModal" onclick="if(event.target===this)_confirmCancel()">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" id="confirmTitle">पक्का हो?</div>
+    <div id="confirmMsg" style="font-size:0.88rem;color:var(--text-2);line-height:1.6;margin-bottom:18px"></div>
+    <div class="m-btns">
+      <button class="btn-s" onclick="_confirmCancel()">रद्द</button>
+      <button class="btn-p" id="confirmOkBtn" style="background:linear-gradient(135deg,#e5534b,#c62828)" onclick="_confirmOk()">मेटाउनुस्</button>
+    </div>
+  </div>
+</div>
+
+<!-- सामान्य Text Input Modal (browser को prompt() को ठाउँमा) -->
+<div class="overlay overlay-top" id="textPromptModal" onclick="if(event.target===this)_textPromptCancel()">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title" id="textPromptTitle">राख्नुस्</div>
+    <div class="f-group">
+      <input class="f-input" id="textPromptInput" type="text" placeholder="" onkeydown="if(event.key==='Enter'){event.preventDefault();_textPromptOk();}">
+    </div>
+    <div class="m-btns">
+      <button class="btn-s" onclick="_textPromptCancel()">रद्द</button>
+      <button class="btn-p" onclick="_textPromptOk()">ठीक छ</button>
+    </div>
+  </div>
+</div>
+
+<!-- बक्सको प्रकार छान्ने inline popup (browser को prompt() को ठाउँमा) -->
+<div id="boxTypePopover" class="color-popover" style="width:250px">
+  <div class="color-popover-title">बक्सको प्रकार छान्नुस्</div>
+  <div id="boxTypeList" style="display:flex;flex-direction:column;gap:4px"></div>
+</div>
 
 <!-- Admin: सूचना list -->
 <div class="overlay" id="adminNoticesModal" onclick="if(event.target===this)closeOv('adminNoticesModal')">
@@ -521,7 +552,7 @@
     </div>
     <div class="f-group">
       <label class="f-label">विवरण *</label>
-      <div class="md-toolbar" id="noticeContentToolbar"></div>
+      <div id="noticeContentToolbar"></div>
       <textarea class="f-textarea" id="noticeFormContent" rows="5" placeholder="पूरा विवरण"></textarea>
     </div>
     <div class="f-group">
@@ -616,7 +647,7 @@
     </div>
     <div class="f-group">
       <label class="f-label">विवरण</label>
-      <div class="md-toolbar" id="bookDescToolbar"></div>
+      <div id="bookDescToolbar"></div>
       <textarea class="f-textarea" id="bookFormDesc" rows="6" placeholder="किताबको विवरण"></textarea>
     </div>
     <div class="f-group">
@@ -655,8 +686,8 @@
     </div>
     <div class="f-group">
       <label class="f-label">अध्यायको सामग्री</label>
-      <div class="md-toolbar" id="chapterContentToolbar"></div>
-      <textarea class="f-textarea" id="chapterFormContent" rows="10" placeholder="अध्यायको पूरा सामग्री यहाँ लेख्नुस्..."></textarea>
+      <div id="chapterContentToolbar"></div>
+      <textarea class="f-textarea" id="chapterFormContent" rows="18" style="min-height:340px" placeholder="अध्यायको पूरा सामग्री यहाँ लेख्नुस्..."></textarea>
     </div>
     </div>
     <div class="m-btns">
