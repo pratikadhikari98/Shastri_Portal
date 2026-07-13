@@ -3,7 +3,7 @@
    Night mode FIXED · 7 Themes · Glass UI
    ================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;600;700;800&family=Akshar:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;600;700;800&family=Akshar:wght@400;500;600;700;800&family=Eczar:wght@400;500;600;700;800&family=Khand:wght@400;500;600;700&family=Gotu&display=swap');
 
 /* सिद्धान्त फन्ट — नेपाली/देवनागरी टेक्स्टको लागि (unicode-range ले Latin अक्षरलाई यहाँ नआउने बनाउँछ,
    त्यसैले तिनीहरू स्वतः तलको Chakra Petch मा जान्छन्) */
@@ -33,7 +33,8 @@
   --surface:       rgba(255,255,255,0.62);
   --surface-b:     rgba(255,255,255,0.82);
   --surface-high:  rgba(255,255,255,0.92);
-  --surface-modal: rgba(252,250,246,0.97);
+  --surface-modal: rgba(252,250,246,0.88);
+  --surface-opaque: rgba(252,250,246,0.97);
   --nav-bg:        rgba(245,242,236,0.32);
   --header-bg:     rgba(238,234,228,0.90);
   --input-bg:      rgba(255,255,255,0.72);
@@ -63,7 +64,8 @@
   --surface:       rgba(240,252,244,0.65);
   --surface-b:     rgba(240,252,244,0.85);
   --surface-high:  rgba(248,255,250,0.95);
-  --surface-modal: rgba(245,252,248,0.97);
+  --surface-modal: rgba(245,252,248,0.88);
+  --surface-opaque: rgba(245,252,248,0.97);
   --nav-bg:        rgba(230,248,236,0.32);
   --header-bg:     rgba(225,242,230,0.92);
   --input-bg:      rgba(240,252,244,0.75);
@@ -93,7 +95,8 @@
   --surface:       rgba(235,245,255,0.65);
   --surface-b:     rgba(235,245,255,0.85);
   --surface-high:  rgba(245,252,255,0.95);
-  --surface-modal: rgba(242,249,255,0.97);
+  --surface-modal: rgba(242,249,255,0.88);
+  --surface-opaque: rgba(242,249,255,0.97);
   --nav-bg:        rgba(228,242,255,0.32);
   --header-bg:     rgba(222,238,255,0.92);
   --input-bg:      rgba(235,245,255,0.75);
@@ -123,7 +126,8 @@
   --surface:       rgba(248,240,255,0.65);
   --surface-b:     rgba(248,240,255,0.85);
   --surface-high:  rgba(252,248,255,0.95);
-  --surface-modal: rgba(250,246,255,0.97);
+  --surface-modal: rgba(250,246,255,0.88);
+  --surface-opaque: rgba(250,246,255,0.97);
   --nav-bg:        rgba(242,234,255,0.32);
   --header-bg:     rgba(238,230,252,0.92);
   --input-bg:      rgba(248,240,255,0.75);
@@ -153,7 +157,8 @@
   --surface:       rgba(255,242,248,0.65);
   --surface-b:     rgba(255,242,248,0.85);
   --surface-high:  rgba(255,248,252,0.95);
-  --surface-modal: rgba(255,246,250,0.97);
+  --surface-modal: rgba(255,246,250,0.88);
+  --surface-opaque: rgba(255,246,250,0.97);
   --nav-bg:        rgba(252,238,246,0.32);
   --header-bg:     rgba(248,234,242,0.92);
   --input-bg:      rgba(255,242,248,0.75);
@@ -183,7 +188,8 @@
   --surface:       rgba(240,246,252,0.65);
   --surface-b:     rgba(240,246,252,0.85);
   --surface-high:  rgba(248,252,255,0.95);
-  --surface-modal: rgba(244,248,252,0.97);
+  --surface-modal: rgba(244,248,252,0.88);
+  --surface-opaque: rgba(244,248,252,0.97);
   --nav-bg:        rgba(232,240,248,0.32);
   --header-bg:     rgba(228,236,244,0.92);
   --input-bg:      rgba(240,246,252,0.75);
@@ -213,7 +219,8 @@
   --surface:       rgba(255,245,235,0.65);
   --surface-b:     rgba(255,245,235,0.85);
   --surface-high:  rgba(255,250,245,0.95);
-  --surface-modal: rgba(255,248,240,0.97);
+  --surface-modal: rgba(255,248,240,0.88);
+  --surface-opaque: rgba(255,248,240,0.97);
   --nav-bg:        rgba(245,235,220,0.32);
   --header-bg:     rgba(240,230,215,0.92);
   --input-bg:      rgba(255,245,235,0.75);
@@ -243,7 +250,8 @@
   --surface:       rgba(232,252,248,0.65);
   --surface-b:     rgba(232,252,248,0.85);
   --surface-high:  rgba(245,255,252,0.95);
-  --surface-modal: rgba(240,254,252,0.97);
+  --surface-modal: rgba(240,254,252,0.88);
+  --surface-opaque: rgba(240,254,252,0.97);
   --nav-bg:        rgba(224,248,244,0.32);
   --header-bg:     rgba(216,244,240,0.92);
   --input-bg:      rgba(232,252,248,0.75);
@@ -261,33 +269,35 @@
 }
 
 /* Deep Night (true AMOLED dark) */
-[data-theme="amoled"] {
-  --accent:        #FFAA40;
-  --accent-2:      #FF8020;
-  --accent-glow:   rgba(255,170,64,0.32);
-  --mesh-a:        rgba(120,60,10,0.50);
-  --mesh-b:        rgba(20,80,40,0.40);
-  --mesh-c:        rgba(15,50,120,0.40);
-  --mesh-d:        rgba(60,20,120,0.35);
-  --bg:            #000000;
-  --surface:       rgba(16,12,8,0.90);
-  --surface-b:     rgba(24,18,12,0.95);
-  --surface-high:  rgba(32,24,16,0.97);
-  --surface-modal: rgba(10,8,5,0.99);
-  --nav-bg:        rgba(6,4,2,0.32);
-  --header-bg:     rgba(6,4,2,0.98);
-  --input-bg:      rgba(22,16,10,0.90);
-  --border:        rgba(255,180,80,0.08);
-  --divider:       rgba(255,180,80,0.05);
-  --shadow:        rgba(0,0,0,0.70);
-  --shadow-lg:     rgba(0,0,0,0.90);
-  --island:        rgba(255,255,255,0.08);
-  --island-border: rgba(255,255,255,0.14);
-  --text-1:        #FFFFFF;
-  --text-2:        #C8A870;
-  --text-3:        #806040;
-  --text-4:        #483820;
-  --scheme:        dark;
+/* Coral Sunrise */
+[data-theme="coral"] {
+  --accent:        #FF5A3C;
+  --accent-2:      #E8401F;
+  --accent-glow:   rgba(255,90,60,0.28);
+  --mesh-a:        #FFC8B8;
+  --mesh-b:        #FFE0D0;
+  --mesh-c:        #FFB0A0;
+  --mesh-d:        #FFD8C0;
+  --bg:            #FBEAE2;
+  --surface:       rgba(255,246,242,0.65);
+  --surface-b:     rgba(255,246,242,0.85);
+  --surface-high:  rgba(255,250,246,0.95);
+  --surface-modal: rgba(255,244,238,0.88);
+  --surface-opaque: rgba(255,244,238,0.97);
+  --nav-bg:        rgba(255,238,230,0.32);
+  --header-bg:     rgba(252,232,222,0.92);
+  --input-bg:      rgba(255,246,242,0.75);
+  --border:        rgba(255,90,60,0.18);
+  --divider:       rgba(255,90,60,0.10);
+  --shadow:        rgba(120,30,10,0.10);
+  --shadow-lg:     rgba(120,30,10,0.20);
+  --island:        rgba(50,14,6,0.92);
+  --island-border: rgba(255,255,255,0.16);
+  --text-1:        #341008;
+  --text-2:        #A83820;
+  --text-3:        #D87858;
+  --text-4:        #E8B8A0;
+  --scheme:        light;
 }
 
 /* Midnight Dark — always dark */
@@ -303,7 +313,8 @@
   --surface:       rgba(30,24,16,0.80);
   --surface-b:     rgba(44,36,24,0.88);
   --surface-high:  rgba(54,44,30,0.95);
-  --surface-modal: rgba(18,14,9,0.98);
+  --surface-modal: rgba(18,14,9,0.9);
+  --surface-opaque: rgba(18,14,9,0.97);
   --nav-bg:        rgba(10,8,5,0.32);
   --header-bg:     rgba(12,9,6,0.94);
   --input-bg:      rgba(40,32,20,0.85);
@@ -346,7 +357,23 @@
    RESET
    ═══════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; color-scheme: var(--scheme, light); }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; color-scheme: var(--scheme, light); transition: font-size 0.28s var(--ease-out); }
+.fontsize-pulse { animation: fsPulse 0.32s var(--ease-spring); }
+@keyframes fsPulse { 0% { transform: scale(1); } 45% { transform: scale(1.22); } 100% { transform: scale(1); } }
+
+/* अध्याय पढ्दा कति बाँकी छ — पातलो progress bar (chapter खुला हुँदा मात्र देखिने) */
+.ch-progress-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 250;
+  background: rgba(120,120,120,0.15);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s var(--ease-out);
+}
+.ch-progress-bar.show { opacity: 1; }
+.ch-progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.1s linear;
+}
 
 /* KEY FIX: All theme-related properties transition smoothly */
 body, body * {
@@ -504,7 +531,7 @@ body {
 
 .dots-menu {
   position: absolute; top: calc(100% + 10px); right: 0;
-  background: var(--surface-modal);
+  background: var(--surface-opaque);
   backdrop-filter: blur(40px) saturate(220%);
   -webkit-backdrop-filter: blur(40px) saturate(220%);
   border: 1px solid var(--border);
@@ -549,7 +576,7 @@ body {
 .td-slate   { background: linear-gradient(135deg,#5888AA,#3A6888); }
 .td-autumn  { background: linear-gradient(135deg,#D4600A,#B84000); }
 .td-teal    { background: linear-gradient(135deg,#0A9E8A,#007A6A); }
-.td-amoled  { background: linear-gradient(135deg,#333,#000); border: 1px solid #555; }
+.td-coral   { background: linear-gradient(135deg,#FF8A6C,#E8401F); }
 .td-dark    { background: linear-gradient(135deg,#2A2018,#0C0A07); }
 
 /* Language chips in ⋮ menu */
@@ -659,7 +686,7 @@ input[type=range].dm-slider {
 .ticker-inner-wrap { flex: 1; overflow: hidden; }
 .ticker-inner {
   display: flex; gap: 48px; white-space: nowrap;
-  animation: tickRun 28s linear infinite;
+  animation: tickRun 16s linear infinite;
   font-size: 0.78rem; color: var(--text-2);
 }
 /* ट्याप गर्दा mobile ब्राउजरहरूमा :hover टाँसिएर ticker रोकिने समस्या हुन्थ्यो —
@@ -667,7 +694,7 @@ input[type=range].dm-slider {
 @media (hover: hover) and (pointer: fine) {
   .ticker-inner:hover { animation-play-state: paused; }
 }
-.t-item::before { content: '◆ '; color: var(--accent); font-size: 0.5rem; vertical-align: middle; }
+.t-item::before { content: ''; }
 @keyframes tickRun { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 /* ═══════════════════════════════════
@@ -808,45 +835,48 @@ input[type=range].dm-slider {
   width: auto;
   overflow: hidden;
   margin: 0 16px 14px;
+  border-radius: 0;
+  box-shadow: 0 4px 16px var(--shadow);
   line-height: 0;
   touch-action: pan-y;
 }
 .nb-img {
   width: 100%;
-  height: auto;          /* फोटोकै natural ratio ले height तय गर्छ — कतै खाली ठाउँ आउँदैन */
+  height: auto;          /* फोटोकै natural ratio ले height तय गर्छ — कतै crop/स्ट्रेच हुँदैन */
   display: block;
 }
 .nb-overlay {
-  position: absolute; inset: 0;
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   display: flex; flex-direction: column; justify-content: center;
   padding: 12% 10% 13%;
   background: rgba(0,0,0,0.24);
+  overflow: hidden; /* फोटोको ठाउँमा जति समाचार अट्छ त्यति मात्र देखिने, बाँकी clip हुने — खाली/कालो ठाउँ नआउने */
 }
 .nb-date {
-  position: absolute; top: 12%; right: 10%;
+  position: absolute; top: 14px; right: 16px;
   font-family: 'Akshar', var(--font-s);
   font-size: 0.72rem; font-weight: 700; color: #E8E2D0;
   text-shadow: 0 1px 4px rgba(0,0,0,0.7);
 }
 .nb-title {
   font-family: 'Akshar', var(--font-s);
-  font-size: 1.12rem; font-weight: 700; color: #FAF7EE;
+  font-size: 1.08rem; font-weight: 700; color: #FAF7EE;
   line-height: 1.4;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.55);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.6);
   text-decoration: underline;
   text-underline-offset: 4px;
   transition: opacity 0.22s ease;
   margin-bottom: 6px;
+  padding-right: 54px; /* मितिसँग नठोक्किने */
 }
 .nb-desc {
   font-family: 'Akshar', var(--font-s);
   font-size: 0.8rem; font-weight: 500; color: #E5E0D2;
-  line-height: 1.55;
-  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  line-height: 1.6;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.55);
   transition: opacity 0.22s ease;
 }
-.nb-dots { display: flex; justify-content: center; gap: 5px; margin-top: 10px; }
+.nb-dots { display: flex; justify-content: center; gap: 5px; margin-top: 12px; }
 .nb-dot {
   width: 5px; height: 5px; border-radius: 3px;
   background: rgba(255,255,255,0.4); cursor: pointer;
@@ -858,16 +888,17 @@ input[type=range].dm-slider {
    BOTTOM NAV
    ═══════════════════════════════════ */
 .bot-nav {
-  position:fixed; bottom:0; left:0; right:0; z-index:150;
+  position:fixed; bottom:14px; left:18px; right:18px; z-index:150;
   background:var(--nav-bg);
   backdrop-filter:blur(4px) saturate(180%);
   -webkit-backdrop-filter:blur(4px) saturate(180%);
-  border-top:1px solid var(--border);
-  box-shadow:0 -4px 24px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.4);
-  display:flex; align-items:center; justify-content:space-around;
-  padding:9px 0 17px;
+  border:1px solid var(--border);
+  border-radius:26px;
+  box-shadow:0 8px 28px var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.4);
+  display:flex; align-items:center; justify-content:center; gap:30px;
+  padding:10px 22px;
 }
-.nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:6px 16px; text-decoration:none; color:var(--text-3); flex:1; position:relative; transition:color var(--t-fast) var(--ease-out) !important; -webkit-tap-highlight-color: transparent; }
+.nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:6px 10px; text-decoration:none; color:var(--text-3); flex:none; position:relative; transition:color var(--t-fast) var(--ease-out) !important; -webkit-tap-highlight-color: transparent; }
 .nav-item.on { color:var(--accent); }
 .nav-item:hover { color:var(--accent); }
 .nav-item:active .nav-ico { transform:scale(0.88); }
@@ -927,9 +958,33 @@ input[type=range].dm-slider {
 .yr-head-title { font-family:var(--font-s); font-size:1.9rem; font-weight:800; margin-bottom:3px; }
 .yr-head-sub { font-size:0.8rem; opacity:0.7; font-weight:500; }
 
-.subj-grp { margin-bottom:20px; }
-.subj-grp-head { display:flex; align-items:center; gap:8px; font-family:var(--font-s); font-size:0.96rem; font-weight:700; color:var(--text-1); margin-bottom:10px; }
-.subj-grp-ico { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:15px; background:var(--surface); border:1px solid var(--border); }
+.subj-grp { margin-bottom:28px; }
+
+.subj-tabs { display:flex; gap:9px; overflow-x:auto; padding:4px 2px 16px; -webkit-overflow-scrolling:touch; }
+.subj-tab {
+  flex:none; display:flex; align-items:center; gap:8px; padding:6px 16px 6px 6px;
+  border-radius:10px; border:1px solid var(--border); background:var(--surface);
+  cursor:pointer; font-family:var(--font-s); font-size:0.82rem; font-weight:700; color:var(--text-2);
+  box-shadow:0 2px 8px var(--shadow);
+  transition:background-color 0.16s var(--ease-out), border-color 0.16s var(--ease-out), color 0.16s var(--ease-out), transform 0.16s var(--ease-out);
+}
+.subj-tab:active { transform:scale(0.95); }
+.subj-tab-ico { width:28px; height:28px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.35); }
+.subj-tab-lbl { white-space:nowrap; }
+.subj-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 4px 14px var(--accent-glow, rgba(0,0,0,0.25)); transform:scale(1.04); }
+.subj-tab.active .subj-tab-ico { box-shadow:0 0 0 2px rgba(255,255,255,0.5), inset 0 1px 0 rgba(255,255,255,0.4); }
+
+/* विषय बदल्दा किताब list छिटो-चिटो फेरिने (fade + हल्का उठ्ने) */
+@keyframes subjListIn { from { opacity:0; transform:translateY(12px) scale(0.99); } to { opacity:1; transform:translateY(0) scale(1); } }
+#yearBooksList.subj-anim-in { animation: subjListIn 0.28s cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes subjRowIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+#yearBooksList.subj-anim-in .book-row { opacity:0; animation: subjRowIn 0.32s cubic-bezier(0.16,1,0.3,1) both; will-change:transform,opacity; }
+#yearBooksList.subj-anim-in .book-row:nth-child(1) { animation-delay:.03s; }
+#yearBooksList.subj-anim-in .book-row:nth-child(2) { animation-delay:.06s; }
+#yearBooksList.subj-anim-in .book-row:nth-child(3) { animation-delay:.09s; }
+#yearBooksList.subj-anim-in .book-row:nth-child(4) { animation-delay:.12s; }
+#yearBooksList.subj-anim-in .book-row:nth-child(5) { animation-delay:.15s; }
+#yearBooksList.subj-anim-in .book-row:nth-child(n+6) { animation-delay:.17s; }
 
 .books-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(146px,1fr)); gap:9px; }
 .books-list { display:flex; flex-direction:column; gap:8px; }
@@ -1016,6 +1071,7 @@ input[type=range].dm-slider {
 .chapter-item {
   background:var(--surface); backdrop-filter:blur(var(--blur)); -webkit-backdrop-filter:blur(var(--blur));
   border-bottom:1px solid var(--divider); cursor:pointer;
+  overflow-x:hidden; max-width:100%;
 }
 .chapter-item:last-child { border-bottom:none; }
 .chapter-item:hover { background:var(--surface-b); }
@@ -1042,6 +1098,13 @@ input[type=range].dm-slider {
   font-size:1rem;
   color:var(--text-1);
   line-height:2;
+  text-align:justify;
+  max-width:100%;
+  box-sizing:border-box;
+  word-wrap:break-word;
+  overflow-wrap:break-word;
+  word-break:break-word;
+  hyphens:auto;
 }
 /* Rich typography for rendered chapters */
 .ch-read-content h1 { font-size:1.4rem; font-weight:800; color:var(--accent); margin:12px 0 8px; font-family:var(--font-s); }
@@ -1175,9 +1238,11 @@ input[type=range].dm-slider {
 /* रंग-popup वा पूरा-स्क्रिन editor यसै माथि खुल्दा, यसको भारी blur अस्थायी रूपमा रोक्ने
    (एकैचोटि २-३ वटा blur layer composite हुँदा jank आउने भएकाले) */
 .overlay.blur-paused, .overlay.blur-paused .modal-sheet { backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
-.modal-sheet { background:var(--surface-modal); backdrop-filter:blur(22px) saturate(200%); -webkit-backdrop-filter:blur(22px) saturate(200%); will-change:transform; border:1px solid var(--border); border-radius:var(--r-xl) var(--r-xl) 0 0; box-shadow:0 -8px 40px var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.4); width:100%; max-height:92vh; overflow-y:auto; padding:18px 18px 32px; transform:translateY(100%); transition:transform 0.4s var(--ease-out) !important; }
+.modal-sheet { background:var(--surface-modal); backdrop-filter:blur(22px) saturate(200%); -webkit-backdrop-filter:blur(22px) saturate(200%); will-change:transform; border:1px solid var(--border); border-radius:0; box-shadow:0 -8px 40px var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.5); width:100%; max-height:92vh; overflow-y:auto; padding:18px 18px 32px; transform:translateY(100%); transition:transform 0.4s var(--ease-out), max-height 0.32s var(--ease-out), height 0.32s var(--ease-out) !important; }
+.modal-sheet.sheet-expanded { max-height:100dvh; height:100dvh; }
+.m-handle { width:38px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 14px; cursor:grab; touch-action:none; }
+.m-handle:active { cursor:grabbing; }
 .overlay.open .modal-sheet { transform:translateY(0); }
-.m-handle { width:38px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 14px; }
 .m-title { font-family:var(--font-s); font-size:1.15rem; font-weight:700; color:var(--text-1); margin-bottom:14px; }
 
 .f-group { margin-bottom:12px; }
@@ -1204,6 +1269,8 @@ input[type=range].dm-slider {
 .tb-btn { flex:none; padding:6px 11px; border-radius:8px; border:1px solid var(--border); background:var(--surface); font-family:var(--font); font-size:0.8rem; font-weight:700; color:var(--text-2); cursor:pointer; white-space:nowrap; }
 .tb-btn:active { background:var(--surface-high); transform:scale(0.96); }
 .tb-btn-fs { background:var(--accent); color:#fff; border-color:transparent; }
+.tb-btn-char { padding:8px 4px; font-size:1.15rem; min-width:40px; text-align:center; }
+.md-vedic-row { padding-bottom:6px; margin-bottom:6px; border-bottom:1px dashed var(--border); }
 
 /* रंग छान्ने — सानो inline popup, कुनै darkened background/overlay छैन */
 .color-popover {
@@ -1236,6 +1303,11 @@ input[type=range].dm-slider {
 .fs-editor-title { font-family:var(--font-s); font-weight:800; font-size:0.92rem; color:var(--text-1); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fs-editor-done { flex-shrink:0; padding:9px 18px; border:none; border-radius:20px; background:var(--accent); color:#fff; font-family:var(--font-s); font-weight:800; font-size:0.82rem; cursor:pointer; }
 .fs-editor-done:active { transform:scale(0.96); }
+.fs-editor-font-btn { flex-shrink:0; width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:var(--surface); color:var(--text-1); font-family:var(--font-s); font-weight:800; font-size:0.9rem; cursor:pointer; }
+.fs-editor-font-btn:active { background:var(--surface-high); transform:scale(0.94); }
+.font-opt-btn { display:flex; align-items:center; justify-content:space-between; width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:0.86rem; color:var(--text-1); text-align:left; }
+.font-opt-btn:active { background:var(--surface-high); }
+.font-opt-btn.active { border-color:var(--accent); background:var(--accent-glow); }
 .fs-editor-toolbar { padding:8px 10px !important; border-bottom:1px solid var(--border); flex-shrink:0; margin:0 !important; }
 .fs-editor-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
 .fs-editor-ta { width:100%; height:100%; min-height:100%; border:none; outline:none; resize:none; padding:18px 16px 40px; font-family:var(--font); font-size:1rem; line-height:1.8; background:transparent; color:var(--text-1); }
