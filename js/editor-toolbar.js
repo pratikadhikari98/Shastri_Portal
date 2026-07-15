@@ -215,6 +215,9 @@ const MD_FONTS = [
   { key: 'khand',      label: 'Khand Nepali',        css: "'Khand','Noto Serif Devanagari',sans-serif" },
   { key: 'gotu',       label: 'Gotu Nepali',         css: "'Gotu','Noto Serif Devanagari',sans-serif" },
   { key: 'notoserif',  label: 'Noto Serif',          css: "'Noto Serif Devanagari',serif" },
+  { key: 'comic',      label: 'Comic (English)',     css: "'Comic Neue','Noto Serif Devanagari',cursive" },
+  { key: 'patrick',    label: 'Patrick Hand (English)', css: "'Patrick Hand','Noto Serif Devanagari',cursive" },
+  { key: 'fredoka',    label: 'Fredoka (English)',   css: "'Fredoka','Noto Serif Devanagari',sans-serif" },
 ];
 
 function _mdFontOutsideClick(e) {
