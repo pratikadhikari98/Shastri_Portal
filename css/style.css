@@ -1139,7 +1139,7 @@ input[type=range].dm-slider {
   hyphens:auto;
 }
 /* Rich typography for rendered chapters */
-.ch-read-content h1 { font-size:1.4rem; font-weight:800; color:var(--accent); margin:12px 0 8px; font-family:var(--font-s); }
+.ch-read-content h1 { font-size:1.4rem; font-weight:800; color:var(--accent); margin:12px 0 8px; }
 .ch-read-content h2 { font-size:1.15rem; font-weight:700; color:var(--text-1); margin:10px 0 6px; border-left:3px solid var(--accent); padding-left:10px; }
 .ch-read-content h3 { font-size:1rem; font-weight:700; color:var(--text-2); margin:8px 0 4px; }
 .ch-read-content p  { margin-bottom:10px; }
