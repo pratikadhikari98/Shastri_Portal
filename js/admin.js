@@ -284,8 +284,8 @@ function renderAdminBooksList() {
         <div><div class="sett-name">${escapeHtml(b.title)}</div><div class="sett-desc">${escapeHtml(b.author || '')}</div></div>
       </div>
       <div style="display:flex;gap:10px;flex-shrink:0">
-        <button onclick="adminBookMove(${i},-1)" ${i===0?'disabled style="background:none;border:none;font-size:1.05rem;cursor:not-allowed;opacity:0.3"':'style="background:none;border:none;font-size:1.05rem;cursor:pointer"'} title="माथि सार्नुस्">⬆️</button>
-        <button onclick="adminBookMove(${i},1)" ${i===arr.length-1?'disabled style="background:none;border:none;font-size:1.05rem;cursor:not-allowed;opacity:0.3"':'style="background:none;border:none;font-size:1.05rem;cursor:pointer"'} title="तल सार्नुस्">⬇️</button>
+        <button onclick="adminBookMove(${i},-1)" ${i===0?'disabled style="background:none;border:none;cursor:not-allowed;opacity:0.3"':'style="background:none;border:none;cursor:pointer"'} title="माथि सार्नुस्"><img src="images/icons/arrow-up.svg" style="width:18px;height:18px;display:block"></button>
+        <button onclick="adminBookMove(${i},1)" ${i===arr.length-1?'disabled style="background:none;border:none;cursor:not-allowed;opacity:0.3"':'style="background:none;border:none;cursor:pointer"'} title="तल सार्नुस्"><img src="images/icons/arrow-down.svg" style="width:18px;height:18px;display:block"></button>
         <button onclick="adminChaptersOpen('${b.id}')" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="अध्याय व्यवस्थापन">📖</button>
         <button onclick="adminBookEdit(${i})" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="सम्पादन">✏️</button>
         <button onclick="adminBookDelete(${i})" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="मेटाउनुस्">🗑️</button>
@@ -549,8 +549,8 @@ function renderAdminChaptersList() {
         <div><div class="sett-name">${escapeHtml(c.title || ('अध्याय ' + (i + 1)))}</div><div class="sett-desc">अध्याय ${i + 1}</div></div>
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0">
-        <button onclick="adminChapterMove(${i},-1)" style="background:none;border:none;font-size:0.95rem;cursor:pointer;opacity:${i === 0 ? '0.3' : '1'}" ${i === 0 ? 'disabled' : ''}>⬆️</button>
-        <button onclick="adminChapterMove(${i},1)" style="background:none;border:none;font-size:0.95rem;cursor:pointer;opacity:${i === chs.length - 1 ? '0.3' : '1'}" ${i === chs.length - 1 ? 'disabled' : ''}>⬇️</button>
+        <button onclick="adminChapterMove(${i},-1)" style="background:none;border:none;cursor:pointer;opacity:${i === 0 ? '0.3' : '1'}" ${i === 0 ? 'disabled' : ''}><img src="images/icons/arrow-up.svg" style="width:16px;height:16px;display:block"></button>
+        <button onclick="adminChapterMove(${i},1)" style="background:none;border:none;cursor:pointer;opacity:${i === chs.length - 1 ? '0.3' : '1'}" ${i === chs.length - 1 ? 'disabled' : ''}><img src="images/icons/arrow-down.svg" style="width:16px;height:16px;display:block"></button>
         <button onclick="adminChapterEdit(${i})" style="background:none;border:none;font-size:1.05rem;cursor:pointer">✏️</button>
         <button onclick="adminChapterDelete(${i})" style="background:none;border:none;font-size:1.05rem;cursor:pointer">🗑️</button>
       </div>
