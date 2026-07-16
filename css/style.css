@@ -782,40 +782,47 @@ input[type=range].dm-slider {
 .year-card {
   position:relative; border-radius:var(--r-xl); overflow:hidden;
   cursor:pointer; height:118px; text-decoration:none; display:block;
-  background:var(--surface-b);
-  border:1px solid var(--border);
-  box-shadow: 0 4px 20px var(--shadow);
+  box-shadow: 0 6px 22px var(--shadow-lg);
 }
 .year-card:hover  { transform:translateY(-4px) scale(1.01); box-shadow:0 16px 40px var(--shadow-lg); }
 .year-card:active { transform:scale(0.97); }
 
-/* बायाँतिरको पातलो रङ्गीन धर्को (पुस्तकको बाइन्डिङ जस्तै) — वर्ष छुट्याउने संकेत */
 .yc-bg { position:absolute; inset:0; }
-.year-card .yc-bg { inset:0 auto 0 0; width:4px; }
-.yc-o { background:#FF8C35; }
-.yc-g { background:#3EB868; }
-.yc-b { background:#2E90F0; }
-.yc-p { background:#9060F0; }
+.yc-o { background:linear-gradient(155deg,#FFB05A 0%,#FF8A2E 48%,#D85A10 100%); }
+.yc-g { background:linear-gradient(155deg,#4FD684 0%,#22B25E 48%,#0C7A3C 100%); }
+.yc-b { background:linear-gradient(155deg,#5AA8FF 0%,#2E7CF0 48%,#1450B8 100%); }
+.yc-p { background:linear-gradient(155deg,#B888FF 0%,#8C4CEA 48%,#5A20AA 100%); }
+[data-theme="dark"] .yc-o { background:linear-gradient(155deg,#8A4410 0%,#5C2606 55%,#2E1002 100%); }
+[data-theme="dark"] .yc-g { background:linear-gradient(155deg,#0E6836 0%,#083A1E 55%,#031A0C 100%); }
+[data-theme="dark"] .yc-b { background:linear-gradient(155deg,#1858B0 0%,#0C3070 55%,#04143A 100%); }
+[data-theme="dark"] .yc-p { background:linear-gradient(155deg,#6E30C0 0%,#3E1670 55%,#1C0838 100%); }
 
-/* पछाडि ठूलो देवनागरी अंक — छाप/मुद्रा जस्तो watermark, प्रत्येक वर्षको संकेत */
-.year-card::after {
-  position:absolute; right:8px; top:50%; transform:translateY(-50%);
-  font-family:var(--font-s); font-weight:800; font-size:5.4rem; line-height:1;
-  opacity:0.09; pointer-events:none; z-index:1;
+/* एउटै नरम कर्णशील चमक — धेरै blob/glare को सट्टा */
+.yc-shine {
+  position:absolute; inset:0;
+  background:linear-gradient(155deg,rgba(255,255,255,0.30) 0%,rgba(255,255,255,0) 40%);
 }
-.year-card.s1::after { content:"१"; color:#FF8C35; }
-.year-card.s2::after { content:"२"; color:#3EB868; }
-.year-card.s3::after { content:"३"; color:#2E90F0; }
-.year-card.s4::after { content:"४"; color:#9060F0; }
+.yc-glare, .yc-blob { display:none; }
 
-.year-card .yc-shine,.year-card .yc-glare,.year-card .yc-blob { display:none; }
+/* पछाडि ठूलो देवनागरी अंक — कुँदिएको छाप (embossed seal) जस्तो, वर्ष छुट्याउने संकेत */
+.year-card::after {
+  position:absolute; right:2px; bottom:-20px;
+  font-family:var(--font-s); font-weight:800; font-size:7.6rem; line-height:1;
+  color:rgba(255,255,255,0.16);
+  text-shadow:0 2px 3px rgba(0,0,0,0.12);
+  pointer-events:none; z-index:1;
+}
+.year-card.s1::after { content:"१"; }
+.year-card.s2::after { content:"२"; }
+.year-card.s3::after { content:"३"; }
+.year-card.s4::after { content:"४"; }
 
-.yc-body { position:relative; z-index:2; padding:16px 20px 16px 24px; height:100%; display:flex; flex-direction:column; justify-content:center; }
-.yc-title { font-family:var(--font-s); font-size:1.55rem; font-weight:800; line-height:1.1; margin-bottom:3px; color:var(--text-1); }
-.yc-sub { font-size:0.78rem; opacity:0.72; font-weight:500; color:var(--text-2); }
-.yc-badges { display:flex; gap:5px; margin-top:7px; }
-.yc-badge { font-size:0.64rem; font-weight:700; padding:2px 7px; border-radius:20px; background:var(--surface); border:1px solid var(--border); color:var(--text-2); }
-.yc-arrow { position:absolute; right:16px; top:50%; transform:translateY(-50%); z-index:2; width:33px; height:33px; background:var(--surface); border:1px solid var(--border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--text-1); }
+.yc-body { position:relative; z-index:2; padding:16px 18px; height:100%; display:flex; flex-direction:column; justify-content:center; }
+.yc-title { font-family:var(--font-s); font-size:1.6rem; font-weight:800; line-height:1.1; margin-bottom:3px; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.18); }
+.yc-sub { font-size:0.78rem; font-weight:500; color:rgba(255,255,255,0.82); }
+.yc-badges { display:flex; gap:5px; margin-top:8px; }
+.yc-badge { font-size:0.64rem; font-weight:700; padding:2px 8px; border-radius:20px; background:rgba(255,255,255,0.20); border:1px solid rgba(255,255,255,0.32); color:#fff; backdrop-filter:blur(4px); }
+.yc-arrow { position:absolute; right:16px; top:50%; transform:translateY(-50%); z-index:2; width:33px; height:33px; background:rgba(255,255,255,0.22); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.34); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.12); }
 .year-card:hover .yc-arrow { transform:translateY(-50%) scale(1.12) translateX(2px); }
 
 /* ═══════════════════════════════════
