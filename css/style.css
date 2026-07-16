@@ -810,17 +810,17 @@ input[type=range].dm-slider {
 .yc-blob-1 { right:-18px; top:-18px; width:90px; height:90px; background:rgba(255,255,255,0.18); }
 .yc-blob-2 { right:55px; bottom:-28px; width:65px; height:65px; background:rgba(255,255,255,0.10); }
 
-/* मधुरो देवनागरी अंक — वर्ष छुट्याउने संकेत */
-.year-card::after {
+/* मधुरो देवनागरी अंक — वर्ष छुट्याउने संकेत (कार्ड सूची र भित्री detail header दुबैमा) */
+.year-card::after, .yr-head::after {
   position:absolute; right:6px; bottom:-14px;
   font-family:var(--font-s); font-weight:800; font-size:5.6rem; line-height:1;
   color:rgba(255,255,255,0.20);
   pointer-events:none; z-index:1;
 }
-.year-card.s1::after { content:"१"; }
-.year-card.s2::after { content:"२"; }
-.year-card.s3::after { content:"३"; }
-.year-card.s4::after { content:"४"; }
+.year-card.s1::after, .yr-head.s1::after { content:"१"; }
+.year-card.s2::after, .yr-head.s2::after { content:"२"; }
+.year-card.s3::after, .yr-head.s3::after { content:"३"; }
+.year-card.s4::after, .yr-head.s4::after { content:"४"; }
 
 .yc-body { position:relative; z-index:2; padding:16px 18px; height:100%; display:flex; flex-direction:column; justify-content:center; }
 .yc-title { font-family:var(--font-s); font-size:1.55rem; font-weight:800; line-height:1.1; margin-bottom:3px; }
