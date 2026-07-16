@@ -211,7 +211,6 @@ window.mdApplyColor = mdApplyColor;
    ════════════════════════════════════ */
 const MD_FONTS = [
   { key: 'siddhanta', label: 'सिद्धान्त (Default)', css: "'Siddhanta','Chakra Petch','Noto Serif Devanagari',serif" },
-  { key: 'eczar',      label: 'Eczar Nepali',        css: "'Eczar','Noto Serif Devanagari',serif" },
   { key: 'khand',      label: 'Khand Nepali',        css: "'Khand','Noto Serif Devanagari',sans-serif" },
   { key: 'gotu',       label: 'Gotu Nepali',         css: "'Gotu','Noto Serif Devanagari',sans-serif" },
   { key: 'notoserif',  label: 'Noto Serif',          css: "'Noto Serif Devanagari',serif" },
