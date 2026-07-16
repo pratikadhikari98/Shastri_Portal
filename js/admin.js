@@ -416,10 +416,22 @@ const chaptersColRef = (bookId) => db.collection('chapters').doc(bookId).collect
 async function loadChaptersFromFirestore(bookId) {
   try {
     const snap = await chaptersColRef(bookId).orderBy('order').get();
-    if (snap.empty) return null;
-    const chs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    try { localStorage.setItem('sp_cache_chapters_' + bookId, JSON.stringify(chs)); } catch (e) {}
-    return chs;
+    if (!snap.empty) {
+      const chs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      try { localStorage.setItem('sp_cache_chapters_' + bookId, JSON.stringify(chs)); } catch (e) {}
+      return chs;
+    }
+    // नयाँ subcollection खाली छ — पुरानो संरचना (chapters/{bookId} document भित्र array) मा डेटा छ कि जाँच्ने,
+    // ताकि पुरानो प्रणालीमा लेखिएका अध्याय नहराओस्। (यी अध्याय अर्को पटक admin ले edit/save गर्दा नयाँ संरचनामा आफैं सर्छन्।)
+    const legacySnap = await db.collection('chapters').doc(bookId).get();
+    if (legacySnap.exists) {
+      const data = legacySnap.data();
+      if (Array.isArray(data?.chapters) && data.chapters.length) {
+        try { localStorage.setItem('sp_cache_chapters_' + bookId, JSON.stringify(data.chapters)); } catch (e) {}
+        return data.chapters;
+      }
+    }
+    return null;
   } catch (err) {
     console.warn('Firestore बाट अध्याय लोड हुन सकेन, offline cache हेर्दैछ:', err.message);
     try {
