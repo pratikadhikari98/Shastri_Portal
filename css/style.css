@@ -3,7 +3,7 @@
    Night mode FIXED · 7 Themes · Glass UI
    ================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;600;700;800&family=Akshar:wght@400;500;600;700;800&family=Khand:wght@400;500;600;700&family=Gotu&family=Comic+Neue:wght@400;700&family=Patrick+Hand&family=Fredoka:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Noto+Serif+Devanagari:wght@400;600;700;800&family=Akshar:wght@400;500;600;700;800&family=Eczar:wght@400;500;600;700;800&family=Khand:wght@400;500;600;700&family=Gotu&family=Comic+Neue:wght@400;700&family=Patrick+Hand&family=Fredoka:wght@400;500;600;700&display=swap');
 
 /* सिद्धान्त फन्ट — नेपाली/देवनागरी टेक्स्टको लागि (unicode-range ले Latin अक्षरलाई यहाँ नआउने बनाउँछ,
    त्यसैले तिनीहरू स्वतः तलको Chakra Petch मा जान्छन्) */
@@ -15,37 +15,8 @@
   font-display: swap;
 }
 
-/* Eczar — local फाइलबाट (Google Fonts version मा देवनागरी सपोर्ट राम्रो नभएकोले, यो पूरा Devanagari + Latin सपोर्ट गर्ने local प्रति प्रयोग गरिएको) */
-@font-face {
-  font-family: 'Eczar';
-  src: url('../fonts/Eczar-Regular.ttf') format('truetype');
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Eczar';
-  src: url('../fonts/Eczar-Medium.ttf') format('truetype');
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Eczar';
-  src: url('../fonts/Eczar-SemiBold.ttf') format('truetype');
-  font-weight: 600;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Eczar';
-  src: url('../fonts/Eczar-Bold.ttf') format('truetype');
-  font-weight: 700;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Eczar';
-  src: url('../fonts/Eczar-ExtraBold.ttf') format('truetype');
-  font-weight: 800;
-  font-display: swap;
-}
+/* Eczar — फेरि Google Fonts बाटै (यसले संयुक्ताक्षर/रेफ आदि ठीकसँग बनाउँछ;
+   local static TTF ले जटिल Devanagari शब्दहरूमा rendering बिगारेकोले हटाइयो) */
 
 /* ═══════════════════════════════════════
    THEME DEFINITIONS
