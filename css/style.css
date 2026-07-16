@@ -1246,6 +1246,8 @@ input[type=range].dm-slider {
    MODALS / OVERLAYS
    ═══════════════════════════════════ */
 .overlay { position:fixed; inset:0; z-index:280; background:rgba(0,0,0,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity 0.28s var(--ease-out) !important; }
+/* confirm/prompt जस्ता dialog अरू खुलेको modal (जस्तै admin panel) माथि नै देखिनुपर्छ */
+.overlay-top { z-index:400; }
 .overlay.open { opacity:1; pointer-events:all; }
 /* रंग-popup वा पूरा-स्क्रिन editor यसै माथि खुल्दा, यसको भारी blur अस्थायी रूपमा रोक्ने
    (एकैचोटि २-३ वटा blur layer composite हुँदा jank आउने भएकाले) */
