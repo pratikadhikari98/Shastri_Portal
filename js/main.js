@@ -1009,9 +1009,10 @@ function renderYearPage(yearId) {
   el.innerHTML = `
   <div class="content">
     <a class="back-btn" onclick="go('home');return false;" href="#">← फिर्ता</a>
-    <div class="yr-head yc-bg yc-${yClr[ci]||'o'} s1" style="position:relative;overflow:hidden">
+    <div class="yr-head yc-bg yc-${yClr[ci]||'o'} s${ci+1}" style="position:relative;overflow:hidden">
       <div class="yc-shine" style="position:absolute;inset:0"></div>
       <div class="yc-glare" style="position:absolute;top:0;left:0;right:0;height:48%"></div>
+      <div class="yc-blob yc-blob-1"></div><div class="yc-blob yc-blob-2"></div>
       <div style="position:relative;z-index:2">
         <div class="yr-head-title" style="color:${['#5A2800','#0A3010','#082050','#280650'][ci]||'#1A1209'};${ci===3&&App.theme==='dark'?'color:white':''}">${yr.title}</div>
         <div class="yr-head-sub" style="color:${['#5A2800','#0A3010','#082050','#280650'][ci]||'#5C4A2A'}">${yr.subtitle}</div>
