@@ -289,10 +289,15 @@ function resizeBg() {
 }
 
 let _bgT = 0;
-function animateBg() {
-  _bgT += 0.003;
-  drawBg();
+let _bgLastDraw = 0;
+const _BG_FRAME_MS = 80; // ~12fps — bistara chalne blob को लागि यति नै पर्याप्त, 60/120Hz मा हरेक frame कोर्दा अनावश्यक heavy हुन्थ्यो
+function animateBg(ts) {
   requestAnimationFrame(animateBg);
+  if (document.hidden) return; // ट्याब/एप पृष्ठभूमिमा हुँदा नकोर्ने — ब्याट्री/CPU बचत
+  if (ts && ts - _bgLastDraw < _BG_FRAME_MS) return; // display refresh जति भए पनि थ्रोटल गर्ने
+  _bgLastDraw = ts || 0;
+  _bgT += 0.02;
+  drawBg();
 }
 
 function drawBg() {
@@ -783,6 +788,11 @@ async function restoreLastLocation() {
     if (loc.page === 'year' && loc.yearId) {
       go('year', { yearId: loc.yearId });
     } else if (loc.page === 'subject' && loc.subjectId && loc.yearId) {
+      // पहिले वर्ष र सही विषय-ट्याबको history state पनि बनाउने, ताकि पछि back
+      // गर्दा एकैचोटि home मा नफर्किई, अध्याय → किताब → विषय-ट्याब → वर्ष क्रमैसँग फर्कियोस्
+      const bookLoc = findBookLocation(loc.subjectId);
+      go('year', { yearId: loc.yearId });
+      if (bookLoc && bookLoc.subjectKey) setYearSubjectTab(loc.yearId, bookLoc.subjectKey);
       go('subject', { subjectId: loc.subjectId, yearId: loc.yearId });
       if (typeof loc.chapterIdx === 'number' && loc.chapterIdx >= 0) {
         // अध्याय (Firestore/legacy फाइलबाट) load हुन थोरै पर्खने
@@ -1610,13 +1620,13 @@ function renderDrop(res,q) {
   let html = books.map(({b,yr,key})=>{
     const s=SUBJ[key]||{short:'क',g:'#EEE,#CCC'};
     const[c1,c2]=s.g.split(',');
-    return `<div class="s-row" onclick="go('subject',{subjectId:'${b.id}',yearId:${yr.id}});document.getElementById('sDrop').classList.remove('open')">
+    return `<div class="s-row" onclick="openBookWithBreadcrumb('${b.id}',${yr.id});document.getElementById('sDrop').classList.remove('open')">
       <div class="s-ico2" style="background:linear-gradient(135deg,${c1},${c2})">${s.short}</div>
       <div><div class="s-name">${b.title}</div><div class="s-sub">${yr.title} · ${b.author}</div></div>
     </div>`;
   }).join('');
   if (chapters.length) {
-    html += chapters.map(c => `<div class="s-row" onclick="go('subject',{subjectId:'${c.bookId}',yearId:${c.yearId}});document.getElementById('sDrop').classList.remove('open');setTimeout(()=>{const el=document.getElementById('chi-${c.bookId}-${c.chapterIdx}');if(el){toggleCh('${c.bookId}',${c.chapterIdx});el.scrollIntoView({behavior:'smooth',block:'start'});}},450)">
+    html += chapters.map(c => `<div class="s-row" onclick="openBookWithBreadcrumb('${c.bookId}',${c.yearId},${c.chapterIdx});document.getElementById('sDrop').classList.remove('open')">
       <div class="s-ico2" style="background:linear-gradient(135deg,#CCC,#AAA)">📖</div>
       <div><div class="s-name">${c.chapterTitle}</div><div class="s-sub">📘 ${c.bookTitle}</div></div>
     </div>`).join('');
@@ -1647,6 +1657,22 @@ function findBookLocation(bookId) {
   return null;
 }
 window.findBookLocation = findBookLocation;
+
+/* किताबमा जाँदा बीचका सबै चरण (वर्ष → विषय-ट्याब → किताब) history मा राख्ने,
+   ताकि जहाँबाट पनि (recent history, bookmark, search) पुगे पनि back ले क्रमैसँग फर्काओस् */
+function openBookWithBreadcrumb(bookId, yearId, chapterIdx) {
+  const bookLoc = findBookLocation(bookId);
+  go('year', { yearId });
+  if (bookLoc && bookLoc.subjectKey) setYearSubjectTab(yearId, bookLoc.subjectKey);
+  go('subject', { subjectId: bookId, yearId });
+  if (typeof chapterIdx === 'number' && chapterIdx >= 0) {
+    setTimeout(() => {
+      const el = document.getElementById(`chi-${bookId}-${chapterIdx}`);
+      if (el) { toggleCh(bookId, chapterIdx); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    }, 450);
+  }
+}
+window.openBookWithBreadcrumb = openBookWithBreadcrumb;
 
 function renderBookmarksPage() {
   const el = document.getElementById('bookmarksList');
@@ -1679,8 +1705,8 @@ function renderBookmarksPage() {
 
   el.innerHTML = rows.map(r => {
     const action = r.type === 'book'
-      ? `go('subject',{subjectId:'${r.bookId}',yearId:${r.yearId}})`
-      : `go('subject',{subjectId:'${r.bookId}',yearId:${r.yearId}});setTimeout(()=>{const el=document.getElementById('chi-${r.bookId}-${r.idx}');if(el){toggleCh('${r.bookId}',${r.idx});el.scrollIntoView({behavior:'smooth',block:'start'});}},450)`;
+      ? `openBookWithBreadcrumb('${r.bookId}',${r.yearId})`
+      : `openBookWithBreadcrumb('${r.bookId}',${r.yearId},${r.idx})`;
     return `
     <div class="note-card" style="cursor:pointer" onclick="${action}">
       <div class="nc2-head">
@@ -1775,7 +1801,7 @@ function renderCourses(filter='all') {
     const[c1,c2]=s.g.split(',');
     books.forEach(b=>{
       html+=`<div style="display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:8px;background:var(--surface);backdrop-filter:blur(var(--blur));border:1px solid var(--surface-b);border-radius:var(--r-md);cursor:pointer;box-shadow:0 2px 10px var(--shadow);transition:transform 0.2s var(--ease-spring)!important"
-        onclick="go('subject',{subjectId:'${b.id}',yearId:${yr.id}})"
+        onclick="openBookWithBreadcrumb('${b.id}',${yr.id})"
         onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform=''">
         <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,${c1},${c2});display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0">${s.short}</div>
         <div style="flex:1;min-width:0">
@@ -1838,7 +1864,7 @@ function renderHistory() {
   if(!el) return;
   if(!App.history.length){el.innerHTML='<div class="empty"><div class="empty-ico">🕐</div><div class="empty-t">इतिहास छैन</div></div>';return;}
   el.innerHTML=App.history.slice(0,8).map(h=>`
-    <div class="hist-item" onclick="go('subject',{subjectId:'${h.id}',yearId:${h.yearId}})">
+    <div class="hist-item" onclick="openBookWithBreadcrumb('${h.id}',${h.yearId})">
       <span class="hi-ico">📖</span>
       <div><div class="hi-name">${h.title}</div><div class="hi-sub">${h.year}</div></div>
       <span class="hi-time">${h.time}</span>
