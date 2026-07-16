@@ -1104,6 +1104,9 @@ input[type=range].dm-slider {
   text-align:left;
   max-width:100%;
   box-sizing:border-box;
+  text-rendering:optimizeLegibility;
+  font-feature-settings:"rphf" 1,"half" 1,"blwf" 1,"pstf" 1,"vatu" 1,"akhn" 1,"pres" 1,"abvs" 1,"blws" 1,"psts" 1,"haln" 1,"liga" 1,"clig" 1,"ccmp" 1;
+  font-variant-ligatures:common-ligatures contextual;
   word-wrap:break-word;
   overflow-wrap:break-word;
 }
