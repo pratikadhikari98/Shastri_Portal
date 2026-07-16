@@ -284,12 +284,32 @@ function renderAdminBooksList() {
         <div><div class="sett-name">${escapeHtml(b.title)}</div><div class="sett-desc">${escapeHtml(b.author || '')}</div></div>
       </div>
       <div style="display:flex;gap:10px;flex-shrink:0">
+        <button onclick="adminBookMove(${i},-1)" ${i===0?'disabled style="background:none;border:none;font-size:1.05rem;cursor:not-allowed;opacity:0.3"':'style="background:none;border:none;font-size:1.05rem;cursor:pointer"'} title="माथि सार्नुस्">⬆️</button>
+        <button onclick="adminBookMove(${i},1)" ${i===arr.length-1?'disabled style="background:none;border:none;font-size:1.05rem;cursor:not-allowed;opacity:0.3"':'style="background:none;border:none;font-size:1.05rem;cursor:pointer"'} title="तल सार्नुस्">⬇️</button>
         <button onclick="adminChaptersOpen('${b.id}')" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="अध्याय व्यवस्थापन">📖</button>
         <button onclick="adminBookEdit(${i})" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="सम्पादन">✏️</button>
         <button onclick="adminBookDelete(${i})" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="मेटाउनुस्">🗑️</button>
       </div>
     </div>`).join('');
 }
+
+async function adminBookMove(idx, dir) {
+  if (!App.isAdmin) return;
+  const arr = getCurrentSubjectArr();
+  if (!arr) return;
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= arr.length) return;
+  [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+  renderAdminBooksList(); // तुरुन्तै देखाउने, Firestore save हुँदा पर्खनु नपरोस्
+  const ok = await saveBooksToFirestore();
+  if (ok) {
+    refreshBookViews();
+  } else {
+    [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]]; // save फेल भए क्रम फिर्ता
+    renderAdminBooksList();
+  }
+}
+window.adminBookMove = adminBookMove;
 
 function adminBookAddNew() {
   if (!App.isAdmin) return;
@@ -384,19 +404,21 @@ window.refreshBookViews = refreshBookViews;
 
 /* ════════════════════════════════════
    अध्याय (Chapters) — Firestore
-   collection: chapters, doc: {bookId}  { chapters: [ {title, content}, ... ] }
+   collection: chapters, doc: {bookId}, subcollection: items, doc: {auto-id}  { title, content, font, order }
+   (पहिले सबै अध्याय एउटै document मा array भएर बस्थे — त्यसले Firestore को
+   1 document = 1MB भन्दा बढी हुन नमिल्ने सीमा भेट्ने जोखिम थियो। अब प्रत्येक
+   अध्याय आफ्नै छुट्टै document हो, त्यसैले अध्याय संख्यामा व्यावहारिक सीमा छैन।)
    पुरानो data/chapters/{bookId}/1.js,2.js... भन्दा यही प्राथमिकता पाउँछ
    (js/main.js को loadAndRenderChapters ले पहिले यहीँ हेर्छ)
    ════════════════════════════════════ */
-const chaptersDocRef = (bookId) => db.collection('chapters').doc(bookId);
+const chaptersColRef = (bookId) => db.collection('chapters').doc(bookId).collection('items');
 
 async function loadChaptersFromFirestore(bookId) {
   try {
-    const snap = await chaptersDocRef(bookId).get();
-    if (!snap.exists) return null;
-    const data = snap.data();
-    const chs = Array.isArray(data?.chapters) ? data.chapters : null;
-    if (chs) { try { localStorage.setItem('sp_cache_chapters_' + bookId, JSON.stringify(chs)); } catch (e) {} }
+    const snap = await chaptersColRef(bookId).orderBy('order').get();
+    if (snap.empty) return null;
+    const chs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    try { localStorage.setItem('sp_cache_chapters_' + bookId, JSON.stringify(chs)); } catch (e) {}
     return chs;
   } catch (err) {
     console.warn('Firestore बाट अध्याय लोड हुन सकेन, offline cache हेर्दैछ:', err.message);
@@ -409,16 +431,69 @@ async function loadChaptersFromFirestore(bookId) {
 }
 window.loadChaptersFromFirestore = loadChaptersFromFirestore;
 
-async function saveChaptersToFirestore(bookId, chapters) {
+/* एउटा मात्र अध्याय (add वा update) — यसले प्रत्येक अध्याय आफ्नै document मा राख्छ */
+async function saveChapterItem(bookId, chapter) {
   try {
-    await chaptersDocRef(bookId).set({
-      chapters,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    const data = {
+      title: chapter.title, content: chapter.content, font: chapter.font || 'siddhanta',
+      order: chapter.order ?? 0, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (chapter.id) {
+      await chaptersColRef(bookId).doc(chapter.id).set(data, { merge: true });
+    } else {
+      const ref = await chaptersColRef(bookId).add(data);
+      chapter.id = ref.id;
+    }
     return true;
   } catch (err) {
     toast('❌ अध्याय सुरक्षित गर्न सकिएन: ' + err.message);
     return false;
+  }
+}
+
+async function deleteChapterItem(bookId, chapter) {
+  try {
+    if (chapter && chapter.id) await chaptersColRef(bookId).doc(chapter.id).delete();
+    return true;
+  } catch (err) {
+    toast('❌ अध्याय मेटाउन सकिएन: ' + err.message);
+    return false;
+  }
+}
+
+/* दिइएका अध्यायहरूको हालको array-क्रम अनुसार 'order' field मात्र अपडेट गर्ने (⬆️⬇️ र मेटाउने बेला प्रयोग हुन्छ) */
+async function reorderChapters(bookId, items) {
+  try {
+    const batch = db.batch();
+    let any = false;
+    items.forEach(c => { if (c.id) { batch.update(chaptersColRef(bookId).doc(c.id), { order: c.order }); any = true; } });
+    if (any) await batch.commit();
+    return true;
+  } catch (err) {
+    toast('❌ क्रम मिलाउन सकिएन: ' + err.message);
+    return false;
+  }
+}
+
+/* पुरानो (legacy static file वा पुरानो single-document) बाट आएका अध्याय — जसमा अझै Firestore document
+   ID छैन — भेटिए तिनलाई यहीँ छुट्टाछुट्टै document मा सार्ने (self-healing, एक पटक मात्र चल्छ) */
+async function ensureChaptersHaveIds(bookId, chs) {
+  const missing = chs.map((c, i) => ({ c, i })).filter(x => !x.c.id);
+  if (!missing.length) return;
+  try {
+    let batch = db.batch(), count = 0; const commits = [];
+    missing.forEach(({ c, i }) => {
+      const ref = chaptersColRef(bookId).doc();
+      c.id = ref.id;
+      c.order = i;
+      batch.set(ref, { title: c.title, content: c.content, font: c.font || 'siddhanta', order: i, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      count++;
+      if (count === 400) { commits.push(batch.commit()); batch = db.batch(); count = 0; }
+    });
+    if (count > 0) commits.push(batch.commit());
+    await Promise.all(commits);
+  } catch (err) {
+    console.warn('पुराना अध्याय Firestore मा सार्न सकिएन:', err.message);
   }
 }
 
@@ -444,7 +519,7 @@ async function loadAdminChaptersForCurrentBook() {
   let chs = await loadChaptersFromFirestore(bookId);
   if (!chs) {
     // Firestore मा अझै नभए, पहिल्यै browser मा cache भएको (पुरानो फाइलबाट) भए त्यो देखाउने
-    chs = (App.chaptersCache && App.chaptersCache[bookId]) ? App.chaptersCache[bookId].map(c => ({ title: c.title, content: c.content })) : [];
+    chs = (App.chaptersCache && App.chaptersCache[bookId]) ? App.chaptersCache[bookId].map(c => ({ title: c.title, content: c.content, font: c.font })) : [];
   }
   App._adminChaptersCache = chs;
   renderAdminChaptersList();
@@ -509,19 +584,24 @@ async function adminChapterSave() {
   const content = contentEl.value;
   const font    = contentEl.dataset.fontKey || 'siddhanta';
   if (!title) { toast('⚠️ शीर्षक आवश्यक छ'); return; }
+  const bookId = App.adminChapter.bookId;
   const chs = App._adminChaptersCache || [];
+  await ensureChaptersHaveIds(bookId, chs); // पुराना (legacy) अध्याय भए पहिले तिनलाई छुट्टाछुट्टै document मा सार्ने
+  let chapterObj;
   if (App.adminChapter.editingIdx !== null && chs[App.adminChapter.editingIdx]) {
-    chs[App.adminChapter.editingIdx] = { title, content, font };
+    chapterObj = chs[App.adminChapter.editingIdx];
+    chapterObj.title = title; chapterObj.content = content; chapterObj.font = font;
   } else {
-    chs.push({ title, content, font });
+    chapterObj = { title, content, font, order: chs.length };
+    chs.push(chapterObj);
   }
-  const ok = await saveChaptersToFirestore(App.adminChapter.bookId, chs);
+  const ok = await saveChapterItem(bookId, chapterObj); // यो एउटै अध्याय मात्र save हुन्छ — बाँकी document हरू touch हुँदैनन्
   if (ok) {
     toast('✅ अध्याय सुरक्षित भयो');
     closeOv('chapterFormModal');
-    App.chaptersCache[App.adminChapter.bookId] = chs; // ताजा cache सिधै राख्ने
+    App.chaptersCache[bookId] = chs; // ताजा cache सिधै राख्ने
     renderAdminChaptersList();
-    refreshInlineChapterView(App.adminChapter.bookId);
+    refreshInlineChapterView(bookId);
   }
 }
 window.adminChapterSave = adminChapterSave;
@@ -529,28 +609,35 @@ window.adminChapterSave = adminChapterSave;
 async function adminChapterDelete(idx) {
   if (!App.isAdmin) return;
   if (!(await showConfirm('साँच्चै यो अध्याय मेटाउने?'))) return;
+  const bookId = App.adminChapter.bookId;
   const chs = App._adminChaptersCache || [];
-  chs.splice(idx, 1);
-  const ok = await saveChaptersToFirestore(App.adminChapter.bookId, chs);
+  await ensureChaptersHaveIds(bookId, chs);
+  const [removed] = chs.splice(idx, 1);
+  const ok = await deleteChapterItem(bookId, removed);
+  chs.forEach((c, i) => { c.order = i; });
+  await reorderChapters(bookId, chs);
   if (ok) {
     toast('🗑️ अध्याय मेटियो');
-    App.chaptersCache[App.adminChapter.bookId] = chs;
+    App.chaptersCache[bookId] = chs;
     renderAdminChaptersList();
-    refreshInlineChapterView(App.adminChapter.bookId);
+    refreshInlineChapterView(bookId);
   }
 }
 window.adminChapterDelete = adminChapterDelete;
 
 async function adminChapterMove(idx, dir) {
+  const bookId = App.adminChapter.bookId;
   const chs = App._adminChaptersCache || [];
   const newIdx = idx + dir;
   if (newIdx < 0 || newIdx >= chs.length) return;
+  await ensureChaptersHaveIds(bookId, chs);
   [chs[idx], chs[newIdx]] = [chs[newIdx], chs[idx]];
-  const ok = await saveChaptersToFirestore(App.adminChapter.bookId, chs);
+  chs[idx].order = idx; chs[newIdx].order = newIdx;
+  const ok = await reorderChapters(bookId, [chs[idx], chs[newIdx]]); // सिर्फ सरेका दुई अध्यायको order मात्र अपडेट हुन्छ
   if (ok) {
-    App.chaptersCache[App.adminChapter.bookId] = chs;
+    App.chaptersCache[bookId] = chs;
     renderAdminChaptersList();
-    refreshInlineChapterView(App.adminChapter.bookId);
+    refreshInlineChapterView(bookId);
   }
 }
 window.adminChapterMove = adminChapterMove;
