@@ -10,7 +10,7 @@ const App = {
   yearId: null,
   subjectId: null,
   theme: localStorage.getItem('sp_theme') || 'light',
-  fontSize: +(localStorage.getItem('sp_fontsize') || 16),
+  fontSize: +(localStorage.getItem('sp_fontsize') || 15),
   lang: localStorage.getItem('sp_lang') || 'ne',
   notes: JSON.parse(localStorage.getItem('sp_notes') || '[]'),
   bookmarks: JSON.parse(localStorage.getItem('sp_bookmarks') || '[]'),
@@ -68,6 +68,11 @@ const THEMES = [
   { id:'autumn', label:'Autumn Orange', dot:'td-autumn',  emoji:'🍂' },
   { id:'teal',   label:'Teal Mint',     dot:'td-teal',    emoji:'🩵' },
   { id:'coral',  label:'Coral Sunrise', dot:'td-coral',   emoji:'🪸' },
+  { id:'indigo',     label:'Indigo Night',  dot:'td-indigo',     emoji:'🔷' },
+  { id:'vermillion', label:'Vermillion',    dot:'td-vermillion', emoji:'🔺' },
+  { id:'turmeric',   label:'Turmeric',      dot:'td-turmeric',   emoji:'🟡' },
+  { id:'peacock',    label:'Peacock',       dot:'td-peacock',    emoji:'🦚' },
+  { id:'sandalwood', label:'Sandalwood',    dot:'td-sandalwood', emoji:'🟤' },
   { id:'dark',   label:'Midnight Dark', dot:'td-dark',    emoji:'🌑' },
 ];
 
@@ -824,7 +829,17 @@ function initHistoryNav() {
       document.getElementById('searchWrap')?.classList.remove('open');
 
       const st = e.state;
-      if (st && st.page) {
+      if (st && st.chOpen) {
+        // forward फेरि यही राज्यमा आइपुग्दा (rare), त्यही अध्याय खोल्ने
+        document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
+        const item = document.getElementById(`chi-${st.chOpen.bookId}-${st.chOpen.idx}`);
+        if (item) item.classList.add('open');
+      } else if (st && st.subTab) {
+        // अध्याय बन्द भएर विषय ट्याबको राज्यमा फर्किंदा
+        document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
+        setYearSubjectTab(st.subTab.yearId, st.subTab.key, true);
+      } else if (st && st.page) {
+        document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
         go(st.page, st.data || {}, true);
       } else if (!(st && st.modal)) {
         go('home', {}, true);
@@ -1037,7 +1052,7 @@ function renderYearPage(yearId) {
   </div>`;
 }
 
-function setYearSubjectTab(yearId, key) {
+function setYearSubjectTab(yearId, key, fromHistory=false) {
   const yr = App.data.years.find(y=>y.id===yearId);
   if (!yr) return;
   document.querySelectorAll('#subjTabs .subj-tab').forEach(b=>b.classList.toggle('active', b.dataset.key===key));
@@ -1048,6 +1063,8 @@ function setYearSubjectTab(yearId, key) {
   void el.offsetWidth; // reflow — ताकि animation फेरि सुरुदेखि चल्छ
   el.innerHTML = books.map(b=>bookCardHtml(b,yearId,key)).join('') || '<div class="empty"><div class="empty-ico">📚</div><div class="empty-t">कुनै किताब छैन</div></div>';
   el.classList.add('subj-anim-in');
+  // विषय ट्याब बदलिँदा history मा थप्ने — ताकि back गर्दा एकैचोटि वर्षको default ट्याबमा नफर्किई यही ट्याबबाट क्रमशः फर्कियोस्
+  if (!fromHistory) history.pushState({ subTab: { yearId, key } }, '');
 }
 window.setYearSubjectTab = setYearSubjectTab;
 
@@ -1260,13 +1277,17 @@ function renderChapterListHtml(bookId) {
 }
 window.renderChapterListHtml = renderChapterListHtml;
 
-function toggleCh(bookId, idx) {
+function toggleCh(bookId, idx, fromHistory=false) {
   const item = document.getElementById(`chi-${bookId}-${idx}`);
   if (!item) return;
   const wasOpen = item.classList.contains('open');
   // Close all first
   document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
-  if (!wasOpen) item.classList.add('open');
+  if (!wasOpen) {
+    item.classList.add('open');
+    // अध्याय खोल्दा history मा थप्ने — ताकि back गर्दा पहिले यो बन्द होस्, अनि मात्र माथिको ट्याब/पेजमा जाओस्
+    if (!fromHistory) history.pushState({ chOpen: { bookId, idx } }, '');
+  }
   saveLastLocation();
   setTimeout(() => window._updateChProgress && window._updateChProgress(), 60);
 }
@@ -1281,6 +1302,7 @@ function nextCh(bookId, idx) {
   if (next) {
     next.classList.add('open');
     next.scrollIntoView({behavior:'smooth',block:'start'});
+    history.pushState({ chOpen: { bookId, idx: idx+1 } }, '');
   }
   saveLastLocation();
   setTimeout(() => window._updateChProgress && window._updateChProgress(), 60);
@@ -1504,31 +1526,88 @@ function initSearch() {
   }
 
   if(!inp) return;
+  let _searchDebounce;
   inp.addEventListener('input',()=>{
     const q=inp.value.trim();
     clr.classList.toggle('show',q.length>0);
     if(q.length<2){drop.classList.remove('open');return;}
-    const res=doSearch(q);
-    renderDrop(res,q);
-    drop.classList.add('open');
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(() => {
+      const res=doSearch(q);
+      renderDrop(res,q);
+      drop.classList.add('open');
+    }, 140);
   });
   clr.addEventListener('click',()=>{inp.value='';clr.classList.remove('show');drop.classList.remove('open');inp.focus();});
   document.addEventListener('click',e=>{if(!e.target.closest('.search-glass')) drop.classList.remove('open');});
 }
 
+/* ── हल्का fuzzy-match (typo सहने) — Levenshtein distance मा आधारित ── */
+function _editDistance(a, b) {
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  const dp = [];
+  for (let i = 0; i <= m; i++) dp.push(new Array(n + 1).fill(0));
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    }
+  }
+  return dp[m][n];
+}
+function _fuzzyContains(haystack, needle) {
+  if (!needle) return false;
+  if (haystack.includes(needle)) return true; // सबैभन्दा पहिले सिधा substring जाँच्ने — छिटो र सबैभन्दा सही
+  if (needle.length < 3) return false; // धेरै छोटो शब्दमा fuzzy लगाउँदा अनावश्यक/गलत match बढ्छ
+  const maxDist = needle.length <= 5 ? 1 : needle.length <= 9 ? 2 : 3;
+  const words = haystack.split(/\s+/);
+  for (const w of words) {
+    if (Math.abs(w.length - needle.length) > maxDist + 2) continue;
+    if (_editDistance(w, needle) <= maxDist) return true;
+  }
+  return false;
+}
+
 function doSearch(q) {
-  if(!App.data) return [];
-  const ql=q.toLowerCase(); const res=[];
-  App.data.years.forEach(yr=>Object.entries(yr.subjects).forEach(([key,books])=>
-    books.forEach(b=>{ if(b.title.toLowerCase().includes(ql)||b.author.toLowerCase().includes(ql)||yr.title.includes(q)) res.push({b,yr,key}); })
+  if (!App.data) return { books: [], chapters: [] };
+  const ql = q.toLowerCase().trim();
+  const books = [];
+
+  App.data.years.forEach(yr => Object.entries(yr.subjects).forEach(([key, arr]) =>
+    (arr||[]).forEach(b => {
+      const hay = `${b.title||''} ${b.author||''} ${yr.title||''}`.toLowerCase();
+      if (_fuzzyContains(hay, ql)) books.push({ b, yr, key });
+    })
   ));
-  return res.slice(0,7);
+
+  // अध्याय भित्रको टेक्स्ट — यो session मा पहिले नै खोलिएका (cache भएका) किताबहरूमा खोजिन्छ
+  const chapters = [];
+  if (ql.length >= 2) {
+    for (const bookId in (App.chaptersCache || {})) {
+      const loc = findBookLocation(bookId);
+      if (!loc) continue;
+      const chs = App.chaptersCache[bookId] || [];
+      chs.forEach((ch, idx) => {
+        const plain = (ch.content || '').replace(/[#*_`>\-\[\]()]/g, ' ');
+        const hay = `${ch.title||''} ${plain}`.toLowerCase();
+        if (_fuzzyContains(hay, ql)) {
+          chapters.push({ bookId, bookTitle: loc.book.title, yearId: loc.yearId, chapterIdx: idx, chapterTitle: ch.title || `अध्याय ${idx+1}` });
+        }
+      });
+    }
+  }
+
+  return { books: books.slice(0,6), chapters: chapters.slice(0,5) };
 }
 
 function renderDrop(res,q) {
   const el=document.getElementById('sDrop');
-  if(!res.length){el.innerHTML=`<div class="s-empty">🔍 "${q}" भेटिएन</div>`;return;}
-  el.innerHTML=res.map(({b,yr,key})=>{
+  const books = res.books || [];
+  const chapters = res.chapters || [];
+  if(!books.length && !chapters.length){el.innerHTML=`<div class="s-empty">🔍 "${q}" भेटिएन</div>`;return;}
+  let html = books.map(({b,yr,key})=>{
     const s=SUBJ[key]||{short:'क',g:'#EEE,#CCC'};
     const[c1,c2]=s.g.split(',');
     return `<div class="s-row" onclick="go('subject',{subjectId:'${b.id}',yearId:${yr.id}});document.getElementById('sDrop').classList.remove('open')">
@@ -1536,6 +1615,13 @@ function renderDrop(res,q) {
       <div><div class="s-name">${b.title}</div><div class="s-sub">${yr.title} · ${b.author}</div></div>
     </div>`;
   }).join('');
+  if (chapters.length) {
+    html += chapters.map(c => `<div class="s-row" onclick="go('subject',{subjectId:'${c.bookId}',yearId:${c.yearId}});document.getElementById('sDrop').classList.remove('open');setTimeout(()=>{const el=document.getElementById('chi-${c.bookId}-${c.chapterIdx}');if(el){toggleCh('${c.bookId}',${c.chapterIdx});el.scrollIntoView({behavior:'smooth',block:'start'});}},450)">
+      <div class="s-ico2" style="background:linear-gradient(135deg,#CCC,#AAA)">📖</div>
+      <div><div class="s-name">${c.chapterTitle}</div><div class="s-sub">📘 ${c.bookTitle}</div></div>
+    </div>`).join('');
+  }
+  el.innerHTML = html;
 }
 
 /* ════════════════════════════════════
