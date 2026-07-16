@@ -1106,8 +1106,6 @@ input[type=range].dm-slider {
   box-sizing:border-box;
   word-wrap:break-word;
   overflow-wrap:break-word;
-  word-break:break-word;
-  hyphens:auto;
 }
 /* Rich typography for rendered chapters */
 .ch-read-content h1 { font-size:1.4rem; font-weight:800; color:var(--accent); margin:12px 0 8px; }
