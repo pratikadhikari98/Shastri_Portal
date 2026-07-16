@@ -1101,7 +1101,7 @@ input[type=range].dm-slider {
   font-size:1rem;
   color:var(--text-1);
   line-height:2;
-  text-align:justify;
+  text-align:left;
   max-width:100%;
   box-sizing:border-box;
   word-wrap:break-word;
