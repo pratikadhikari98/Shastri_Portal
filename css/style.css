@@ -300,6 +300,161 @@
   --scheme:        light;
 }
 
+/* Indigo Night */
+[data-theme="indigo"] {
+  --accent:        #5654E0;
+  --accent-2:      #3A38B8;
+  --accent-glow:   rgba(86,84,224,0.28);
+  --mesh-a:        #C0BEF5;
+  --mesh-b:        #A8D0F0;
+  --mesh-c:        #D0C0F5;
+  --mesh-d:        #B0B8E8;
+  --bg:            #E6E5F5;
+  --surface:       rgba(244,244,255,0.65);
+  --surface-b:     rgba(244,244,255,0.85);
+  --surface-high:  rgba(250,250,255,0.95);
+  --surface-modal: rgba(247,247,255,0.88);
+  --surface-opaque: rgba(247,247,255,0.97);
+  --nav-bg:        rgba(236,236,252,0.32);
+  --header-bg:     rgba(232,232,250,0.92);
+  --input-bg:      rgba(244,244,255,0.75);
+  --border:        rgba(86,84,224,0.20);
+  --divider:       rgba(86,84,224,0.10);
+  --shadow:        rgba(20,18,60,0.12);
+  --shadow-lg:     rgba(20,18,60,0.22);
+  --island:        rgba(14,12,36,0.92);
+  --island-border: rgba(255,255,255,0.16);
+  --text-1:        #16143A;
+  --text-2:        #3E3C8A;
+  --text-3:        #7674C0;
+  --text-4:        #B4B2E4;
+  --scheme:        light;
+}
+
+/* Vermillion — सिन्दूर */
+[data-theme="vermillion"] {
+  --accent:        #D6303F;
+  --accent-2:      #A81F2C;
+  --accent-glow:   rgba(214,48,63,0.26);
+  --mesh-a:        #F5B8BC;
+  --mesh-b:        #F0D0A8;
+  --mesh-c:        #F5A8B0;
+  --mesh-d:        #E8C0C4;
+  --bg:            #F5E6E6;
+  --surface:       rgba(255,244,244,0.65);
+  --surface-b:     rgba(255,244,244,0.85);
+  --surface-high:  rgba(255,250,250,0.95);
+  --surface-modal: rgba(255,247,247,0.88);
+  --surface-opaque: rgba(255,247,247,0.97);
+  --nav-bg:        rgba(252,236,236,0.32);
+  --header-bg:     rgba(250,228,228,0.92);
+  --input-bg:      rgba(255,244,244,0.75);
+  --border:        rgba(214,48,63,0.20);
+  --divider:       rgba(214,48,63,0.10);
+  --shadow:        rgba(60,10,14,0.10);
+  --shadow-lg:     rgba(60,10,14,0.20);
+  --island:        rgba(30,6,8,0.92);
+  --island-border: rgba(255,255,255,0.16);
+  --text-1:        #3A0A0E;
+  --text-2:        #8A2028;
+  --text-3:        #C05460;
+  --text-4:        #E4A8AE;
+  --scheme:        light;
+}
+
+/* Turmeric — हलदी */
+[data-theme="turmeric"] {
+  --accent:        #E0A800;
+  --accent-2:      #B8860B;
+  --accent-glow:   rgba(224,168,0,0.26);
+  --mesh-a:        #F8E4A0;
+  --mesh-b:        #F5D080;
+  --mesh-c:        #F0E4B0;
+  --mesh-d:        #EAD8A0;
+  --bg:            #F5EFDE;
+  --surface:       rgba(255,252,240,0.65);
+  --surface-b:     rgba(255,252,240,0.85);
+  --surface-high:  rgba(255,254,246,0.95);
+  --surface-modal: rgba(255,253,244,0.88);
+  --surface-opaque: rgba(255,253,244,0.97);
+  --nav-bg:        rgba(250,244,222,0.32);
+  --header-bg:     rgba(246,236,208,0.92);
+  --input-bg:      rgba(255,252,240,0.75);
+  --border:        rgba(184,134,11,0.20);
+  --divider:       rgba(184,134,11,0.10);
+  --shadow:        rgba(60,42,4,0.10);
+  --shadow-lg:     rgba(60,42,4,0.20);
+  --island:        rgba(28,20,2,0.92);
+  --island-border: rgba(255,255,255,0.16);
+  --text-1:        #2E2200;
+  --text-2:        #7A5C06;
+  --text-3:        #B08E30;
+  --text-4:        #DCC582;
+  --scheme:        light;
+}
+
+/* Peacock — मयूर */
+[data-theme="peacock"] {
+  --accent:        #0E8C8C;
+  --accent-2:      #086868;
+  --accent-glow:   rgba(14,140,140,0.26);
+  --mesh-a:        #A0E4DC;
+  --mesh-b:        #88D0C8;
+  --mesh-c:        #B0E8D8;
+  --mesh-d:        #90C8D0;
+  --bg:            #E0EFED;
+  --surface:       rgba(240,255,252,0.65);
+  --surface-b:     rgba(240,255,252,0.85);
+  --surface-high:  rgba(248,255,254,0.95);
+  --surface-modal: rgba(244,255,253,0.88);
+  --surface-opaque: rgba(244,255,253,0.97);
+  --nav-bg:        rgba(228,250,246,0.32);
+  --header-bg:     rgba(220,244,240,0.92);
+  --input-bg:      rgba(240,255,252,0.75);
+  --border:        rgba(8,104,104,0.20);
+  --divider:       rgba(8,104,104,0.10);
+  --shadow:        rgba(4,40,38,0.10);
+  --shadow-lg:     rgba(4,40,38,0.20);
+  --island:        rgba(2,26,24,0.92);
+  --island-border: rgba(255,255,255,0.16);
+  --text-1:        #042A28;
+  --text-2:        #106262;
+  --text-3:        #4A9C9C;
+  --text-4:        #A0D4D0;
+  --scheme:        light;
+}
+
+/* Sandalwood — चन्दन */
+[data-theme="sandalwood"] {
+  --accent:        #A0703C;
+  --accent-2:      #7A4E22;
+  --accent-glow:   rgba(160,112,60,0.26);
+  --mesh-a:        #E4C8A0;
+  --mesh-b:        #D8B888;
+  --mesh-c:        #ECD4B0;
+  --mesh-d:        #D0B090;
+  --bg:            #EFE6DA;
+  --surface:       rgba(253,247,240,0.65);
+  --surface-b:     rgba(253,247,240,0.85);
+  --surface-high:  rgba(254,250,245,0.95);
+  --surface-modal: rgba(253,248,242,0.88);
+  --surface-opaque: rgba(253,248,242,0.97);
+  --nav-bg:        rgba(246,236,222,0.32);
+  --header-bg:     rgba(240,226,208,0.92);
+  --input-bg:      rgba(253,247,240,0.75);
+  --border:        rgba(122,78,34,0.20);
+  --divider:       rgba(122,78,34,0.10);
+  --shadow:        rgba(50,32,10,0.10);
+  --shadow-lg:     rgba(50,32,10,0.20);
+  --island:        rgba(26,16,4,0.92);
+  --island-border: rgba(255,255,255,0.16);
+  --text-1:        #2C1C08;
+  --text-2:        #6A4620;
+  --text-3:        #A47C4E;
+  --text-4:        #D4B892;
+  --scheme:        light;
+}
+
 /* Midnight Dark — always dark */
 [data-theme="dark"] {
   --accent:        #FF9040;
@@ -477,7 +632,7 @@ body {
 }
 .logo-text {
   font-family: 'Akshar', var(--font-s);
-  font-size: 1.1rem; font-weight: 800; color: var(--text-1);
+  font-size: 20px; font-weight: 800; color: var(--text-1);
   letter-spacing: 0.3px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
@@ -577,6 +732,11 @@ body {
 .td-autumn  { background: linear-gradient(135deg,#D4600A,#B84000); }
 .td-teal    { background: linear-gradient(135deg,#0A9E8A,#007A6A); }
 .td-coral   { background: linear-gradient(135deg,#FF8A6C,#E8401F); }
+.td-indigo    { background: linear-gradient(135deg,#5654E0,#3A38B8); }
+.td-vermillion{ background: linear-gradient(135deg,#D6303F,#A81F2C); }
+.td-turmeric  { background: linear-gradient(135deg,#E0A800,#B8860B); }
+.td-peacock   { background: linear-gradient(135deg,#0E8C8C,#086868); }
+.td-sandalwood{ background: linear-gradient(135deg,#A0703C,#7A4E22); }
 .td-dark    { background: linear-gradient(135deg,#2A2018,#0C0A07); }
 
 /* Language chips in ⋮ menu */
@@ -867,12 +1027,12 @@ input[type=range].dm-slider {
 .nb-date {
   position: absolute; top: 14px; right: 16px;
   font-family: 'Akshar', var(--font-s);
-  font-size: 0.72rem; font-weight: 700; color: #E8E2D0;
+  font-size: 12px; font-weight: 700; color: #E8E2D0;
   text-shadow: 0 1px 4px rgba(0,0,0,0.7);
 }
 .nb-title {
   font-family: 'Akshar', var(--font-s);
-  font-size: 1.08rem; font-weight: 700; color: #FAF7EE;
+  font-size: 15px; font-weight: 700; color: #FAF7EE;
   line-height: 1.4;
   text-shadow: 0 2px 8px rgba(0,0,0,0.6);
   text-decoration: underline;
@@ -883,7 +1043,7 @@ input[type=range].dm-slider {
 }
 .nb-desc {
   font-family: 'Akshar', var(--font-s);
-  font-size: 0.8rem; font-weight: 500; color: #E5E0D2;
+  font-size: 13px; font-weight: 500; color: #E5E0D2;
   line-height: 1.6;
   text-shadow: 0 1px 6px rgba(0,0,0,0.55);
   transition: opacity 0.22s ease;
