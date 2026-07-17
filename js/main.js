@@ -718,11 +718,18 @@ function _positionIndicatorNow(navEl, ico, instant) {
   const indicator = document.getElementById('navIndicator');
   const bar = document.getElementById('botNav');
   if (!indicator || !bar || !ico || !ico.isConnected) return;
-  const barRect = bar.getBoundingClientRect();
-  const icoRect = ico.getBoundingClientRect();
-  if (!barRect.width || !icoRect.width) return; // अझै render/layout नभएको हो भने skip — पछि resync ले ठीक गर्छ
-  const centerX = icoRect.left + icoRect.width  / 2 - barRect.left;
-  const centerY = icoRect.top  + icoRect.height / 2 - barRect.top;
+  if (!bar.offsetWidth || !ico.offsetWidth) return; // अझै render/layout नभएको हो भने skip — पछि resync ले ठीक गर्छ
+
+  // getBoundingClientRect (viewport-relative) को सट्टा offsetLeft/offsetTop composition प्रयोग गर्ने —
+  // यसले zoom/scroll/measurement-timing सम्बन्धी झन्झट नल्याई bar भित्रैको सही स्थान दिन्छ
+  let x = 0, y = 0, el = ico;
+  while (el && el !== bar) {
+    x += el.offsetLeft;
+    y += el.offsetTop;
+    el = el.offsetParent;
+  }
+  const centerX = x + ico.offsetWidth  / 2;
+  const centerY = y + ico.offsetHeight / 2;
 
   if (instant) {
     indicator.style.transition = 'none';
