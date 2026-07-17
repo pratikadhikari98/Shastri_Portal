@@ -1062,8 +1062,8 @@ input[type=range].dm-slider {
 .bot-nav {
   position:fixed; bottom:14px; left:18px; right:18px; z-index:150;
   border-radius:26px;
-  display:flex; align-items:center; justify-content:center; gap:30px;
-  padding:10px 22px;
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  padding:10px 16px;
   isolation: isolate; /* भित्रको content लाई पछाडिको glass-layer बाट स्वतन्त्र stacking context दिने */
 }
 .bot-nav::before {
@@ -1075,33 +1075,37 @@ input[type=range].dm-slider {
   border-radius:26px;
   box-shadow:0 8px 28px var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.4);
 }
-.nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:6px 10px; text-decoration:none; color:var(--text-3); flex:none; position:relative; transition:color var(--t-fast) var(--ease-out) !important; -webkit-tap-highlight-color: transparent; }
-.nav-item.on { color:var(--accent); }
-.nav-item:hover { color:var(--accent); }
-.nav-item:active .nav-ico { transform:scale(0.88); }
-.nav-ico { width:30px; height:30px; display:flex; align-items:center; justify-content:center; pointer-events:none; position:relative; z-index:1; transition:transform 0.15s var(--ease-out) !important; }
-.nav-ico svg { width:30px; height:30px; display:block; pointer-events:none; }
-.nav-item.on  .nav-ico { transform:scale(1.16); }
-.nav-lbl { display:none; }
+.nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:0; text-decoration:none; color:var(--text-3); flex:none; position:relative; -webkit-tap-highlight-color: transparent; }
+.nav-item:active .nav-ico { transform:translateY(1px) scale(0.94); }
 
-/* ── एउटै sliding indicator — ट्याब बदल्दा एउटैबाट अर्कोमा गुड्दै जाने, jelly-squish सहित ── */
-.nav-indicator {
-  position:absolute; top:38%; left:16.666%; width:54px; height:54px; border-radius:18px;
-  transform: translate(-50%,-50%);
-  background: rgba(255,106,26,0.55);
-  pointer-events:none; z-index:0;
-  transition: left 0.5s cubic-bezier(.22,1,.36,1), top 0.5s cubic-bezier(.22,1,.36,1),
-              width 0.32s cubic-bezier(.34,1.56,.64,1), height 0.32s cubic-bezier(.34,1.56,.64,1),
-              background-color 0.3s var(--ease-out);
-  will-change: left, top, width, height;
+/* हरेक icon आफ्नै छुट्टै card — जस्तो अपलोड गरेको साइटको bottom bar मा छ */
+.nav-ico {
+  width:46px; height:46px; border-radius:14px;
+  background:var(--surface-high);
+  border:1px solid var(--border);
+  box-shadow:0 1px 3px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.5);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; z-index:1;
+  transition: transform 0.18s var(--ease-spring), box-shadow 0.18s var(--ease-out), background 0.18s var(--ease-out) !important;
 }
-.nav-indicator.stretch { width: 70px; }
+.nav-ico svg { width:24px; height:24px; display:block; pointer-events:none; }
+.nav-item:hover .nav-ico { transform:translateY(-3px); box-shadow:0 6px 14px var(--shadow-lg); }
+
+/* Active ट्याब — accent रङको card, हल्का माथि उठेको */
+.nav-item.on .nav-ico {
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  border-color:transparent;
+  box-shadow:0 6px 16px var(--accent-glow);
+  transform:translateY(-3px) scale(1.06);
+}
+.nav-item.on .nav-ico svg { filter:brightness(0) invert(1); } /* active हुँदा icon सेतो देखिने */
+.nav-lbl { display:none; }
 
 .nav-ico.nav-pop { animation: navIconPop 0.4s var(--ease-spring); }
 @keyframes navIconPop {
-  0%   { transform: scale(0.6) rotate(-6deg); }
-  50%  { transform: scale(1.28) rotate(2deg); }
-  100% { transform: scale(1.16) rotate(0deg); }
+  0%   { transform: translateY(-3px) scale(0.75) rotate(-6deg); }
+  50%  { transform: translateY(-3px) scale(1.18) rotate(2deg); }
+  100% { transform: translateY(-3px) scale(1.06) rotate(0deg); }
 }
 
 /* स्क्रोल गर्दा बटम नेभ लुक्ने/देखिने */
