@@ -845,8 +845,8 @@ function initHistoryNav() {
         const item = document.getElementById(`chi-${st.chOpen.bookId}-${st.chOpen.idx}`);
         if (item) item.classList.add('open');
       } else if (st && st.subTab) {
-        // अध्याय बन्द भएर विषय ट्याबको राज्यमा फर्किंदा
-        document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
+        // अध्याय/किताब पेजले वर्ष-पेजको DOM नै हटाइसकेको हुनसक्छ — त्यसैले पहिले वर्ष-पेज पुनः बनाउने, अनि सही ट्याब देखाउने
+        go('year', { yearId: st.subTab.yearId }, true);
         setYearSubjectTab(st.subTab.yearId, st.subTab.key, true);
       } else if (st && st.page) {
         document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
