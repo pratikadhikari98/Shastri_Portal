@@ -113,6 +113,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 /* ════════════════════════════════════
    DATA
    ════════════════════════════════════ */
+async function _fetchWithTimeout(url, ms = 4000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal });
+    return r;
+  } finally { clearTimeout(t); }
+}
+
 async function loadData() {
   // पहिला localStorage cache (अघिल्लो पटक अनलाइन हुँदा Firestore बाट आएर बचाइएको
   // वास्तविक admin डाटा) जाँच्ने — offline हुँदा वा नेटवर्क ढिलो हुँदा पनि admin ले
@@ -122,20 +131,21 @@ async function loadData() {
   try { const c = localStorage.getItem('sp_cache_notices');  if (c) cachedNews     = JSON.parse(c); } catch (e) {}
   try { const c = localStorage.getItem('sp_cache_subjects'); if (c) cachedSubjects = JSON.parse(c); } catch (e) {}
 
-  try {
-    const r = await fetch('data/books.json');
-    if (!r.ok) throw new Error('data/books.json भेटिएन');
-    App.data = await r.json();
-  } catch {
-    // data/books.json हटाइएको/नभएको भए खाली राख्ने — Firestore ले तुरुन्तै भर्छ
-    App.data = { years: [] };
-  }
+  // यी तीनवटा static फाइल एक-अर्कासँग सम्बन्धित छैनन् — क्रमैसँग (sequential) होइन,
+  // सँगै (parallel) fetch गर्दा सुरुको लोडिङ धेरै छिटो हुन्छ (ढिलो नेटवर्कमा विशेष गरी)।
+  // timeout पनि राखियो ताकि कमजोर/अड्किएको नेटवर्कले पूरै boot नै रोकिदिन नसकोस्।
+  const [booksRes, staticNews, contribs] = await Promise.all([
+    _fetchWithTimeout('data/books.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetchJsData('data/news.js'),
+    fetchJsData('data/contributors.js'),
+  ]);
+
+  App.data = (booksRes && typeof booksRes === 'object') ? booksRes : { years: [] };
   // Cache भएको admin डाटा भए, पुरानो static/demo भन्दा त्यसैलाई प्राथमिकता दिने
   if (Array.isArray(cachedBooks) && cachedBooks.length) App.data.years = cachedBooks;
   if (cachedSubjects && Object.keys(cachedSubjects).length) Object.assign(SUBJ, cachedSubjects);
 
   // समाचार — data/news.js भए तुरुन्तै देखाउने (नभए खाली), अनि cache भए त्यसैले override गर्ने
-  const staticNews = await fetchJsData('data/news.js');
   App.data.news = Array.isArray(staticNews) ? staticNews : (App.data?.news || []);
   if (Array.isArray(cachedNews) && cachedNews.length) App.data.news = cachedNews;
 
@@ -150,8 +160,7 @@ async function loadData() {
     }).catch(err => console.warn('Firestore समाचार background load असफल:', err.message));
   }
 
-  // सहयोगी लिस्ट — छुट्टै data/contributors.js बाट
-  const contribs = await fetchJsData('data/contributors.js');
+  // सहयोगी लिस्ट — छुट्टै data/contributors.js बाट (माथि नै parallel मा fetch भइसकियो)
   App.contributors = Array.isArray(contribs) ? contribs : [];
 
   // किताब — data/books.json भए तुरुन्तै देखाउने (माथि गरिसकियो),
@@ -668,6 +677,15 @@ function initNav() {
     const on = document.querySelector('.nav-item.on');
     if (on) moveNavIndicator(on, true);
   });
+  // कहिलेकाहीं (केही Android Chrome मा) backdrop-filter भएको fixed bar सुरुमा
+  // blank/खाली देखिने GPU compositing glitch हुन्छ — यसले जबरजस्ती एक पटक repaint गराउँछ
+  const bar = document.getElementById('botNav');
+  if (bar) {
+    requestAnimationFrame(() => {
+      bar.style.transform = 'translateZ(0) scale(0.9999)';
+      requestAnimationFrame(() => { bar.style.transform = 'translateZ(0)'; });
+    });
+  }
 }
 
 /* एउटै रंगीन indicator लाई क्लिक गरेको ट्याबमुनि smooth गुडाउने, jelly-squish सहित */
