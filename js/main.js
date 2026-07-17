@@ -750,7 +750,10 @@ function go(page, data={}, fromHistory=false) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('on'));
   const pg = document.getElementById('p-'+page);
   if (pg) { pg.classList.add('on'); App.page = page; }
-  const nav = document.querySelector(`.nav-item[data-page="${page}"]`);
+  // वर्ष/किताब हेर्ने पेजहरू (year, subject) सिधै bottom-nav को कुनै ट्याबसँग मिल्दैनन् —
+  // यी सबै "होम" खण्डकै भाग मानेर pill लाई त्यहीँ राख्ने (नत्र pill stale/गलत ठाउँमा रहन्छ)
+  const navPage = ['year', 'subject'].includes(page) ? 'home' : page;
+  const nav = document.querySelector(`.nav-item[data-page="${navPage}"]`);
   if (nav) {
     nav.classList.add('on');
     // Icon को हल्का bounce
