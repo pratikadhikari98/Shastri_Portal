@@ -677,15 +677,6 @@ function initNav() {
     const on = document.querySelector('.nav-item.on');
     if (on) moveNavIndicator(on, true);
   });
-  // कहिलेकाहीं (केही Android Chrome मा) backdrop-filter भएको fixed bar सुरुमा
-  // blank/खाली देखिने GPU compositing glitch हुन्छ — यसले जबरजस्ती एक पटक repaint गराउँछ
-  const bar = document.getElementById('botNav');
-  if (bar) {
-    requestAnimationFrame(() => {
-      bar.style.transform = 'translateZ(0) scale(0.9999)';
-      requestAnimationFrame(() => { bar.style.transform = 'translateZ(0)'; });
-    });
-  }
 }
 
 /* एउटै रंगीन indicator लाई क्लिक गरेको ट्याबमुनि smooth गुडाउने, jelly-squish सहित */
