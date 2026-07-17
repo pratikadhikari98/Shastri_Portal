@@ -1061,16 +1061,19 @@ input[type=range].dm-slider {
    ═══════════════════════════════════ */
 .bot-nav {
   position:fixed; bottom:14px; left:18px; right:18px; z-index:150;
+  border-radius:26px;
+  display:flex; align-items:center; justify-content:center; gap:30px;
+  padding:10px 22px;
+  isolation: isolate; /* भित्रको content लाई पछाडिको glass-layer बाट स्वतन्त्र stacking context दिने */
+}
+.bot-nav::before {
+  content:''; position:absolute; inset:0; z-index:-1;
   background:var(--nav-bg);
   backdrop-filter:blur(4px) saturate(180%);
   -webkit-backdrop-filter:blur(4px) saturate(180%);
   border:1px solid var(--border);
   border-radius:26px;
   box-shadow:0 8px 28px var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.4);
-  display:flex; align-items:center; justify-content:center; gap:30px;
-  padding:10px 22px;
-  transform: translateZ(0); /* सुरुदेखि नै आफ्नै GPU layer बनाउने — backdrop-filter + later transform ले content नै blank देखाउने bug रोक्न */
-  isolation: isolate;
 }
 .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:6px 10px; text-decoration:none; color:var(--text-3); flex:none; position:relative; transition:color var(--t-fast) var(--ease-out) !important; -webkit-tap-highlight-color: transparent; }
 .nav-item.on { color:var(--accent); }
