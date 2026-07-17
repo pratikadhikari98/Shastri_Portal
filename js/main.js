@@ -677,6 +677,20 @@ function initNav() {
     const on = document.querySelector('.nav-item.on');
     if (on) moveNavIndicator(on, true);
   });
+  // hard-refresh (cold cache) मा font/layout पूर्ण रूपमा नबसीकनै माथिको पहिलो measurement
+  // गलत हुनसक्छ (icon को साइज/स्थान अझै अन्तिम नभई) — त्यसैले सबै पूर्ण रूपमा load भएपछि फेरि मिलाउने
+  const resync = () => {
+    const on = document.querySelector('.nav-item.on');
+    if (on) moveNavIndicator(on, true);
+  };
+  if (document.readyState === 'complete') {
+    setTimeout(resync, 60);
+  } else {
+    window.addEventListener('load', () => setTimeout(resync, 60));
+  }
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(resync).catch(() => {});
+  }
 }
 
 /* एउटै रंगीन indicator लाई क्लिक गरेको ट्याबमुनि smooth गुडाउने, jelly-squish सहित */
