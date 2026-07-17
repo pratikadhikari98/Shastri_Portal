@@ -1069,6 +1069,8 @@ input[type=range].dm-slider {
   box-shadow:0 8px 28px var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.4);
   display:flex; align-items:center; justify-content:center; gap:30px;
   padding:10px 22px;
+  transform: translateZ(0); /* सुरुदेखि नै आफ्नै GPU layer बनाउने — backdrop-filter + later transform ले content नै blank देखाउने bug रोक्न */
+  isolation: isolate;
 }
 .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:6px 10px; text-decoration:none; color:var(--text-3); flex:none; position:relative; transition:color var(--t-fast) var(--ease-out) !important; -webkit-tap-highlight-color: transparent; }
 .nav-item.on { color:var(--accent); }
@@ -1100,7 +1102,7 @@ input[type=range].dm-slider {
 }
 
 /* स्क्रोल गर्दा बटम नेभ लुक्ने/देखिने */
-.bot-nav { transition: transform 0.32s var(--ease-out) !important; will-change: transform; }
+.bot-nav { transition: transform 0.32s var(--ease-out) !important; }
 .bot-nav.nav-hidden { transform: translateY(120%); }
 
 /* ═══════════════════════════════════
