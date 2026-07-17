@@ -9,6 +9,7 @@ const App = {
   page: 'home',
   yearId: null,
   subjectId: null,
+  _booting: true, // boot/restore सकिने बित्तिकै false हुन्छ — यो हुँदासम्म nav indicator कुनै animation बिना सिधै सही ठाउँमा बस्छ
   theme: localStorage.getItem('sp_theme') || 'light',
   fontSize: +(localStorage.getItem('sp_fontsize') || 15),
   lang: localStorage.getItem('sp_lang') || 'ne',
@@ -107,7 +108,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   initSheetDragGestures();
   initChapterProgress();
   applyLanguage(App.lang);
-  restoreLastLocation();
+  await restoreLastLocation();
+  App._booting = false;
 });
 
 /* ════════════════════════════════════
@@ -704,8 +706,21 @@ function moveNavIndicator(navEl, instant = false) {
   const bar = document.getElementById('botNav');
   const ico = navEl && navEl.querySelector('.nav-ico');
   if (!indicator || !navEl || !bar || !ico) return;
+  if (instant) {
+    // एक frame पर्खने — ताकि boot/page-transition को बीचैमा (layout अझै नबसेको बेला)
+    // getBoundingClientRect() ले गलत/शून्य जस्तो coordinate नफर्काओस्
+    requestAnimationFrame(() => _positionIndicatorNow(navEl, ico, true));
+    return;
+  }
+  _positionIndicatorNow(navEl, ico, false);
+}
+function _positionIndicatorNow(navEl, ico, instant) {
+  const indicator = document.getElementById('navIndicator');
+  const bar = document.getElementById('botNav');
+  if (!indicator || !bar || !ico || !ico.isConnected) return;
   const barRect = bar.getBoundingClientRect();
   const icoRect = ico.getBoundingClientRect();
+  if (!barRect.width || !icoRect.width) return; // अझै render/layout नभएको हो भने skip — पछि resync ले ठीक गर्छ
   const centerX = icoRect.left + icoRect.width  / 2 - barRect.left;
   const centerY = icoRect.top  + icoRect.height / 2 - barRect.top;
 
@@ -760,7 +775,8 @@ function go(page, data={}, fromHistory=false) {
     const ico = nav.querySelector('.nav-ico');
     if (ico) { ico.classList.remove('nav-pop'); void ico.offsetWidth; ico.classList.add('nav-pop'); }
     // एउटै indicator लाई नयाँ ट्याबमा smooth गुडाउने + jelly-squish
-    moveNavIndicator(nav);
+    // (boot/restore हुँदै गर्दा भने animation नराखी सिधै सही ठाउँमा राख्ने — नत्र पहिलो पटक pill माथि-तिरबाट खस्रिएर आएजस्तो देखिन्छ)
+    moveNavIndicator(nav, App._booting);
   }
 
   if (page==='year'&&data.yearId)       { App.yearId=data.yearId; renderYearPage(data.yearId); }
