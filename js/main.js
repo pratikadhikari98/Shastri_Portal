@@ -672,81 +672,6 @@ function initNav() {
       go(el.dataset.page);
     })
   );
-  // सुरुमा active ट्याब (होम) मुनि indicator मिलाउने
-  const initial = document.querySelector('.nav-item.on') || document.querySelector('.nav-item');
-  if (initial) moveNavIndicator(initial, true);
-  window.addEventListener('resize', () => {
-    const on = document.querySelector('.nav-item.on');
-    if (on) moveNavIndicator(on, true);
-  });
-  // hard-refresh (cold cache) मा font/layout पूर्ण रूपमा नबसीकनै माथिको पहिलो measurement
-  // गलत हुनसक्छ (icon को साइज/स्थान अझै अन्तिम नभई) — त्यसैले सबै पूर्ण रूपमा load भएपछि फेरि मिलाउने
-  const resync = () => {
-    const on = document.querySelector('.nav-item.on');
-    if (on) moveNavIndicator(on, true);
-  };
-  if (document.readyState === 'complete') {
-    setTimeout(resync, 60);
-  } else {
-    window.addEventListener('load', () => setTimeout(resync, 60));
-  }
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(resync).catch(() => {});
-  }
-}
-
-/* एउटै रंगीन indicator लाई क्लिक गरेको ट्याबमुनि smooth गुडाउने, jelly-squish सहित */
-const NAV_COLORS = {
-  home:      'rgba(255,106,26,0.55)',
-  bookmarks: 'rgba(245,166,35,0.55)',
-  profile:   'rgba(133,58,214,0.50)',
-};
-function moveNavIndicator(navEl, instant = false) {
-  const indicator = document.getElementById('navIndicator');
-  const bar = document.getElementById('botNav');
-  const ico = navEl && navEl.querySelector('.nav-ico');
-  if (!indicator || !navEl || !bar || !ico) return;
-  if (instant) {
-    // एक frame पर्खने — ताकि boot/page-transition को बीचैमा (layout अझै नबसेको बेला)
-    // getBoundingClientRect() ले गलत/शून्य जस्तो coordinate नफर्काओस्
-    requestAnimationFrame(() => _positionIndicatorNow(navEl, ico, true));
-    return;
-  }
-  _positionIndicatorNow(navEl, ico, false);
-}
-function _positionIndicatorNow(navEl, ico, instant) {
-  const indicator = document.getElementById('navIndicator');
-  const bar = document.getElementById('botNav');
-  if (!indicator || !bar || !ico || !ico.isConnected) return;
-  if (!bar.offsetWidth || !ico.offsetWidth) return; // अझै render/layout नभएको हो भने skip — पछि resync ले ठीक गर्छ
-
-  // getBoundingClientRect (viewport-relative) को सट्टा offsetLeft/offsetTop composition प्रयोग गर्ने —
-  // यसले zoom/scroll/measurement-timing सम्बन्धी झन्झट नल्याई bar भित्रैको सही स्थान दिन्छ
-  let x = 0, y = 0, el = ico;
-  while (el && el !== bar) {
-    x += el.offsetLeft;
-    y += el.offsetTop;
-    el = el.offsetParent;
-  }
-  const centerX = x + ico.offsetWidth  / 2;
-  const centerY = y + ico.offsetHeight / 2;
-
-  if (instant) {
-    indicator.style.transition = 'none';
-    indicator.style.left = centerX + 'px';
-    indicator.style.top  = centerY + 'px';
-    indicator.style.background = NAV_COLORS[navEl.dataset.page] || NAV_COLORS.home;
-    void indicator.offsetWidth;
-    indicator.style.transition = '';
-    return;
-  }
-
-  indicator.style.left = centerX + 'px';
-  indicator.style.top  = centerY + 'px';
-  indicator.style.background = NAV_COLORS[navEl.dataset.page] || NAV_COLORS.home;
-  indicator.classList.add('stretch');
-  clearTimeout(indicator._stretchT);
-  indicator._stretchT = setTimeout(() => indicator.classList.remove('stretch'), 260);
 }
 
 /* सुरुमा देखिने, तल स्क्रोल गर्दा लुक्ने, माथि स्क्रोल गर्दा फेरि देखिने */
@@ -781,9 +706,6 @@ function go(page, data={}, fromHistory=false) {
     // Icon को हल्का bounce
     const ico = nav.querySelector('.nav-ico');
     if (ico) { ico.classList.remove('nav-pop'); void ico.offsetWidth; ico.classList.add('nav-pop'); }
-    // एउटै indicator लाई नयाँ ट्याबमा smooth गुडाउने + jelly-squish
-    // (boot/restore हुँदै गर्दा भने animation नराखी सिधै सही ठाउँमा राख्ने — नत्र पहिलो पटक pill माथि-तिरबाट खस्रिएर आएजस्तो देखिन्छ)
-    moveNavIndicator(nav, App._booting);
   }
 
   if (page==='year'&&data.yearId)       { App.yearId=data.yearId; renderYearPage(data.yearId); }
