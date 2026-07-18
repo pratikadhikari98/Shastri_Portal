@@ -1067,10 +1067,13 @@ input[type=range].dm-slider {
   isolation: isolate; /* भित्रको content लाई पछाडिको glass-layer बाट स्वतन्त्र stacking context दिने */
 }
 .bot-nav::before {
-  content:''; position:absolute; inset:0; z-index:-1;
-  background:var(--surface-opaque);
+  content:''; position:absolute; top:0; bottom:0; left:26px; right:26px; z-index:-1;
+  background:var(--nav-bg);
+  backdrop-filter:blur(4px) saturate(180%);
+  -webkit-backdrop-filter:blur(4px) saturate(180%);
+  border:1px solid var(--border);
   border-radius:26px;
-  box-shadow:0 6px 24px var(--shadow-lg), 0 1px 3px var(--shadow);
+  box-shadow:0 8px 28px var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:0; text-decoration:none; color:var(--text-3); flex:none; position:relative; -webkit-tap-highlight-color: transparent; }
 .nav-item:active .nav-ico { transform:translateY(-1px) scale(0.95); }
