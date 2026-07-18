@@ -1234,7 +1234,7 @@ function renderChapterListHtml(bookId) {
         <span class="ch-chevron">›</span>
       </div>
       <div class="ch-read-body">
-        <div class="ch-read-content" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content||'')}</div>
+        <div class="ch-read-content" ondblclick="toggleCh('${bookId}',${i})" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content||'')}</div>
         <div class="ch-read-foot">
           <span class="ch-rd-lbl">अध्याय ${toN(i+1)} / ${toN(chs.length)} <span class="ch-rd-pct" id="chPct-${bookId}-${i}"></span></span>
           ${i<chs.length-1?`<button class="ch-rd-btn" onclick="event.stopPropagation();nextCh('${bookId}',${i})">अर्को →</button>`:'<span class="ch-rd-lbl" style="color:var(--accent);font-weight:700">✓ सकियो</span>'}
@@ -1775,7 +1775,7 @@ async function renderNewsListPage() {
   el.innerHTML = addBtn + items.map((n, i) => {
     const bodyHtml = renderMd(n.content || '');
     return `
-    <div style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden;box-shadow:0 3px 12px var(--shadow)">
+    <div ondblclick="toggleFeedBody(${i})" style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden;box-shadow:0 3px 12px var(--shadow)">
       <div style="padding:12px 14px 8px;display:flex;align-items:center;gap:9px">
         <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🎓</div>
         <div style="flex:1;min-width:0">
@@ -1783,37 +1783,25 @@ async function renderNewsListPage() {
           <div style="font-size:0.68rem;color:var(--text-3)">${n.date||''}${n.category?' · '+n.category:''}</div>
         </div>
         ${App.isAdmin ? `<div style="display:flex;gap:8px;flex-shrink:0">
-          <button onclick="editFeedPostByIndex(${i})" style="background:none;border:none;font-size:1rem;cursor:pointer">✏️</button>
-          <button onclick="deleteFeedPost('${n.id}')" style="background:none;border:none;font-size:1rem;cursor:pointer">🗑️</button>
+          <button onclick="event.stopPropagation();editFeedPostByIndex(${i})" style="background:none;border:none;font-size:1rem;cursor:pointer">✏️</button>
+          <button onclick="event.stopPropagation();deleteFeedPost('${n.id}')" style="background:none;border:none;font-size:1rem;cursor:pointer">🗑️</button>
         </div>` : ''}
       </div>
       ${n.image ? `<img src="${n.image}" style="width:100%;max-height:280px;object-fit:cover;display:block" loading="lazy">` : ''}
-      <div style="padding:10px 14px 4px">
+      <div style="padding:10px 14px 14px">
         <div style="font-size:0.88rem;font-weight:700;color:var(--text-1);margin-bottom:4px">${n.title||''}</div>
-        <div class="feed-body" id="feedBody${i}" style="font-size:0.8rem;color:var(--text-2);line-height:1.6;max-height:5.2em;overflow:hidden;transition:max-height 0.32s var(--ease-out)">${bodyHtml}</div>
+        <div class="feed-body ch-read-content" id="feedBody${i}" style="padding:0;font-size:0.8rem;line-height:1.6;max-height:5.2em;overflow:hidden;transition:max-height 0.32s var(--ease-out)">${bodyHtml}</div>
       </div>
-      <div onclick="toggleFeedBody(${i})" id="feedToggle${i}" style="padding:6px 14px 12px;color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer">थप पढ्नुस् ⌄</div>
     </div>`;
   }).join('');
-
-  // छोटो पोस्ट (जसलाई expand गर्नु नै नपर्ने) मा "थप पढ्नुस्" लुकाउने
-  items.forEach((n, i) => {
-    const body = document.getElementById('feedBody'+i);
-    const toggle = document.getElementById('feedToggle'+i);
-    if (body && toggle && body.scrollHeight <= body.clientHeight + 2) {
-      toggle.style.display = 'none';
-    }
-  });
 }
 window.renderNewsListPage = renderNewsListPage;
 
 function toggleFeedBody(i) {
   const body = document.getElementById('feedBody'+i);
-  const toggle = document.getElementById('feedToggle'+i);
-  if (!body || !toggle) return;
+  if (!body) return;
   const isOpen = body.classList.toggle('open');
   body.style.maxHeight = isOpen ? body.scrollHeight + 'px' : '5.2em';
-  toggle.textContent = isOpen ? 'कम देखाउनुस् ⌃' : 'थप पढ्नुस् ⌄';
 }
 window.toggleFeedBody = toggleFeedBody;
 
