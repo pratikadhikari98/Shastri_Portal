@@ -669,6 +669,10 @@ function initNav() {
     el.addEventListener('click', e => {
       e.preventDefault();
       if (navigator.vibrate) navigator.vibrate(12); // हलुका haptic feedback
+      if (el.id === 'navSearchBtn') {
+        document.getElementById('searchBtn')?.click(); // header कै search toggle प्रयोग गर्ने
+        return;
+      }
       go(el.dataset.page);
     })
   );
