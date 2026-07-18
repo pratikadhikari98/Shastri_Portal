@@ -264,18 +264,10 @@
 <div id="p-subject" class="page"></div>
 
 <!-- COURSES -->
-<div id="p-courses" class="page">
+<div id="p-news" class="page">
   <div class="content">
-    <div class="sec-head"><div class="sec-title" data-i18n="all_subjects">सबै विषयहरू</div></div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px">
-      <div class="cf-chip nd" data-key="all"     style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('all')"><span data-i18n="cat_all">सबै</span></div>
-      <div class="cf-chip nd" data-key="nepali"   style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('nepali')">📜 <span data-i18n="cat_nepali">नेपाली</span></div>
-      <div class="cf-chip nd" data-key="english"  style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('english')">📗 <span data-i18n="cat_english">English</span></div>
-      <div class="cf-chip nd" data-key="sanskrit" style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('sanskrit')">🕉️ <span data-i18n="cat_sanskrit">संस्कृत</span></div>
-      <div class="cf-chip nd" data-key="vyakaran" style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('vyakaran')">✏️ <span data-i18n="cat_vyakaran">व्याकरण</span></div>
-      <div class="cf-chip nd" data-key="jyotish"  style="width:auto;height:auto;border-radius:20px;padding:5px 12px;background:var(--surface);border:1px solid var(--border);font-size:0.76rem;font-weight:700;cursor:pointer;color:var(--text-2)" onclick="renderCourses('jyotish')">⭐ <span data-i18n="cat_jyotish">ज्योतिष</span></div>
-    </div>
-    <div id="coursesList"><div class="spin-wrap"><div class="spinner"></div></div></div>
+    <div class="sec-head"><div class="sec-title">📰 समाचार</div></div>
+    <div id="newsListPage"><div class="spin-wrap"><div class="spinner"></div></div></div>
   </div>
 </div>
 
@@ -426,14 +418,14 @@
     </div>
     <div class="nav-lbl" data-i18n="nav_home">होम</div>
   </a>
-  <a class="nav-item" data-page="courses" href="#">
+  <a class="nav-item" data-page="news" href="#">
     <div class="nav-ico">
       <svg viewBox="0 0 24 24" fill="none">
-        <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v18H6.5A2.5 2.5 0 0 1 4 18.5v-13Z" fill="#D8E8FF" stroke="#3B7DDB" stroke-width="1.5" stroke-linejoin="round"/>
-        <path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v18h5.5a2.5 2.5 0 0 0 2.5-2.5v-13Z" fill="#EAF2FF" stroke="#3B7DDB" stroke-width="1.5" stroke-linejoin="round"/>
+        <rect x="3.5" y="4.5" width="17" height="15" rx="1.5" fill="#FFE8D8" stroke="#FF7A3D" stroke-width="1.5"/>
+        <path d="M7 8.5h6M7 11.5h10M7 14.5h10M7 17h6" stroke="#FF7A3D" stroke-width="1.4" stroke-linecap="round"/>
       </svg>
     </div>
-    <div class="nav-lbl">विषयहरू</div>
+    <div class="nav-lbl">समाचार</div>
   </a>
   <a class="nav-item" id="navSearchBtn" href="#">
     <div class="nav-ico">
@@ -593,7 +585,13 @@
     </div>
     <div class="f-group">
       <label class="f-label">फोटो (ऐच्छिक)</label>
-      <input class="f-input" id="noticeFormImage" type="text" placeholder="images/news/xyz.jpg">
+      <input type="file" accept="image/*" id="noticeFormImageFile" style="display:none" onchange="handleNoticeImageChange(event)">
+      <div id="noticeImgPreviewWrap" style="display:none;margin-bottom:8px;position:relative;width:fit-content">
+        <img id="noticeImgPreview" style="max-width:140px;max-height:100px;border-radius:10px;display:block;object-fit:cover">
+        <button type="button" onclick="removeNoticeImage()" style="position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;background:#D6303F;color:#fff;border:2px solid var(--surface-opaque);font-size:13px;cursor:pointer">✕</button>
+      </div>
+      <button type="button" class="btn-s" onclick="document.getElementById('noticeFormImageFile').click()" id="noticeImgPickBtn">📷 फोटो छान्नुस्</button>
+      <input type="hidden" id="noticeFormImage">
     </div>
     </div>
     <div class="m-btns">
