@@ -555,8 +555,6 @@ const I18N = {
     dm_offline_delete:'अफलाइन डाटा हटाउनुस्', dm_app_info:'एप जानकारी', dm_update:'एप अपडेट गर्नुस्',
     dm_version:'भर्जन', dm_follow:'हामीलाई फलो गर्नुस्',
     ticker_news:'समाचार', search_ph:'किताब वा विषय खोज्नुस्…', years:'वर्षहरू',
-    all_subjects:'सबै विषयहरू', cat_all:'सबै', cat_nepali:'नेपाली', cat_english:'English',
-    cat_sanskrit:'संस्कृत', cat_vyakaran:'व्याकरण', cat_jyotish:'ज्योतिष',
     edit:'सम्पादन', contact_social:'सम्पर्क / Social', stats:'तथ्याङ्क', settings:'सेटिङहरू',
     display:'प्रदर्शन', data:'Data', json_download:'JSON download', backup_import:'Backup Import',
     json_restore:'JSON restore', reading_history:'पढ्ने इतिहास', clear:'सफा',
@@ -576,8 +574,6 @@ const I18N = {
     dm_offline_delete:'ऑफलाइन-दत्तांशं निष्कासयतु', dm_app_info:'अनुप्रयोग-सूचना', dm_update:'अनुप्रयोगं अद्यतनं करोतु',
     dm_version:'संस्करणम्', dm_follow:'अस्मान् अनुसरतु',
     ticker_news:'समाचारः', search_ph:'पुस्तकं विषयं वा अन्विष्यताम्…', years:'वर्षाणि',
-    all_subjects:'सर्वे विषयाः', cat_all:'सर्वे', cat_nepali:'नेपालीसाहित्यम्', cat_english:'आंग्लसाहित्यम्',
-    cat_sanskrit:'संस्कृतसाहित्यम्', cat_vyakaran:'व्याकरणम्', cat_jyotish:'ज्योतिषशास्त्रम्',
     edit:'सम्पादनम्', contact_social:'सम्पर्कः / Social', stats:'तथ्याङ्काः', settings:'सेटिंग्स्',
     display:'प्रदर्शनम्', data:'दत्तांशः', json_download:'JSON अवाहनम्', backup_import:'बैकअप-आयातः',
     json_restore:'JSON पुनःस्थापनम्', reading_history:'पठन-इतिहासः', clear:'शोधयतु',
@@ -597,8 +593,6 @@ const I18N = {
     dm_offline_delete:'Delete Offline Data', dm_app_info:'App Info', dm_update:'Update App',
     dm_version:'Version', dm_follow:'Follow Us',
     ticker_news:'News', search_ph:'Search books or subjects…', years:'Years',
-    all_subjects:'All Subjects', cat_all:'All', cat_nepali:'Nepali', cat_english:'English',
-    cat_sanskrit:'Sanskrit', cat_vyakaran:'Grammar', cat_jyotish:'Astrology',
     edit:'Edit', contact_social:'Contact / Social', stats:'Stats', settings:'Settings',
     display:'Display', data:'Data', json_download:'JSON download', backup_import:'Backup Import',
     json_restore:'JSON restore', reading_history:'Reading History', clear:'Clear',
@@ -706,7 +700,7 @@ function go(page, data={}, fromHistory=false) {
   else if (page==='subject'&&data.subjectId) { App.subjectId=data.subjectId; App.yearId=data.yearId; renderSubjectPage(data.subjectId,data.yearId); }
   else if (page==='bookmarks') renderBookmarksPage();
   else if (page==='profile') renderProfile();
-  else if (page==='courses') renderCourses('all');
+  else if (page==='news') renderNewsListPage();
   if (page !== 'home') {
     document.getElementById('searchWrap')?.classList.remove('open');
     document.getElementById('sDrop')?.classList.remove('open');
@@ -771,7 +765,7 @@ async function restoreLastLocation() {
           setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
         }
       }
-    } else if (['profile', 'courses', 'bookmarks'].includes(loc.page)) {
+    } else if (['profile', 'news', 'bookmarks'].includes(loc.page)) {
       go(loc.page);
     }
   } catch (e) { console.warn('अघिल्लो स्थान फर्काउन सकिएन:', e); }
@@ -1764,41 +1758,33 @@ window.delNote=delNote;
 /* ════════════════════════════════════
    COURSES
    ════════════════════════════════════ */
-function renderCourses(filter='all') {
-  const el=document.getElementById('coursesList');
-  if(!el||!App.data) return;
-  document.querySelectorAll('.cf-chip').forEach(c=>c.classList.toggle('on',c.dataset.key===filter));
-
-  let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
-  App.data.years.forEach(yr=>Object.entries(yr.subjects).forEach(([key,books])=>{
-    if(filter!=='all'&&key!==filter) return;
-    const s=SUBJ[key]||{short:'क',g:'#EEE,#CCC',label:key};
-    const[c1,c2]=s.g.split(',');
-    books.forEach(b=>{
-      html+=`<div style="border-radius:var(--r-md);overflow:hidden;cursor:pointer;background:var(--surface);border:1px solid var(--surface-b);box-shadow:0 4px 14px var(--shadow);transition:transform 0.2s var(--ease-spring),box-shadow 0.2s var(--ease-out)!important"
-        onclick="openBookWithBreadcrumb('${b.id}',${yr.id})"
-        onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 10px 24px var(--shadow-lg)'"
-        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px var(--shadow)'">
-        <div style="position:relative;height:92px;background:linear-gradient(150deg,${c1},${c2});display:flex;align-items:center;justify-content:center;overflow:hidden">
-          <span style="font-size:2.4rem;font-weight:800;color:rgba(255,255,255,0.9);text-shadow:0 2px 6px rgba(0,0,0,0.15)">${s.short}</span>
-          <span style="position:absolute;bottom:-10px;right:-6px;font-size:4.4rem;font-weight:800;color:rgba(255,255,255,0.14);line-height:1">${s.short}</span>
-        </div>
-        <div style="padding:10px 11px">
-          <div style="font-size:0.8rem;font-weight:700;color:var(--text-1);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.1em">${b.title}</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
-            <span style="font-size:0.64rem;font-weight:700;color:var(--text-3);background:var(--surface-b);padding:2px 8px;border-radius:20px">${yr.title}</span>
-            <span style="color:var(--accent);font-size:15px">→</span>
-          </div>
-        </div>
-      </div>`;
-    });
-  }));
-  html += '</div>';
-  el.innerHTML = html==='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>'
-    ? '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">भेटिएन</div></div>'
-    : html;
+function renderNewsListPage() {
+  const el = document.getElementById('newsListPage');
+  if (!el) return;
+  const items = App.data?.news || [];
+  if (!items.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">अझै कुनै समाचार छैन</div></div>';
+    return;
+  }
+  el.innerHTML = items.map((n, i) => `
+    <div style="display:flex;gap:11px;padding:12px;margin-bottom:10px;background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);cursor:pointer;box-shadow:0 3px 12px var(--shadow)"
+      onclick="openNewsItem(${i})">
+      ${n.image
+        ? `<img src="${n.image}" style="width:64px;height:64px;border-radius:11px;object-fit:cover;flex-shrink:0" loading="lazy">`
+        : `<div style="width:64px;height:64px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">📰</div>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:0.86rem;font-weight:700;color:var(--text-1);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title||''}</div>
+        <div style="font-size:0.7rem;color:var(--text-3);margin-top:4px">${n.date||''}${n.category?' · '+n.category:''}</div>
+      </div>
+    </div>`).join('');
 }
-window.renderCourses=renderCourses;
+window.renderNewsListPage = renderNewsListPage;
+
+function openNewsItem(idx) {
+  App.newsIdx = idx;
+  openNewsCurrent();
+}
+window.openNewsItem = openNewsItem;
 /* ════════════════════════════════════
    PROFILE
    ════════════════════════════════════ */

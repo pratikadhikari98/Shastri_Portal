@@ -95,11 +95,68 @@ function openNoticeForm(notice = null) {
   document.getElementById('noticeFormCategory').value = notice?.category || '';
   document.getElementById('noticeFormImage').value    = notice?.image    || '';
   document.getElementById('noticeFormContent').dataset.fontKey = notice?.font || 'siddhanta';
+  // फोटो preview — सम्पादन गर्दा पहिल्यै भएको फोटो देखाउने
+  const prevWrap = document.getElementById('noticeImgPreviewWrap');
+  const prevImg  = document.getElementById('noticeImgPreview');
+  const pickBtn  = document.getElementById('noticeImgPickBtn');
+  if (notice?.image) {
+    prevImg.src = notice.image;
+    prevWrap.style.display = 'block';
+    if (pickBtn) pickBtn.textContent = '📷 फोटो बदल्नुस्';
+  } else {
+    prevWrap.style.display = 'none';
+    if (pickBtn) pickBtn.textContent = '📷 फोटो छान्नुस्';
+  }
+  document.getElementById('noticeFormImageFile').value = '';
   App.editingNoticeId = notice?.id || null;
   document.getElementById('noticeFormHeading').textContent = notice ? '✏️ सूचना सम्पादन' : '➕ नयाँ सूचना';
   openOv('noticeFormModal');
 }
 window.openNoticeForm = openNoticeForm;
+
+/* फोटो अपलोड — Firebase Storage सेटअप नभएकोले, ठूलो फोटोलाई यहीँ (client-side) घटाएर
+   Firestore document भित्रै base64 को रूपमा सुरक्षित गरिन्छ (Firestore document 1MB सीमा भित्र रहनको लागि) */
+function handleNoticeImageChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { toast('⚠️ फोटो फाइल मात्र राख्नुस्'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 900; // यति long-side राखे पनि मोबाइलमा स्पष्टै देखिन्छ, आकार पनि सानो रहन्छ
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        const scale = MAX / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+      if (dataUrl.length > 700 * 1024) {
+        toast('⚠️ फोटो अझै धेरै ठूलो छ, अर्को छोटो/हल्का फोटो प्रयोग गर्नुस्');
+        return;
+      }
+      document.getElementById('noticeFormImage').value = dataUrl;
+      document.getElementById('noticeImgPreview').src = dataUrl;
+      document.getElementById('noticeImgPreviewWrap').style.display = 'block';
+      document.getElementById('noticeImgPickBtn').textContent = '📷 फोटो बदल्नुस्';
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+window.handleNoticeImageChange = handleNoticeImageChange;
+
+function removeNoticeImage() {
+  document.getElementById('noticeFormImage').value = '';
+  document.getElementById('noticeFormImageFile').value = '';
+  document.getElementById('noticeImgPreviewWrap').style.display = 'none';
+  document.getElementById('noticeImgPickBtn').textContent = '📷 फोटो छान्नुस्';
+}
+window.removeNoticeImage = removeNoticeImage;
 
 async function saveNoticeForm() {
   if (!App.isAdmin) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
