@@ -670,7 +670,7 @@ function initNav() {
       e.preventDefault();
       if (navigator.vibrate) navigator.vibrate(12); // हलुका haptic feedback
       if (el.id === 'navSearchBtn') {
-        document.getElementById('searchBtn')?.click(); // header कै search toggle प्रयोग गर्ने
+        toggleSearchBar();
         return;
       }
       go(el.dataset.page);
@@ -1487,6 +1487,20 @@ function addHistory(book,yr){
 /* ════════════════════════════════════
    SEARCH
    ════════════════════════════════════ */
+function toggleSearchBar() {
+  const wrap = document.getElementById('searchWrap');
+  const inp  = document.getElementById('sInp');
+  const drop = document.getElementById('sDrop');
+  if (!wrap) return;
+  const willOpen = !wrap.classList.contains('open');
+  wrap.classList.toggle('open', willOpen);
+  if (willOpen) {
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // टाढा scroll भएको बेला पनि search bar देखियोस्
+    setTimeout(() => inp?.focus(), 180);
+  } else { drop?.classList.remove('open'); inp?.blur(); }
+}
+window.toggleSearchBar = toggleSearchBar;
+
 function initSearch() {
   const inp=document.getElementById('sInp');
   const clr=document.getElementById('sClr');
@@ -1496,14 +1510,9 @@ function initSearch() {
 
   // सर्च बटन थिचेपछि मात्र सर्च बार देखिने
   if (btn && wrap) {
-    btn.addEventListener('click', () => {
-      const willOpen = !wrap.classList.contains('open');
-      wrap.classList.toggle('open', willOpen);
-      if (willOpen) setTimeout(() => inp?.focus(), 180);
-      else { drop?.classList.remove('open'); inp?.blur(); }
-    });
+    btn.addEventListener('click', () => toggleSearchBar());
     document.addEventListener('click', e => {
-      if (wrap.classList.contains('open') && !e.target.closest('.search-wrap') && !e.target.closest('#searchBtn')) {
+      if (wrap.classList.contains('open') && !e.target.closest('.search-wrap') && !e.target.closest('#searchBtn') && !e.target.closest('#navSearchBtn')) {
         wrap.classList.remove('open');
         drop?.classList.remove('open');
       }
@@ -1769,6 +1778,7 @@ function renderCourses(filter='all') {
   const el=document.getElementById('coursesList');
   if(!el||!App.data) return;
   document.querySelectorAll('.cf-chip').forEach(c=>c.classList.toggle('on',c.dataset.key===filter));
+
   let html='';
   App.data.years.forEach(yr=>Object.entries(yr.subjects).forEach(([key,books])=>{
     if(filter!=='all'&&key!==filter) return;
@@ -1790,7 +1800,6 @@ function renderCourses(filter='all') {
   el.innerHTML=html||'<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">भेटिएन</div></div>';
 }
 window.renderCourses=renderCourses;
-
 /* ════════════════════════════════════
    PROFILE
    ════════════════════════════════════ */
