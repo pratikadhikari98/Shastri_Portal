@@ -65,16 +65,6 @@ const THEMES = [
   { id:'blue',   label:'Ocean Blue',    dot:'td-blue',    emoji:'🔵' },
   { id:'purple', label:'Royal Purple',  dot:'td-purple',  emoji:'🟣' },
   { id:'rose',   label:'Rose Gold',     dot:'td-rose',    emoji:'🌸' },
-  { id:'slate',  label:'Slate Gray',    dot:'td-slate',   emoji:'🩶' },
-  { id:'autumn', label:'Autumn Orange', dot:'td-autumn',  emoji:'🍂' },
-  { id:'teal',   label:'Teal Mint',     dot:'td-teal',    emoji:'🩵' },
-  { id:'coral',  label:'Coral Sunrise', dot:'td-coral',   emoji:'🪸' },
-  { id:'indigo',     label:'Indigo Night',  dot:'td-indigo',     emoji:'🔷' },
-  { id:'vermillion', label:'Vermillion',    dot:'td-vermillion', emoji:'🔺' },
-  { id:'turmeric',   label:'Turmeric',      dot:'td-turmeric',   emoji:'🟡' },
-  { id:'peacock',    label:'Peacock',       dot:'td-peacock',    emoji:'🦚' },
-  { id:'sandalwood', label:'Sandalwood',    dot:'td-sandalwood', emoji:'🟤' },
-  { id:'dark',   label:'Midnight Dark', dot:'td-dark',    emoji:'🌑' },
 ];
 
 /* ── App version — कोड अपडेट गर्दा यी दुई लाइन बदल्नुहोस् ── */
@@ -1779,25 +1769,34 @@ function renderCourses(filter='all') {
   if(!el||!App.data) return;
   document.querySelectorAll('.cf-chip').forEach(c=>c.classList.toggle('on',c.dataset.key===filter));
 
-  let html='';
+  let html='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">';
   App.data.years.forEach(yr=>Object.entries(yr.subjects).forEach(([key,books])=>{
     if(filter!=='all'&&key!==filter) return;
     const s=SUBJ[key]||{short:'क',g:'#EEE,#CCC',label:key};
     const[c1,c2]=s.g.split(',');
     books.forEach(b=>{
-      html+=`<div style="display:flex;align-items:center;gap:11px;padding:11px 13px;margin-bottom:8px;background:var(--surface);backdrop-filter:blur(var(--blur));border:1px solid var(--surface-b);border-radius:var(--r-md);cursor:pointer;box-shadow:0 2px 10px var(--shadow);transition:transform 0.2s var(--ease-spring)!important"
+      html+=`<div style="border-radius:var(--r-md);overflow:hidden;cursor:pointer;background:var(--surface);border:1px solid var(--surface-b);box-shadow:0 4px 14px var(--shadow);transition:transform 0.2s var(--ease-spring),box-shadow 0.2s var(--ease-out)!important"
         onclick="openBookWithBreadcrumb('${b.id}',${yr.id})"
-        onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform=''">
-        <div style="width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,${c1},${c2});display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0">${s.short}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:0.84rem;font-weight:700;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.title}</div>
-          <div style="font-size:0.7rem;color:var(--text-3);margin-top:2px">${yr.title} · ${b.author}</div>
+        onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 10px 24px var(--shadow-lg)'"
+        onmouseout="this.style.transform='';this.style.boxShadow='0 4px 14px var(--shadow)'">
+        <div style="position:relative;height:92px;background:linear-gradient(150deg,${c1},${c2});display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <span style="font-size:2.4rem;font-weight:800;color:rgba(255,255,255,0.9);text-shadow:0 2px 6px rgba(0,0,0,0.15)">${s.short}</span>
+          <span style="position:absolute;bottom:-10px;right:-6px;font-size:4.4rem;font-weight:800;color:rgba(255,255,255,0.14);line-height:1">${s.short}</span>
         </div>
-        <span style="color:var(--text-3);font-size:17px">›</span>
+        <div style="padding:10px 11px">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--text-1);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.1em">${b.title}</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+            <span style="font-size:0.64rem;font-weight:700;color:var(--text-3);background:var(--surface-b);padding:2px 8px;border-radius:20px">${yr.title}</span>
+            <span style="color:var(--accent);font-size:15px">→</span>
+          </div>
+        </div>
       </div>`;
     });
   }));
-  el.innerHTML=html||'<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">भेटिएन</div></div>';
+  html += '</div>';
+  el.innerHTML = html==='<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>'
+    ? '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">भेटिएन</div></div>'
+    : html;
 }
 window.renderCourses=renderCourses;
 /* ════════════════════════════════════
