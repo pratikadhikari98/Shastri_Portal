@@ -2,7 +2,7 @@
 // ⚠️ यहाँदेखि app shell (html/css/js) लाई NETWORK-FIRST बनाइयो —
 //    अब जहिले पनि internet भएसम्म GitHub बाट ताजा (latest) फाइल नै ल्याउँछ,
 //    cache चाहिं offline हुँदा मात्र प्रयोग हुन्छ। यसले "पुरानै देखिने" समस्या जरैबाट हटाउँछ।
-const APP_CACHE      = 'shastri-app-v15';     // App shell (auto)
+const APP_CACHE      = 'shastri-app-v16';     // App shell (auto)
 const OFFLINE_CACHE  = 'shastri-offline-v1';  // User-triggered "Save for offline" content
 
 const APP_ASSETS = [
