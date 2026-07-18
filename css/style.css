@@ -1076,7 +1076,6 @@ input[type=range].dm-slider {
   box-shadow:0 8px 28px var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 .nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:0; text-decoration:none; color:var(--text-3); flex:none; position:relative; -webkit-tap-highlight-color: transparent; }
-.nav-item:active .nav-ico { transform:translateY(-1px) scale(0.95); }
 
 /* हरेक icon आफ्नै छुट्टै सेतो card — ठ्याक्कै अपलोड गरेको साइटको bottom bar जस्तै (सबै icon उस्तै, active को लागि छुट्टै रङ छैन) */
 .nav-ico {
@@ -1085,17 +1084,12 @@ input[type=range].dm-slider {
   box-shadow:0 1px 3px var(--shadow);
   display:flex; align-items:center; justify-content:center;
   position:relative; z-index:1;
-  transition: transform 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out) !important;
+  transition: transform 0.15s var(--ease-out) !important;
 }
 .nav-ico svg { width:24px; height:24px; display:block; pointer-events:none; }
-.nav-item:hover .nav-ico, .nav-item:active .nav-ico { transform:translateY(-3px); box-shadow:0 4px 10px var(--shadow-lg); }
+.nav-item:hover .nav-ico { transform:translateY(-3px); }
+.nav-item:active .nav-ico { transform:translateY(-1px) scale(0.95); }
 .nav-lbl { display:none; }
-
-.nav-ico.nav-pop { animation: navIconPop 0.25s var(--ease-out); }
-@keyframes navIconPop {
-  0%   { transform: translateY(-3px) scale(0.9); }
-  100% { transform: translateY(-3px) scale(1); }
-}
 
 /* स्क्रोल गर्दा बटम नेभ लुक्ने/देखिने */
 .bot-nav { transition: transform 0.32s var(--ease-out) !important; }
