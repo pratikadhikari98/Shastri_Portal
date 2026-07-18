@@ -1773,8 +1773,7 @@ async function renderNewsListPage() {
   }
 
   el.innerHTML = addBtn + items.map((n, i) => {
-    const plain = (n.content || '').replace(/[#*_`>\-\[\]()]/g, ' ');
-    const preview = plain.length > 160 ? plain.slice(0, 160) + '…' : plain;
+    const bodyHtml = renderMd(n.content || '');
     return `
     <div style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden;box-shadow:0 3px 12px var(--shadow)">
       <div style="padding:12px 14px 8px;display:flex;align-items:center;gap:9px">
@@ -1788,30 +1787,35 @@ async function renderNewsListPage() {
           <button onclick="deleteFeedPost('${n.id}')" style="background:none;border:none;font-size:1rem;cursor:pointer">🗑️</button>
         </div>` : ''}
       </div>
-      <div style="padding:0 14px 10px">
+      ${n.image ? `<img src="${n.image}" style="width:100%;max-height:280px;object-fit:cover;display:block" loading="lazy">` : ''}
+      <div style="padding:10px 14px 4px">
         <div style="font-size:0.88rem;font-weight:700;color:var(--text-1);margin-bottom:4px">${n.title||''}</div>
-        <div style="font-size:0.8rem;color:var(--text-2);line-height:1.6">${preview}</div>
-        ${plain.length > 160 ? `<span onclick="openFeedPostCurrent(${i})" style="color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer">थप पढ्नुस्</span>` : ''}
+        <div class="feed-body" id="feedBody${i}" style="font-size:0.8rem;color:var(--text-2);line-height:1.6;max-height:5.2em;overflow:hidden;transition:max-height 0.32s var(--ease-out)">${bodyHtml}</div>
       </div>
-      ${n.image ? `<img src="${n.image}" style="width:100%;max-height:280px;object-fit:cover;display:block;cursor:pointer" onclick="openFeedPostCurrent(${i})" loading="lazy">` : ''}
+      <div onclick="toggleFeedBody(${i})" id="feedToggle${i}" style="padding:6px 14px 12px;color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer">थप पढ्नुस् ⌄</div>
     </div>`;
   }).join('');
+
+  // छोटो पोस्ट (जसलाई expand गर्नु नै नपर्ने) मा "थप पढ्नुस्" लुकाउने
+  items.forEach((n, i) => {
+    const body = document.getElementById('feedBody'+i);
+    const toggle = document.getElementById('feedToggle'+i);
+    if (body && toggle && body.scrollHeight <= body.clientHeight + 2) {
+      toggle.style.display = 'none';
+    }
+  });
 }
 window.renderNewsListPage = renderNewsListPage;
 
-function openFeedPostCurrent(idx) {
-  const n = App.feedPosts?.[idx];
-  if (!n) return;
-  document.getElementById('newsMTitle').textContent = n.title;
-  document.getElementById('newsMDate').textContent  = n.date || '';
-  const bodyEl = document.getElementById('newsMBody');
-  bodyEl.innerHTML = renderMd(n.content || '');
-  bodyEl.style.fontFamily = (n.font && typeof fontCssFor==='function') ? fontCssFor(n.font) : '';
-  const img = document.getElementById('newsMImg');
-  if (img) { img.src = n.image||''; img.style.display = n.image?'block':'none'; }
-  openOv('newsModal');
+function toggleFeedBody(i) {
+  const body = document.getElementById('feedBody'+i);
+  const toggle = document.getElementById('feedToggle'+i);
+  if (!body || !toggle) return;
+  const isOpen = body.classList.toggle('open');
+  body.style.maxHeight = isOpen ? body.scrollHeight + 'px' : '5.2em';
+  toggle.textContent = isOpen ? 'कम देखाउनुस् ⌃' : 'थप पढ्नुस् ⌄';
 }
-window.openFeedPostCurrent = openFeedPostCurrent;
+window.toggleFeedBody = toggleFeedBody;
 
 /* ════════════════════════════════════
    PROFILE
