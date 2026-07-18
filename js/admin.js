@@ -83,8 +83,9 @@ async function loadNoticesFromFirestore() {
   }
 }
 
-function openNoticeForm(notice = null) {
+function openNoticeForm(notice = null, target = 'notices') {
   if (!App.isAdmin) return;
+  App._noticeFormTarget = target; // 'notices' = home board, 'feed' = समाचार पेजको छुट्टै feed
   if (typeof renderMdToolbar === 'function') {
     const tb = document.getElementById('noticeContentToolbar');
     if (tb) tb.innerHTML = renderMdToolbar('noticeFormContent', { title: '📢 सूचना लेख्नुस्' });
@@ -170,17 +171,19 @@ async function saveNoticeForm() {
     font:     contentEl.dataset.fontKey || 'siddhanta',
   };
   if (!data.title || !data.content) { toast('⚠️ शीर्षक र विवरण आवश्यक छ'); return; }
+  const col = App._noticeFormTarget === 'feed' ? 'feed_posts' : 'notices';
   try {
     if (App.editingNoticeId) {
-      await db.collection('notices').doc(App.editingNoticeId).update(data);
-      toast('✅ सूचना अपडेट भयो');
+      await db.collection(col).doc(App.editingNoticeId).update(data);
+      toast('✅ अपडेट भयो');
     } else {
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-      await db.collection('notices').add(data);
-      toast('✅ नयाँ सूचना थपियो');
+      await db.collection(col).add(data);
+      toast('✅ नयाँ पोस्ट थपियो');
     }
     closeOv('noticeFormModal');
-    await refreshNotices();
+    if (col === 'feed_posts') await refreshFeedPosts();
+    else await refreshNotices();
   } catch (err) {
     toast('❌ सुरक्षित गर्न सकिएन: ' + err.message);
   }
@@ -213,9 +216,56 @@ async function refreshNotices() {
 
 function editNoticeByIndex(i) {
   const n = App.data?.news?.[i];
-  if (n) openNoticeForm(n);
+  if (n) openNoticeForm(n, 'notices');
 }
 window.editNoticeByIndex = editNoticeByIndex;
+
+/* ════════════════════════════════════
+   "समाचार" पेजको छुट्टै feed — home board (notices) भन्दा फरक collection
+   collection: feed_posts
+   ════════════════════════════════════ */
+async function loadFeedPostsFromFirestore() {
+  try {
+    const snap = await db.collection('feed_posts').orderBy('createdAt', 'desc').get();
+    if (snap.empty) return [];
+    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    try { localStorage.setItem('sp_cache_feed', JSON.stringify(data)); } catch (e) {}
+    return data;
+  } catch (err) {
+    console.warn('Firestore बाट feed लोड हुन सकेन, offline cache हेर्दैछ:', err.message);
+    try {
+      const cached = localStorage.getItem('sp_cache_feed');
+      if (cached) return JSON.parse(cached);
+    } catch (e) {}
+    return [];
+  }
+}
+window.loadFeedPostsFromFirestore = loadFeedPostsFromFirestore;
+
+async function refreshFeedPosts() {
+  App.feedPosts = await loadFeedPostsFromFirestore();
+  if (typeof renderNewsListPage === 'function') renderNewsListPage();
+}
+window.refreshFeedPosts = refreshFeedPosts;
+
+async function deleteFeedPost(id) {
+  if (!App.isAdmin || !id) return;
+  if (!(await showConfirm('साँच्चै यो पोस्ट मेटाउने?'))) return;
+  try {
+    await db.collection('feed_posts').doc(id).delete();
+    toast('🗑️ पोस्ट मेटियो');
+    await refreshFeedPosts();
+  } catch (err) {
+    toast('❌ मेटाउन सकिएन: ' + err.message);
+  }
+}
+window.deleteFeedPost = deleteFeedPost;
+
+function editFeedPostByIndex(i) {
+  const p = App.feedPosts?.[i];
+  if (p) openNoticeForm(p, 'feed');
+}
+window.editFeedPostByIndex = editFeedPostByIndex;
 
 function escapeHtml(s = '') {
   return String(s).replace(/[&<>"']/g, c => ({

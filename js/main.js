@@ -18,6 +18,7 @@ const App = {
   chapterBookmarks: JSON.parse(localStorage.getItem('sp_chapter_bookmarks') || '[]'),
   history: JSON.parse(localStorage.getItem('sp_history') || '[]'),
   chaptersCache: {},
+  feedPosts: [], // "समाचार" पेजको छुट्टै feed (home board को notices भन्दा फरक)
   editNoteId: null,
   newsIdx: 0,
   data: null,
@@ -1758,33 +1759,63 @@ window.delNote=delNote;
 /* ════════════════════════════════════
    COURSES
    ════════════════════════════════════ */
-function renderNewsListPage() {
+async function renderNewsListPage() {
   const el = document.getElementById('newsListPage');
   if (!el) return;
-  const items = App.data?.news || [];
+  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  if (!App.feedPosts.length) App.feedPosts = await loadFeedPostsFromFirestore();
+  const items = App.feedPosts;
+
+  const addBtn = App.isAdmin
+    ? `<button onclick="openNoticeForm(null,'feed')" style="width:100%;padding:12px;margin-bottom:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:none;border-radius:var(--r-md);font-weight:700;font-size:0.86rem;cursor:pointer;box-shadow:0 4px 14px var(--accent-glow)">➕ नयाँ पोस्ट लेख्नुस्</button>`
+    : '';
+
   if (!items.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">अझै कुनै समाचार छैन</div></div>';
+    el.innerHTML = addBtn + '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">अझै कुनै समाचार छैन</div></div>';
     return;
   }
-  el.innerHTML = items.map((n, i) => `
-    <div style="display:flex;gap:11px;padding:12px;margin-bottom:10px;background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);cursor:pointer;box-shadow:0 3px 12px var(--shadow)"
-      onclick="openNewsItem(${i})">
-      ${n.image
-        ? `<img src="${n.image}" style="width:64px;height:64px;border-radius:11px;object-fit:cover;flex-shrink:0" loading="lazy">`
-        : `<div style="width:64px;height:64px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">📰</div>`}
-      <div style="flex:1;min-width:0">
-        <div style="font-size:0.86rem;font-weight:700;color:var(--text-1);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${n.title||''}</div>
-        <div style="font-size:0.7rem;color:var(--text-3);margin-top:4px">${n.date||''}${n.category?' · '+n.category:''}</div>
+
+  el.innerHTML = addBtn + items.map((n, i) => {
+    const plain = (n.content || '').replace(/[#*_`>\-\[\]()]/g, ' ');
+    const preview = plain.length > 160 ? plain.slice(0, 160) + '…' : plain;
+    return `
+    <div style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden;box-shadow:0 3px 12px var(--shadow)">
+      <div style="padding:12px 14px 8px;display:flex;align-items:center;gap:9px">
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🎓</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--text-1)">शास्त्री पोर्टल</div>
+          <div style="font-size:0.68rem;color:var(--text-3)">${n.date||''}${n.category?' · '+n.category:''}</div>
+        </div>
+        ${App.isAdmin ? `<div style="display:flex;gap:8px;flex-shrink:0">
+          <button onclick="editFeedPostByIndex(${i})" style="background:none;border:none;font-size:1rem;cursor:pointer">✏️</button>
+          <button onclick="deleteFeedPost('${n.id}')" style="background:none;border:none;font-size:1rem;cursor:pointer">🗑️</button>
+        </div>` : ''}
       </div>
-    </div>`).join('');
+      <div style="padding:0 14px 10px">
+        <div style="font-size:0.88rem;font-weight:700;color:var(--text-1);margin-bottom:4px">${n.title||''}</div>
+        <div style="font-size:0.8rem;color:var(--text-2);line-height:1.6">${preview}</div>
+        ${plain.length > 160 ? `<span onclick="openFeedPostCurrent(${i})" style="color:var(--accent);font-size:0.78rem;font-weight:700;cursor:pointer">थप पढ्नुस्</span>` : ''}
+      </div>
+      ${n.image ? `<img src="${n.image}" style="width:100%;max-height:280px;object-fit:cover;display:block;cursor:pointer" onclick="openFeedPostCurrent(${i})" loading="lazy">` : ''}
+    </div>`;
+  }).join('');
 }
 window.renderNewsListPage = renderNewsListPage;
 
-function openNewsItem(idx) {
-  App.newsIdx = idx;
-  openNewsCurrent();
+function openFeedPostCurrent(idx) {
+  const n = App.feedPosts?.[idx];
+  if (!n) return;
+  document.getElementById('newsMTitle').textContent = n.title;
+  document.getElementById('newsMDate').textContent  = n.date || '';
+  const bodyEl = document.getElementById('newsMBody');
+  bodyEl.innerHTML = renderMd(n.content || '');
+  bodyEl.style.fontFamily = (n.font && typeof fontCssFor==='function') ? fontCssFor(n.font) : '';
+  const img = document.getElementById('newsMImg');
+  if (img) { img.src = n.image||''; img.style.display = n.image?'block':'none'; }
+  openOv('newsModal');
 }
-window.openNewsItem = openNewsItem;
+window.openFeedPostCurrent = openFeedPostCurrent;
+
 /* ════════════════════════════════════
    PROFILE
    ════════════════════════════════════ */
