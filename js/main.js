@@ -692,9 +692,6 @@ function go(page, data={}, fromHistory=false) {
   const nav = document.querySelector(`.nav-item[data-page="${navPage}"]`);
   if (nav) {
     nav.classList.add('on');
-    // Icon को हल्का bounce
-    const ico = nav.querySelector('.nav-ico');
-    if (ico) { ico.classList.remove('nav-pop'); void ico.offsetWidth; ico.classList.add('nav-pop'); }
   }
 
   if (page==='year'&&data.yearId)       { App.yearId=data.yearId; renderYearPage(data.yearId); }
