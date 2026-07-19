@@ -496,7 +496,7 @@
   --r-lg:  28px;
   --r-xl:  36px;
   --r-pill:999px;
-  --blur:  22px;
+  --blur:  10px;
   --blur-sm: 12px;
   --ease-spring: cubic-bezier(0.34,1.56,0.64,1);
   --ease-out:    cubic-bezier(0.4,0,0.2,1);
@@ -1015,7 +1015,9 @@ input[type=range].dm-slider {
 .nb-img {
   width: 100%;
   height: auto;          /* फोटोकै natural ratio ले height तय गर्छ — कतै crop/स्ट्रेच हुँदैन */
+  aspect-ratio: 739 / 413; /* फोटो load हुनुअघि नै ठाउँ छुट्याइने — load हुँदा page नहल्लियोस् भनेर */
   display: block;
+  background: var(--surface-b); /* load हुँदै गर्दा खाली नदेखियोस् */
 }
 .nb-overlay {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
