@@ -1777,7 +1777,7 @@ async function renderNewsListPage() {
     return `
     <div ondblclick="toggleFeedBody(${i})" style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden;box-shadow:0 3px 12px var(--shadow)">
       <div style="padding:12px 14px 8px;display:flex;align-items:center;gap:9px">
-        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🎓</div>
+        <div style="width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:0 1px 3px var(--shadow)"><img src="images/icons/logo.svg" alt="शास्त्री पोर्टल" style="width:24px;height:24px;display:block"></div>
         <div style="flex:1;min-width:0">
           <div style="font-size:0.8rem;font-weight:700;color:var(--text-1)">शास्त्री पोर्टल</div>
           <div style="font-size:0.68rem;color:var(--text-3)">${n.date||''}${n.category?' · '+n.category:''}</div>
@@ -1787,7 +1787,7 @@ async function renderNewsListPage() {
           <button onclick="event.stopPropagation();deleteFeedPost('${n.id}')" style="background:none;border:none;font-size:1rem;cursor:pointer">🗑️</button>
         </div>` : ''}
       </div>
-      ${n.image ? `<img src="${n.image}" style="width:100%;max-height:280px;object-fit:cover;display:block" loading="lazy">` : ''}
+      ${n.image ? `<img src="${n.image}" style="width:100%;height:220px;object-fit:cover;display:block;background:var(--surface-b)" loading="lazy">` : ''}
       <div style="padding:10px 14px 14px">
         <div style="font-size:0.88rem;font-weight:700;color:var(--text-1);margin-bottom:4px">${n.title||''}</div>
         <div class="feed-body ch-read-content" id="feedBody${i}" style="padding:0;font-size:0.8rem;line-height:1.6;max-height:5.2em;overflow:hidden;transition:max-height 0.32s var(--ease-out)">${bodyHtml}</div>
