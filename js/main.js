@@ -1761,11 +1761,11 @@ async function renderNewsListPage() {
   if (!el) return;
   el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
   if (!App.feedPosts.length) App.feedPosts = await loadFeedPostsFromFirestore();
-  const items = App.feedPosts;
+  // सामान्य visitor लाई स्वीकृत भएका (वा पुराना, status नभएका legacy) पोस्ट मात्र देखिने —
+  // pending (समीक्षा बाँकी) पोस्ट Admin ले 🔔 बाट मात्र हेर्न पाउँछन्
+  const items = App.feedPosts.filter(p => p.status !== 'pending');
 
-  const addBtn = App.isAdmin
-    ? `<button onclick="openNoticeForm(null,'feed')" style="width:100%;padding:12px;margin-bottom:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:none;border-radius:var(--r-md);font-weight:700;font-size:0.86rem;cursor:pointer;box-shadow:0 4px 14px var(--accent-glow)">➕ नयाँ पोस्ट लेख्नुस्</button>`
-    : '';
+  const addBtn = `<button onclick="openNoticeForm(null,'feed')" style="width:100%;padding:12px;margin-bottom:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:none;border-radius:var(--r-md);font-weight:700;font-size:0.86rem;cursor:pointer;box-shadow:0 4px 14px var(--accent-glow)">➕ नयाँ पोस्ट लेख्नुस्</button>`;
 
   if (!items.length) {
     el.innerHTML = addBtn + '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">अझै कुनै समाचार छैन</div></div>';
@@ -1783,7 +1783,7 @@ async function renderNewsListPage() {
           <div style="font-size:0.68rem;color:var(--text-3)">${n.date||''}${n.category?' · '+n.category:''}</div>
         </div>
         ${App.isAdmin ? `<div style="display:flex;gap:8px;flex-shrink:0">
-          <button onclick="event.stopPropagation();editFeedPostByIndex(${i})" style="background:none;border:none;font-size:1rem;cursor:pointer">✏️</button>
+          <button onclick="event.stopPropagation();editFeedPostById('${n.id}')" style="background:none;border:none;font-size:1rem;cursor:pointer">✏️</button>
           <button onclick="event.stopPropagation();deleteFeedPost('${n.id}')" style="background:none;border:none;font-size:1rem;cursor:pointer">🗑️</button>
         </div>` : ''}
       </div>

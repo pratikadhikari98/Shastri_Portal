@@ -60,6 +60,9 @@ function renderAdminUI() {
   }
   document.body.classList.toggle('is-admin', App.isAdmin);
   renderAdminNoticeList();
+  const bell = document.getElementById('pendingBtn');
+  if (bell) bell.style.display = App.isAdmin ? 'flex' : 'none';
+  if (App.isAdmin) refreshPendingBadge();
 }
 
 /* ════════════════════════════════════
@@ -84,7 +87,10 @@ async function loadNoticesFromFirestore() {
 }
 
 function openNoticeForm(notice = null, target = 'notices') {
-  if (!App.isAdmin) return;
+  // सामान्य visitor (login नगरी) ले पनि "समाचार" feed मा नयाँ पोस्ट लेख्न सक्छ — तर होम-बोर्ड सूचना
+  // वा अरूको पोस्ट सम्पादन/मेटाउन भने Admin ले मात्र सक्छ
+  const publicSubmit = (target === 'feed' && !notice && !App.isAdmin);
+  if (!App.isAdmin && !publicSubmit) return;
   App._noticeFormTarget = target; // 'notices' = home board, 'feed' = समाचार पेजको छुट्टै feed
   if (typeof renderMdToolbar === 'function') {
     const tb = document.getElementById('noticeContentToolbar');
@@ -110,7 +116,21 @@ function openNoticeForm(notice = null, target = 'notices') {
   }
   document.getElementById('noticeFormImageFile').value = '';
   App.editingNoticeId = notice?.id || null;
-  document.getElementById('noticeFormHeading').textContent = notice ? '✏️ सूचना सम्पादन' : '➕ नयाँ सूचना';
+  document.getElementById('noticeFormHeading').textContent =
+    notice ? '✏️ सम्पादन' : (publicSubmit ? '➕ नयाँ पोस्ट लेख्नुस्' : '➕ नयाँ सूचना');
+  let noteEl = document.getElementById('noticeFormPublicNote');
+  if (publicSubmit) {
+    if (!noteEl) {
+      noteEl = document.createElement('div');
+      noteEl.id = 'noticeFormPublicNote';
+      noteEl.style.cssText = 'font-size:0.76rem;color:var(--text-3);background:var(--surface-b);padding:8px 10px;border-radius:10px;margin-bottom:12px';
+      noteEl.textContent = 'ℹ️ तपाईंको पोस्ट Admin ले हेरेर स्वीकृत गरेपछि मात्र सबैले देख्न पाउँछन्।';
+      document.getElementById('noticeFormHeading').insertAdjacentElement('afterend', noteEl);
+    }
+    noteEl.style.display = 'block';
+  } else if (noteEl) {
+    noteEl.style.display = 'none';
+  }
   openOv('noticeFormModal');
 }
 window.openNoticeForm = openNoticeForm;
@@ -160,7 +180,9 @@ function removeNoticeImage() {
 window.removeNoticeImage = removeNoticeImage;
 
 async function saveNoticeForm() {
-  if (!App.isAdmin) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
+  const col = App._noticeFormTarget === 'feed' ? 'feed_posts' : 'notices';
+  const publicSubmit = (col === 'feed_posts' && !App.editingNoticeId && !App.isAdmin);
+  if (!App.isAdmin && !publicSubmit) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
   const contentEl = document.getElementById('noticeFormContent');
   const data = {
     title:    document.getElementById('noticeFormTitle').value.trim(),
@@ -171,7 +193,7 @@ async function saveNoticeForm() {
     font:     contentEl.dataset.fontKey || 'siddhanta',
   };
   if (!data.title || !data.content) { toast('⚠️ शीर्षक र विवरण आवश्यक छ'); return; }
-  const col = App._noticeFormTarget === 'feed' ? 'feed_posts' : 'notices';
+  if (col === 'feed_posts') data.status = App.isAdmin ? 'approved' : 'pending';
   try {
     if (App.editingNoticeId) {
       await db.collection(col).doc(App.editingNoticeId).update(data);
@@ -179,10 +201,10 @@ async function saveNoticeForm() {
     } else {
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
       await db.collection(col).add(data);
-      toast('✅ नयाँ पोस्ट थपियो');
+      toast(publicSubmit ? '✅ पोस्ट पठाइयो — Admin ले स्वीकृत गरेपछि देखिनेछ' : '✅ नयाँ पोस्ट थपियो');
     }
     closeOv('noticeFormModal');
-    if (col === 'feed_posts') await refreshFeedPosts();
+    if (col === 'feed_posts') { await refreshFeedPosts(); if (App.isAdmin) refreshPendingBadge(); }
     else await refreshNotices();
   } catch (err) {
     toast('❌ सुरक्षित गर्न सकिएन: ' + err.message);
@@ -261,11 +283,89 @@ async function deleteFeedPost(id) {
 }
 window.deleteFeedPost = deleteFeedPost;
 
-function editFeedPostByIndex(i) {
-  const p = App.feedPosts?.[i];
+function editFeedPostById(id) {
+  const p = App.feedPosts?.find(x => x.id === id);
   if (p) openNoticeForm(p, 'feed');
 }
-window.editFeedPostByIndex = editFeedPostByIndex;
+window.editFeedPostById = editFeedPostById;
+
+/* Admin: pending (समीक्षा बाँकी) पोस्टको notification badge र review panel */
+async function refreshPendingBadge() {
+  if (!App.isAdmin) return;
+  if (!App.feedPosts.length) App.feedPosts = await loadFeedPostsFromFirestore();
+  const pending = App.feedPosts.filter(p => p.status === 'pending');
+  const badge = document.getElementById('pendingBadge');
+  if (badge) {
+    if (pending.length) { badge.textContent = pending.length > 9 ? '9+' : pending.length; badge.style.display = 'flex'; }
+    else badge.style.display = 'none';
+  }
+}
+window.refreshPendingBadge = refreshPendingBadge;
+
+async function openPendingPostsPanel() {
+  if (!App.isAdmin) return;
+  App.feedPosts = await loadFeedPostsFromFirestore();
+  renderPendingPostsList();
+  openOv('pendingPostsModal');
+}
+window.openPendingPostsPanel = openPendingPostsPanel;
+
+function renderPendingPostsList() {
+  const el = document.getElementById('pendingPostsList');
+  if (!el) return;
+  const pending = App.feedPosts.filter(p => p.status === 'pending');
+  if (!pending.length) {
+    el.innerHTML = '<div class="empty-s">समीक्षा बाँकी कुनै पोस्ट छैन 🎉</div>';
+    return;
+  }
+  el.innerHTML = pending.map(p => `
+    <div style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);padding:12px;margin-bottom:10px">
+      <div style="font-size:0.84rem;font-weight:700;color:var(--text-1);margin-bottom:3px">${p.title||''}</div>
+      <div style="font-size:0.78rem;color:var(--text-2);line-height:1.5;max-height:4.5em;overflow:hidden;margin-bottom:8px">${(p.content||'').replace(/[#*_\`>\-\[\]()]/g,' ').slice(0,180)}</div>
+      ${p.image ? `<img src="${p.image}" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-bottom:8px">` : ''}
+      <div style="display:flex;gap:8px">
+        <button class="btn-p" style="flex:1;padding:8px" onclick="approveFeedPost('${p.id}')">✅ स्वीकृत</button>
+        <button class="btn-s" style="padding:8px 12px" onclick="editFeedPostFromPending('${p.id}')">✏️</button>
+        <button class="btn-s" style="padding:8px 12px;color:#D6303F" onclick="rejectFeedPost('${p.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+window.renderPendingPostsList = renderPendingPostsList;
+
+function editFeedPostFromPending(id) {
+  const p = App.feedPosts.find(x => x.id === id);
+  if (p) { closeOv('pendingPostsModal'); openNoticeForm(p, 'feed'); }
+}
+window.editFeedPostFromPending = editFeedPostFromPending;
+
+async function approveFeedPost(id) {
+  if (!App.isAdmin) return;
+  try {
+    await db.collection('feed_posts').doc(id).update({ status: 'approved' });
+    toast('✅ पोस्ट स्वीकृत भयो');
+    await refreshFeedPosts();
+    renderPendingPostsList();
+    refreshPendingBadge();
+  } catch (err) {
+    toast('❌ स्वीकृत गर्न सकिएन: ' + err.message);
+  }
+}
+window.approveFeedPost = approveFeedPost;
+
+async function rejectFeedPost(id) {
+  if (!App.isAdmin) return;
+  if (!(await showConfirm('साँच्चै यो पोस्ट अस्वीकार गर्ने (मेटाउने)?'))) return;
+  try {
+    await db.collection('feed_posts').doc(id).delete();
+    toast('🗑️ पोस्ट अस्वीकार गरियो');
+    await refreshFeedPosts();
+    renderPendingPostsList();
+    refreshPendingBadge();
+  } catch (err) {
+    toast('❌ मेटाउन सकिएन: ' + err.message);
+  }
+}
+window.rejectFeedPost = rejectFeedPost;
 
 function escapeHtml(s = '') {
   return String(s).replace(/[&<>"']/g, c => ({
