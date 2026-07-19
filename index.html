@@ -88,6 +88,12 @@
   </div>
   <div class="header-right">
 
+    <!-- ADMIN: Pending post notification -->
+    <button class="hdr-btn" id="pendingBtn" title="Pending पोस्ट" onclick="openPendingPostsPanel()" style="display:none;position:relative">
+      🔔
+      <span id="pendingBadge" style="display:none;position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 3px;background:#D6303F;color:#fff;border-radius:10px;font-size:0.62rem;font-weight:800;align-items:center;justify-content:center;line-height:16px;text-align:center">0</span>
+    </button>
+
     <!-- SEARCH BUTTON — छुँदा मात्र सर्च बार देखिने -->
     <button class="hdr-btn" id="searchBtn" title="खोज्नुस्" data-i18n-title="search">🔍</button>
 
@@ -546,6 +552,14 @@
 <div id="boxTypePopover" class="color-popover" style="width:250px">
   <div class="color-popover-title">बक्सको प्रकार छान्नुस्</div>
   <div id="boxTypeList" style="display:flex;flex-direction:column;gap:4px"></div>
+</div>
+
+<!-- ══ Admin: Pending पोस्ट review ══ -->
+<div class="overlay" id="pendingPostsModal" onclick="if(event.target===this)closeOv('pendingPostsModal')">
+  <div class="modal-sheet">
+    <div class="sett-grp-lbl" style="padding-left:0">🔔 समीक्षा बाँकी पोस्ट</div>
+    <div id="pendingPostsList" style="margin-top:8px"></div>
+  </div>
 </div>
 
 <!-- Admin: सूचना list -->
