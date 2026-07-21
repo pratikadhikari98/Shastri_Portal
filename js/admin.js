@@ -689,6 +689,8 @@ async function saveChapterItem(bookId, chapter) {
       title: chapter.title, content: chapter.content, font: chapter.font || 'siddhanta',
       order: chapter.order ?? 0, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
+    if (chapter.status) data.status = chapter.status;
+    if (chapter.authorName) data.authorName = chapter.authorName;
     if (chapter.id) {
       await chaptersColRef(bookId).doc(chapter.id).set(data, { merge: true });
     } else {
