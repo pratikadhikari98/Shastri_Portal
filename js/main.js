@@ -1221,14 +1221,18 @@ function renderChapterListHtml(bookId) {
   }
 
   el.innerHTML = `${adminAddBar}<div class="ch-list">${chs.map((ch,i)=>{
+    if (ch.status === 'pending' && !App.isAdmin) return ''; // स्वीकृत नभएको अध्याय सामान्य पाठकलाई नदेखिने
     const chBmKey = bookId+'::'+i;
     const chIsBm = App.chapterBookmarks.includes(chBmKey);
+    const pendingTag = (ch.status === 'pending') ? `<span style="font-size:0.62rem;font-weight:800;color:#fff;background:#E8A020;padding:1px 7px;border-radius:10px;margin-right:6px;flex-shrink:0">⏳ बाँकी</span>` : '';
     return `
     <div class="chapter-item" id="chi-${bookId}-${i}">
       <div class="ch-head" onclick="toggleCh('${bookId}',${i})">
         <div class="ch-num">${toN(i+1)}</div>
         <div class="ch-title-txt">${ch.title||('अध्याय '+(i+1))}</div>
+        ${pendingTag}
         <button id="chbm-${bookId}-${i}" onclick="event.stopPropagation();toggleChapterBm('${bookId}',${i})" title="Bookmark" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">${chIsBm?'🔖':'🏷️'}</button>
+        ${App.isAdmin && ch.status === 'pending' ? `<button onclick="event.stopPropagation();adminChapterApproveInline('${bookId}',${i})" title="स्वीकृत गर्नुस्" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">✅</button>` : ''}
         ${App.isAdmin ? `<button onclick="event.stopPropagation();adminInlineChapterEdit('${bookId}',${i})" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">✏️</button>` : ''}
         ${App.isAdmin ? `<button onclick="event.stopPropagation();adminInlineChapterDelete('${bookId}',${i})" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">🗑️</button>` : ''}
         <span class="ch-chevron">›</span>
@@ -1566,6 +1570,7 @@ function doSearch(q) {
       if (!loc) continue;
       const chs = App.chaptersCache[bookId] || [];
       chs.forEach((ch, idx) => {
+        if (ch.status === 'pending' && !App.isAdmin) return; // स्वीकृत नभएको अध्याय search मा पनि नआओस्
         const plain = (ch.content || '').replace(/[#*_`>\-\[\]()]/g, ' ');
         const hay = `${ch.title||''} ${plain}`.toLowerCase();
         if (_fuzzyContains(hay, ql)) {
@@ -1613,6 +1618,77 @@ function initNotes() {
 /* ════════════════════════════════════
    BOOKMARKS PAGE — किताब + अध्याय दुवैका bookmark एकै ठाउँमा
    ════════════════════════════════════ */
+/* ════════════════════════════════════
+   "User Request" — Code राखेर अध्याय थप्ने/सम्पादन अनुमति (Admin ले प्रत्येक किताबको लागि छुट्टै Code दिन्छ)
+   ════════════════════════════════════ */
+async function loadChapterCodes(force = false) {
+  if (App._chapterCodes && !force) return App._chapterCodes;
+  try {
+    const snap = await db.collection('site_content').doc('chapter_codes').get();
+    App._chapterCodes = snap.exists ? (snap.data().codes || {}) : {};
+  } catch (err) {
+    console.warn('Code लोड हुन सकेन:', err.message);
+    App._chapterCodes = App._chapterCodes || {};
+  }
+  return App._chapterCodes;
+}
+window.loadChapterCodes = loadChapterCodes;
+
+function openUserRequestModal() {
+  const sel = document.getElementById('urBookSelect');
+  if (sel) {
+    let opts = '';
+    (App.data?.years || []).forEach(yr => Object.entries(yr.subjects || {}).forEach(([key, books]) => {
+      (books || []).forEach(b => { opts += `<option value="${b.id}">${b.title} (${yr.title})</option>`; });
+    }));
+    sel.innerHTML = opts || '<option value="">कुनै किताब भेटिएन</option>';
+  }
+  const codeInp = document.getElementById('urCodeInput');
+  if (codeInp) codeInp.value = '';
+  const err = document.getElementById('urError');
+  if (err) err.style.display = 'none';
+  openOv('userRequestModal');
+}
+window.openUserRequestModal = openUserRequestModal;
+
+async function submitUserRequest() {
+  const bookId = document.getElementById('urBookSelect').value;
+  const code = document.getElementById('urCodeInput').value.trim();
+  const err = document.getElementById('urError');
+  err.style.display = 'none';
+  if (!bookId || !code) { err.textContent = 'किताब र Code दुबै राख्नुहोस्।'; err.style.display = 'block'; return; }
+
+  const codes = await loadChapterCodes(true); // ताजा नै जाँच्ने, ताकि Admin ले भर्खरै Code बदलेको भए तुरुन्तै असर परोस्
+  if (!codes[bookId] || String(codes[bookId]) !== code) {
+    err.textContent = '❌ गलत Code। Admin सँग सही Code माग्नुहोस्।';
+    err.style.display = 'block';
+    return;
+  }
+
+  // सही भयो — यो फोनमै सुरक्षित गरिन्छ, Admin ले Code नबदलेसम्म फेरि सोध्दैन
+  try {
+    const saved = JSON.parse(localStorage.getItem('sp_chapter_access') || '{}');
+    saved[bookId] = code;
+    localStorage.setItem('sp_chapter_access', JSON.stringify(saved));
+  } catch (e) {}
+
+  closeOv('userRequestModal');
+  toast('✅ पहुँच मिल्यो');
+  if (typeof publicChapterAddNew === 'function') publicChapterAddNew(bookId);
+}
+window.submitUserRequest = submitUserRequest;
+
+/* यो किताबको लागि यो फोनमा सुरक्षित Code अझै मान्य छ कि जाँच्ने (Admin ले बदलिसकेको भए false) */
+async function hasValidChapterAccess(bookId) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('sp_chapter_access') || '{}');
+    if (!saved[bookId]) return false;
+    const codes = await loadChapterCodes();
+    return !!codes[bookId] && String(codes[bookId]) === String(saved[bookId]);
+  } catch (e) { return false; }
+}
+window.hasValidChapterAccess = hasValidChapterAccess;
+
 function findBookLocation(bookId) {
   for (const yr of (App.data?.years || [])) {
     for (const [key, books] of orderedSubjectEntries(yr.subjects || {})) {
@@ -1774,12 +1850,16 @@ async function renderNewsListPage() {
 
   el.innerHTML = addBtn + items.map((n, i) => {
     const bodyHtml = renderMd(n.content || '');
+    const isAuthored = !!n.authorName;
+    const avatarHtml = isAuthored
+      ? `<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0">${(n.authorName||'?').trim().charAt(0)}</div>`
+      : `<div style="width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:0 1px 3px var(--shadow)"><img src="images/icons/logo.svg" alt="शास्त्री पोर्टल" style="width:24px;height:24px;display:block"></div>`;
     return `
     <div ondblclick="toggleFeedBody(${i})" style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden;box-shadow:0 3px 12px var(--shadow)">
       <div style="padding:12px 14px 8px;display:flex;align-items:center;gap:9px">
-        <div style="width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:0 1px 3px var(--shadow)"><img src="images/icons/logo.svg" alt="शास्त्री पोर्टल" style="width:24px;height:24px;display:block"></div>
+        ${avatarHtml}
         <div style="flex:1;min-width:0">
-          <div style="font-size:0.8rem;font-weight:700;color:var(--text-1)">शास्त्री पोर्टल</div>
+          <div style="font-size:0.8rem;font-weight:700;color:var(--text-1)">${isAuthored ? n.authorName : 'शास्त्री पोर्टल'}</div>
           <div style="font-size:0.68rem;color:var(--text-3)">${n.date||''}${n.category?' · '+n.category:''}</div>
         </div>
         ${App.isAdmin ? `<div style="display:flex;gap:8px;flex-shrink:0">
