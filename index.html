@@ -147,6 +147,10 @@
             <div class="dm-item-ico">🔗</div>
             <div><div class="dm-item-name" data-i18n="dm_share">Website Share गर्नुस्</div></div>
           </div>
+          <div class="dm-item" onclick="openUserRequestModal();document.getElementById('dotsMenu').classList.remove('open')">
+            <div class="dm-item-ico">🔑</div>
+            <div><div class="dm-item-name">User Request</div></div>
+          </div>
           <div class="dm-item" onclick="go('profile');document.getElementById('dotsMenu').classList.remove('open')">
             <div class="dm-item-ico">⚙️</div>
             <div><div class="dm-item-name" data-i18n="dm_settings_profile">सेटिङ र Profile</div></div>
@@ -555,6 +559,24 @@
 </div>
 
 <!-- ══ Admin: Pending पोस्ट review ══ -->
+<!-- ══ User Request — Code राखेर अध्याय थप्ने अनुमति ══ -->
+<div class="overlay" id="userRequestModal" onclick="if(event.target===this)closeOv('userRequestModal')">
+  <div class="modal-sheet">
+    <div class="sett-grp-lbl" style="padding-left:0">🔑 User Request</div>
+    <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:14px">कुनै विषयको अध्याय थप्न/सम्पादन गर्न, Admin ले दिएको Code यहाँ राख्नुहोस्।</div>
+    <div class="f-group">
+      <label class="f-label">विषय (किताब) छान्नुहोस्</label>
+      <select class="f-select" id="urBookSelect"></select>
+    </div>
+    <div class="f-group">
+      <label class="f-label">Code</label>
+      <input class="f-input" id="urCodeInput" type="text" inputmode="numeric" placeholder="जस्तै: 1233">
+    </div>
+    <div id="urError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;text-align:center;display:none"></div>
+    <button class="btn-p" style="width:100%" onclick="submitUserRequest()">✅ Code प्रयोग गर्नुस्</button>
+  </div>
+</div>
+
 <div class="overlay" id="pendingPostsModal" onclick="if(event.target===this)closeOv('pendingPostsModal')">
   <div class="modal-sheet">
     <div class="sett-grp-lbl" style="padding-left:0">🔔 समीक्षा बाँकी पोस्ट</div>
@@ -583,6 +605,10 @@
     <div class="f-group">
       <label class="f-label">शीर्षक *</label>
       <input class="f-input" id="noticeFormTitle" type="text" placeholder="सूचनाको शीर्षक">
+    </div>
+    <div class="f-group" id="noticeFormAuthorGroup" style="display:none">
+      <label class="f-label">तपाईंको नाम *</label>
+      <input class="f-input" id="noticeFormAuthor" type="text" placeholder="तपाईंको नाम लेख्नुस्">
     </div>
     <div class="f-group">
       <label class="f-label">विवरण *</label>
@@ -723,6 +749,10 @@
     <div class="f-group">
       <label class="f-label">अध्यायको शीर्षक *</label>
       <input class="f-input" id="chapterFormTitle" type="text" placeholder="जस्तै: पहिलो अध्याय">
+    </div>
+    <div class="f-group" id="chapterFormAuthorGroup" style="display:none">
+      <label class="f-label">तपाईंको नाम *</label>
+      <input class="f-input" id="chapterFormAuthor" type="text" placeholder="तपाईंको नाम लेख्नुस्">
     </div>
     <div class="f-group">
       <label class="f-label">अध्यायको सामग्री</label>
