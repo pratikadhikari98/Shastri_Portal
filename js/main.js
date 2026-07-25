@@ -280,7 +280,15 @@ function initBackgroundCanvas() {
   window._bgCtx = c.getContext('2d');
   resizeBg();
   window.addEventListener('resize', resizeBg);
-  animateBg();
+  // कमजोर फोन (कम RAM/CPU core) मा निरन्तर animation नराखी, एक पटक मात्र कोरेर स्थिर राख्ने —
+  // धेरै low-end Android मा यही ठूलो jank/hang को कारण हुन्थ्यो
+  const lowEnd = (navigator.deviceMemory && navigator.deviceMemory <= 3) ||
+                 (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+  if (lowEnd) {
+    drawBg(); // एक पटक मात्र
+  } else {
+    animateBg();
+  }
 }
 
 function resizeBg() {
@@ -292,7 +300,7 @@ function resizeBg() {
 
 let _bgT = 0;
 let _bgLastDraw = 0;
-const _BG_FRAME_MS = 80; // ~12fps — bistara chalne blob को लागि यति नै पर्याप्त, 60/120Hz मा हरेक frame कोर्दा अनावश्यक heavy हुन्थ्यो
+const _BG_FRAME_MS = 120; // ~8fps — bistara chalne blob को लागि पर्याप्त, कमजोर फोनमा पनि नअड्किने
 function animateBg(ts) {
   requestAnimationFrame(animateBg);
   if (document.hidden) return; // ट्याब/एप पृष्ठभूमिमा हुँदा नकोर्ने — ब्याट्री/CPU बचत
@@ -1194,6 +1202,16 @@ async function loadAndRenderChapters(bookId) {
   }
 
   renderChapterListHtml(bookId);
+
+  // Code भएको (Admin नभएको) प्रयोगकर्तालाई "+" देखिनुपर्छ कि जाँच्ने (async — भेटिए फेरि render हुन्छ)
+  if (!App.isAdmin) {
+    hasValidChapterAccess(bookId).then(ok => {
+      if (!ok) return;
+      App._unlockedBooks = App._unlockedBooks || new Set();
+      App._unlockedBooks.add(bookId);
+      if (App.currentChapterBookId === bookId) renderChapterListHtml(bookId);
+    });
+  }
 }
 
 /* अध्यायको list HTML render गर्ने — cache बाटै (कुनै नयाँ Firestore call नगरी),
@@ -1203,9 +1221,10 @@ function renderChapterListHtml(bookId) {
   if (!el) return;
   const chs = App.chaptersCache[bookId] || [];
 
-  const adminAddBar = App.isAdmin
+  const canAdd = App.isAdmin || (App._unlockedBooks && App._unlockedBooks.has(bookId));
+  const adminAddBar = canAdd
     ? `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-         <button class="tb-btn" onclick="adminInlineChapterAdd('${bookId}')">➕ नयाँ अध्याय</button>
+         <button class="tb-btn" onclick="${App.isAdmin ? `adminInlineChapterAdd('${bookId}')` : `publicChapterAddNew('${bookId}')`}">➕ नयाँ अध्याय</button>
        </div>`
     : '';
 
@@ -1215,7 +1234,7 @@ function renderChapterListHtml(bookId) {
       <div class="empty">
         <div class="empty-ico">📖</div>
         <div class="empty-t">अध्याय छैन</div>
-        <div class="empty-s">${App.isAdmin ? '"➕ नयाँ अध्याय" थिचेर अध्याय थप्नुस्' : 'चाँडै अध्याय थपिनेछ'}</div>
+        <div class="empty-s">${canAdd ? '"➕ नयाँ अध्याय" थिचेर अध्याय थप्नुस्' : 'चाँडै अध्याय थपिनेछ'}</div>
       </div>`;
     return;
   }
@@ -1224,6 +1243,8 @@ function renderChapterListHtml(bookId) {
     if (ch.status === 'pending' && !App.isAdmin) return ''; // स्वीकृत नभएको अध्याय सामान्य पाठकलाई नदेखिने
     const chBmKey = bookId+'::'+i;
     const chIsBm = App.chapterBookmarks.includes(chBmKey);
+    const isOwner = !App.isAdmin && typeof isMyOwnChapter === 'function' && isMyOwnChapter(bookId, ch.id);
+    const canEdit = App.isAdmin || isOwner;
     const pendingTag = (ch.status === 'pending') ? `<span style="font-size:0.62rem;font-weight:800;color:#fff;background:#E8A020;padding:1px 7px;border-radius:10px;margin-right:6px;flex-shrink:0">⏳ बाँकी</span>` : '';
     return `
     <div class="chapter-item" id="chi-${bookId}-${i}">
@@ -1233,8 +1254,8 @@ function renderChapterListHtml(bookId) {
         ${pendingTag}
         <button id="chbm-${bookId}-${i}" onclick="event.stopPropagation();toggleChapterBm('${bookId}',${i})" title="Bookmark" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">${chIsBm?'🔖':'🏷️'}</button>
         ${App.isAdmin && ch.status === 'pending' ? `<button onclick="event.stopPropagation();adminChapterApproveInline('${bookId}',${i})" title="स्वीकृत गर्नुस्" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">✅</button>` : ''}
-        ${App.isAdmin ? `<button onclick="event.stopPropagation();adminInlineChapterEdit('${bookId}',${i})" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">✏️</button>` : ''}
-        ${App.isAdmin ? `<button onclick="event.stopPropagation();adminInlineChapterDelete('${bookId}',${i})" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">🗑️</button>` : ''}
+        ${canEdit ? `<button onclick="event.stopPropagation();adminInlineChapterEdit('${bookId}',${i})" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">✏️</button>` : ''}
+        ${canEdit ? `<button onclick="event.stopPropagation();adminInlineChapterDelete('${bookId}',${i})" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">🗑️</button>` : ''}
         <span class="ch-chevron">›</span>
       </div>
       <div class="ch-read-body">
@@ -1619,30 +1640,24 @@ function initNotes() {
    BOOKMARKS PAGE — किताब + अध्याय दुवैका bookmark एकै ठाउँमा
    ════════════════════════════════════ */
 /* ════════════════════════════════════
-   "User Request" — Code राखेर अध्याय थप्ने/सम्पादन अनुमति (Admin ले प्रत्येक किताबको लागि छुट्टै Code दिन्छ)
+   "Code" प्रणाली — Admin ले एउटा Code बनाएर धेरै किताबमा एकैचोटि पहुँच दिन सक्छ।
+   site_content/chapter_codes doc: { list: [ { code, bookIds:[...], label }, ... ] }
+   Code मिलेपछि: pending/approval चाहिँदैन, सिधै देखिन्छ; आफूले थपेको अध्याय आफैं edit/delete गर्न मिल्छ।
    ════════════════════════════════════ */
 async function loadChapterCodes(force = false) {
   if (App._chapterCodes && !force) return App._chapterCodes;
   try {
     const snap = await db.collection('site_content').doc('chapter_codes').get();
-    App._chapterCodes = snap.exists ? (snap.data().codes || {}) : {};
+    App._chapterCodes = snap.exists ? (snap.data().list || []) : [];
   } catch (err) {
     console.warn('Code लोड हुन सकेन:', err.message);
-    App._chapterCodes = App._chapterCodes || {};
+    App._chapterCodes = App._chapterCodes || [];
   }
   return App._chapterCodes;
 }
 window.loadChapterCodes = loadChapterCodes;
 
 function openUserRequestModal() {
-  const sel = document.getElementById('urBookSelect');
-  if (sel) {
-    let opts = '';
-    (App.data?.years || []).forEach(yr => Object.entries(yr.subjects || {}).forEach(([key, books]) => {
-      (books || []).forEach(b => { opts += `<option value="${b.id}">${b.title} (${yr.title})</option>`; });
-    }));
-    sel.innerHTML = opts || '<option value="">कुनै किताब भेटिएन</option>';
-  }
   const codeInp = document.getElementById('urCodeInput');
   if (codeInp) codeInp.value = '';
   const err = document.getElementById('urError');
@@ -1652,14 +1667,14 @@ function openUserRequestModal() {
 window.openUserRequestModal = openUserRequestModal;
 
 async function submitUserRequest() {
-  const bookId = document.getElementById('urBookSelect').value;
   const code = document.getElementById('urCodeInput').value.trim();
   const err = document.getElementById('urError');
   err.style.display = 'none';
-  if (!bookId || !code) { err.textContent = 'किताब र Code दुबै राख्नुहोस्।'; err.style.display = 'block'; return; }
+  if (!code) { err.textContent = 'Code राख्नुहोस्।'; err.style.display = 'block'; return; }
 
-  const codes = await loadChapterCodes(true); // ताजा नै जाँच्ने, ताकि Admin ले भर्खरै Code बदलेको भए तुरुन्तै असर परोस्
-  if (!codes[bookId] || String(codes[bookId]) !== code) {
+  const list = await loadChapterCodes(true); // ताजा नै जाँच्ने, ताकि Admin ले भर्खरै Code बदलेको/हटाएको भए तुरुन्तै असर परोस्
+  const entry = list.find(c => String(c.code) === code);
+  if (!entry || !entry.bookIds || !entry.bookIds.length) {
     err.textContent = '❌ गलत Code। Admin सँग सही Code माग्नुहोस्।';
     err.style.display = 'block';
     return;
@@ -1668,26 +1683,48 @@ async function submitUserRequest() {
   // सही भयो — यो फोनमै सुरक्षित गरिन्छ, Admin ले Code नबदलेसम्म फेरि सोध्दैन
   try {
     const saved = JSON.parse(localStorage.getItem('sp_chapter_access') || '{}');
-    saved[bookId] = code;
+    entry.bookIds.forEach(bid => { saved[bid] = code; });
     localStorage.setItem('sp_chapter_access', JSON.stringify(saved));
   } catch (e) {}
 
+  App._unlockedBooks = App._unlockedBooks || new Set();
+  entry.bookIds.forEach(bid => App._unlockedBooks.add(bid));
+
   closeOv('userRequestModal');
-  toast('✅ पहुँच मिल्यो');
-  if (typeof publicChapterAddNew === 'function') publicChapterAddNew(bookId);
+  toast(`✅ पहुँच मिल्यो — ${entry.bookIds.length} किताबमा अब "+" देखिन्छ`);
+  if (typeof renderChapterListHtml === 'function' && App.currentChapterBookId) renderChapterListHtml(App.currentChapterBookId);
 }
 window.submitUserRequest = submitUserRequest;
 
-/* यो किताबको लागि यो फोनमा सुरक्षित Code अझै मान्य छ कि जाँच्ने (Admin ले बदलिसकेको भए false) */
+/* यो किताबको लागि यो फोनमा सुरक्षित Code अझै मान्य छ कि जाँच्ने (Admin ले बदलेको/हटाएको भए false) */
 async function hasValidChapterAccess(bookId) {
   try {
     const saved = JSON.parse(localStorage.getItem('sp_chapter_access') || '{}');
     if (!saved[bookId]) return false;
-    const codes = await loadChapterCodes();
-    return !!codes[bookId] && String(codes[bookId]) === String(saved[bookId]);
+    const list = await loadChapterCodes();
+    return list.some(c => String(c.code) === String(saved[bookId]) && (c.bookIds||[]).includes(bookId));
   } catch (e) { return false; }
 }
 window.hasValidChapterAccess = hasValidChapterAccess;
+
+/* यो अध्याय यही फोन/browser बाट (code प्रयोग गरेर) थपिएको हो कि जाँच्ने — भए मात्र मालिकलाई ✏️/🗑️ देखिन्छ */
+function isMyOwnChapter(bookId, chapterId) {
+  try {
+    const mine = JSON.parse(localStorage.getItem('sp_my_chapters') || '{}');
+    return !!(mine[bookId] && mine[bookId].includes(chapterId));
+  } catch (e) { return false; }
+}
+window.isMyOwnChapter = isMyOwnChapter;
+
+function rememberMyChapter(bookId, chapterId) {
+  try {
+    const mine = JSON.parse(localStorage.getItem('sp_my_chapters') || '{}');
+    if (!mine[bookId]) mine[bookId] = [];
+    if (!mine[bookId].includes(chapterId)) mine[bookId].push(chapterId);
+    localStorage.setItem('sp_my_chapters', JSON.stringify(mine));
+  } catch (e) {}
+}
+window.rememberMyChapter = rememberMyChapter;
 
 function findBookLocation(bookId) {
   for (const yr of (App.data?.years || [])) {

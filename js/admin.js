@@ -63,6 +63,17 @@ function renderAdminUI() {
   const bell = document.getElementById('pendingBtn');
   if (bell) bell.style.display = App.isAdmin ? 'flex' : 'none';
   if (App.isAdmin) refreshPendingBadge();
+  const codeItem = document.getElementById('codeMenuItem');
+  const codeLabel = document.getElementById('codeMenuItemLabel');
+  if (codeItem && codeLabel) {
+    if (App.isAdmin) {
+      codeLabel.textContent = 'Create a Code';
+      codeItem.setAttribute('onclick', "openCreateCodeModal();document.getElementById('dotsMenu').classList.remove('open')");
+    } else {
+      codeLabel.textContent = 'User Request';
+      codeItem.setAttribute('onclick', "openUserRequestModal();document.getElementById('dotsMenu').classList.remove('open')");
+    }
+  }
 }
 
 /* ════════════════════════════════════
@@ -493,22 +504,93 @@ function getCurrentSubjectArr() {
   return y.subjects[App.adminBook.subjectId];
 }
 
-async function adminSetBookCode(bookId, bookTitle) {
+async function openCreateCodeModal() {
   if (!App.isAdmin) return;
-  const codes = await loadChapterCodes(true);
-  const current = codes[bookId] || '';
-  const val = await showTextPrompt(`🔑 "${bookTitle}" — अध्याय थप्ने Code`, 'जस्तै: 1233', current);
-  if (val === null) return; // रद्द गरियो (वा खाली छाडियो)
+  const listEl = document.getElementById('ccBookCheckList');
+  if (listEl) {
+    let html = '';
+    (App.data?.years || []).forEach(yr => Object.entries(yr.subjects || {}).forEach(([key, books]) => {
+      (books || []).forEach(b => {
+        html += `<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;font-size:0.82rem;cursor:pointer">
+          <input type="checkbox" class="cc-book-chk" value="${b.id}" style="width:16px;height:16px">
+          <span>${b.title} <span style="color:var(--text-3);font-size:0.72rem">(${yr.title})</span></span>
+        </label>`;
+      });
+    }));
+    listEl.innerHTML = html || '<div class="empty-s">कुनै किताब भेटिएन</div>';
+  }
+  document.getElementById('ccCodeInput').value = '';
+  document.getElementById('ccError').style.display = 'none';
+  await renderExistingCodesList();
+  openOv('createCodeModal');
+}
+window.openCreateCodeModal = openCreateCodeModal;
+
+async function renderExistingCodesList() {
+  const el = document.getElementById('ccExistingList');
+  if (!el) return;
+  const list = await loadChapterCodes(true);
+  if (!list.length) { el.innerHTML = '<div class="empty-s">अझै कुनै Code बनाइएको छैन</div>'; return; }
+  const bookTitleOf = (id) => {
+    for (const yr of (App.data?.years || [])) {
+      for (const books of Object.values(yr.subjects || {})) {
+        const b = (books || []).find(x => x.id === id);
+        if (b) return b.title;
+      }
+    }
+    return id;
+  };
+  el.innerHTML = list.map(c => `
+    <div style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-sm);padding:9px 11px;margin-bottom:7px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="font-weight:800;color:var(--accent);font-size:0.9rem">🔑 ${c.code}</div>
+        <button onclick="adminRevokeCode('${c.code}')" style="background:none;border:none;color:#D6303F;font-size:0.78rem;font-weight:700;cursor:pointer">हटाउनुस्</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text-3)">${(c.bookIds||[]).map(bookTitleOf).join(', ')}</div>
+    </div>`).join('');
+}
+window.renderExistingCodesList = renderExistingCodesList;
+
+async function adminSaveNewCode() {
+  if (!App.isAdmin) return;
+  const code = document.getElementById('ccCodeInput').value.trim();
+  const bookIds = Array.from(document.querySelectorAll('.cc-book-chk:checked')).map(el => el.value);
+  const err = document.getElementById('ccError');
+  err.style.display = 'none';
+  if (!code) { err.textContent = 'Code राख्नुहोस्।'; err.style.display = 'block'; return; }
+  if (!bookIds.length) { err.textContent = 'कम्तीमा एउटा किताब छान्नुहोस्।'; err.style.display = 'block'; return; }
   try {
-    codes[bookId] = val;
-    await db.collection('site_content').doc('chapter_codes').set({ codes }, { merge: false });
-    App._chapterCodes = codes;
-    toast('✅ Code सुरक्षित भयो: ' + val);
-  } catch (err) {
-    toast('❌ सुरक्षित गर्न सकिएन: ' + err.message);
+    const list = await loadChapterCodes(true);
+    if (list.some(c => String(c.code) === code)) { err.textContent = 'यो Code पहिल्यै प्रयोगमा छ, अर्को राख्नुहोस्।'; err.style.display = 'block'; return; }
+    list.push({ code, bookIds, createdAt: Date.now() });
+    await db.collection('site_content').doc('chapter_codes').set({ list }, { merge: false });
+    App._chapterCodes = list;
+    toast('✅ Code बनियो: ' + code);
+    document.getElementById('ccCodeInput').value = '';
+    document.querySelectorAll('.cc-book-chk:checked').forEach(el => el.checked = false);
+    renderExistingCodesList();
+  } catch (e) {
+    err.textContent = 'सुरक्षित गर्न सकिएन: ' + e.message;
+    err.style.display = 'block';
   }
 }
-window.adminSetBookCode = adminSetBookCode;
+window.adminSaveNewCode = adminSaveNewCode;
+
+async function adminRevokeCode(code) {
+  if (!App.isAdmin) return;
+  if (!(await showConfirm(`साँच्चै Code "${code}" हटाउने? यो Code प्रयोग गर्नेहरूको पहुँच तुरुन्तै हराउनेछ।`))) return;
+  try {
+    const list = await loadChapterCodes(true);
+    const filtered = list.filter(c => String(c.code) !== String(code));
+    await db.collection('site_content').doc('chapter_codes').set({ list: filtered }, { merge: false });
+    App._chapterCodes = filtered;
+    toast('🗑️ Code हटाइयो');
+    renderExistingCodesList();
+  } catch (e) {
+    toast('❌ हटाउन सकिएन: ' + e.message);
+  }
+}
+window.adminRevokeCode = adminRevokeCode;
 
 function renderAdminBooksList() {
   const el = document.getElementById('adminBooksList');
@@ -525,7 +607,6 @@ function renderAdminBooksList() {
         <button onclick="adminBookMove(${i},-1)" ${i===0?'disabled style="background:none;border:none;cursor:not-allowed;opacity:0.3"':'style="background:none;border:none;cursor:pointer"'} title="माथि सार्नुस्"><img src="images/icons/arrow-up.svg" style="width:18px;height:18px;display:block"></button>
         <button onclick="adminBookMove(${i},1)" ${i===arr.length-1?'disabled style="background:none;border:none;cursor:not-allowed;opacity:0.3"':'style="background:none;border:none;cursor:pointer"'} title="तल सार्नुस्"><img src="images/icons/arrow-down.svg" style="width:18px;height:18px;display:block"></button>
         <button onclick="adminChaptersOpen('${b.id}')" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="अध्याय व्यवस्थापन">📖</button>
-        <button onclick="adminSetBookCode('${b.id}','${escapeHtml(b.title).replace(/'/g,"\\'")}')" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="अध्याय थप्ने Code">🔑</button>
         <button onclick="adminBookEdit(${i})" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="सम्पादन">✏️</button>
         <button onclick="adminBookDelete(${i})" style="background:none;border:none;font-size:1.05rem;cursor:pointer" title="मेटाउनुस्">🗑️</button>
       </div>
@@ -849,7 +930,7 @@ function publicChapterAddNew(bookId) {
     noteEl = document.createElement('div');
     noteEl.id = 'chapterFormPublicNote';
     noteEl.style.cssText = 'font-size:0.76rem;color:var(--text-3);background:var(--surface-b);padding:8px 10px;border-radius:10px;margin-bottom:12px';
-    noteEl.textContent = 'ℹ️ तपाईंले थपेको अध्याय Admin ले हेरेर स्वीकृत गरेपछि मात्र सबैले देख्न पाउँछन्।';
+    noteEl.textContent = 'ℹ️ तपाईंसँग यो किताबको Code भएकोले, थपेको अध्याय तुरुन्तै देखिन्छ। तपाईंले आफूले थपेको अध्याय पछि पनि सम्पादन/मेटाउन सक्नुहुन्छ।';
     document.getElementById('chapterFormHeading').insertAdjacentElement('afterend', noteEl);
   }
   noteEl.style.display = 'block';
@@ -877,10 +958,13 @@ function adminChapterAddNew() {
 window.adminChapterAddNew = adminChapterAddNew;
 
 function adminChapterEdit(idx) {
-  if (!App.isAdmin) return;
-  App._chapterPublicSubmit = false;
+  const bookId = App.adminChapter.bookId;
   const c = (App._adminChaptersCache || [])[idx];
   if (!c) return;
+  const isOwner = !App.isAdmin && isMyOwnChapter(bookId, c.id);
+  if (!App.isAdmin && !isOwner) return;
+  App._chapterPublicSubmit = false;
+  App._chapterEditIsOwner = isOwner;
   if (typeof renderMdToolbar === 'function') {
     const tb = document.getElementById('chapterContentToolbar');
     if (tb) tb.innerHTML = renderMdToolbar('chapterFormContent', { title: '📖 अध्याय लेख्नुस्' });
@@ -900,8 +984,9 @@ window.adminChapterEdit = adminChapterEdit;
 
 async function adminChapterSave() {
   const bookId = App.adminChapter.bookId;
-  const publicSubmit = App._chapterPublicSubmit && !App.isAdmin;
-  if (!App.isAdmin && !publicSubmit) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
+  const publicSubmit = App._chapterPublicSubmit && !App.isAdmin; // नयाँ अध्याय, Code बाट
+  const isOwnerEdit = App._chapterEditIsOwner && !App.isAdmin;   // आफूले पहिले नै थपेको अध्याय सम्पादन
+  if (!App.isAdmin && !publicSubmit && !isOwnerEdit) { toast('⚠️ अनुमति छैन'); return; }
   const title   = document.getElementById('chapterFormTitle').value.trim();
   const contentEl = document.getElementById('chapterFormContent');
   const content = contentEl.value;
@@ -914,25 +999,31 @@ async function adminChapterSave() {
     const authorName = document.getElementById('chapterFormAuthor').value.trim();
     if (!authorName) { toast('⚠️ तपाईंको नाम लेख्नुस्'); return; }
     const existing = (await loadChaptersFromFirestore(bookId)) || [];
-    const chapterObj = { title, content, font, order: existing.length, status: 'pending', authorName };
+    const chapterObj = { title, content, font, order: existing.length, status: 'approved', authorName };
     const ok = await saveChapterItem(bookId, chapterObj);
     if (ok) {
-      toast('✅ अध्याय पठाइयो — Admin ले स्वीकृत गरेपछि देखिनेछ');
+      rememberMyChapter(bookId, chapterObj.id); // आफ्नै भनेर याद राख्ने, पछि सम्पादन/मेटाउन मिलोस्
+      toast('✅ अध्याय थपियो');
       closeOv('chapterFormModal');
+      App.chaptersCache[bookId] = App.chaptersCache[bookId] || [];
+      App.chaptersCache[bookId].push(chapterObj);
+      refreshInlineChapterView(bookId);
     }
     return;
   }
 
   const chs = App._adminChaptersCache || [];
-  await ensureChaptersHaveIds(bookId, chs); // पुराना (legacy) अध्याय भए पहिले तिनलाई छुट्टाछुट्टै document मा सार्ने
+  if (App.isAdmin) await ensureChaptersHaveIds(bookId, chs); // पुराना (legacy) अध्याय भए पहिले तिनलाई छुट्टाछुट्टै document मा सार्ने
   const authorName = document.getElementById('chapterFormAuthor').value.trim();
   let chapterObj;
   if (App.adminChapter.editingIdx !== null && chs[App.adminChapter.editingIdx]) {
     chapterObj = chs[App.adminChapter.editingIdx];
+    if (!App.isAdmin && !isMyOwnChapter(bookId, chapterObj.id)) { toast('⚠️ अनुमति छैन'); return; }
     chapterObj.title = title; chapterObj.content = content; chapterObj.font = font;
-    chapterObj.status = 'approved';
+    if (App.isAdmin) chapterObj.status = 'approved';
     if (authorName) chapterObj.authorName = authorName;
   } else {
+    if (!App.isAdmin) { toast('⚠️ अनुमति छैन'); return; }
     chapterObj = { title, content, font, order: chs.length, status: 'approved' };
     chs.push(chapterObj);
   }
@@ -941,26 +1032,30 @@ async function adminChapterSave() {
     toast('✅ अध्याय सुरक्षित भयो');
     closeOv('chapterFormModal');
     App.chaptersCache[bookId] = chs; // ताजा cache सिधै राख्ने
-    renderAdminChaptersList();
+    if (App.isAdmin) renderAdminChaptersList();
     refreshInlineChapterView(bookId);
   }
 }
 window.adminChapterSave = adminChapterSave;
 
 async function adminChapterDelete(idx) {
-  if (!App.isAdmin) return;
-  if (!(await showConfirm('साँच्चै यो अध्याय मेटाउने?'))) return;
   const bookId = App.adminChapter.bookId;
   const chs = App._adminChaptersCache || [];
-  await ensureChaptersHaveIds(bookId, chs);
+  const target = chs[idx];
+  const isOwner = target && !App.isAdmin && isMyOwnChapter(bookId, target.id);
+  if (!App.isAdmin && !isOwner) return;
+  if (!(await showConfirm('साँच्चै यो अध्याय मेटाउने?'))) return;
+  if (App.isAdmin) await ensureChaptersHaveIds(bookId, chs);
   const [removed] = chs.splice(idx, 1);
   const ok = await deleteChapterItem(bookId, removed);
-  chs.forEach((c, i) => { c.order = i; });
-  await reorderChapters(bookId, chs);
+  if (App.isAdmin) {
+    chs.forEach((c, i) => { c.order = i; });
+    await reorderChapters(bookId, chs);
+  }
   if (ok) {
     toast('🗑️ अध्याय मेटियो');
     App.chaptersCache[bookId] = chs;
-    renderAdminChaptersList();
+    if (App.isAdmin) renderAdminChaptersList();
     refreshInlineChapterView(bookId);
   }
 }
@@ -993,17 +1088,23 @@ function adminInlineChapterAdd(bookId) {
 window.adminInlineChapterAdd = adminInlineChapterAdd;
 
 function adminInlineChapterEdit(bookId, idx) {
-  if (!App.isAdmin) return;
+  const chs = App.chaptersCache[bookId] || [];
+  const c = chs[idx];
+  const isOwner = c && !App.isAdmin && isMyOwnChapter(bookId, c.id);
+  if (!App.isAdmin && !isOwner) return;
   App.adminChapter.bookId = bookId;
-  App._adminChaptersCache = App.chaptersCache[bookId] || [];
+  App._adminChaptersCache = chs;
   adminChapterEdit(idx);
 }
 window.adminInlineChapterEdit = adminInlineChapterEdit;
 
 function adminInlineChapterDelete(bookId, idx) {
-  if (!App.isAdmin) return;
+  const chs = App.chaptersCache[bookId] || [];
+  const c = chs[idx];
+  const isOwner = c && !App.isAdmin && isMyOwnChapter(bookId, c.id);
+  if (!App.isAdmin && !isOwner) return;
   App.adminChapter.bookId = bookId;
-  App._adminChaptersCache = App.chaptersCache[bookId] || [];
+  App._adminChaptersCache = chs;
   adminChapterDelete(idx);
 }
 window.adminInlineChapterDelete = adminInlineChapterDelete;
