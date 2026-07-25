@@ -147,9 +147,9 @@
             <div class="dm-item-ico">🔗</div>
             <div><div class="dm-item-name" data-i18n="dm_share">Website Share गर्नुस्</div></div>
           </div>
-          <div class="dm-item" onclick="openUserRequestModal();document.getElementById('dotsMenu').classList.remove('open')">
+          <div class="dm-item" id="codeMenuItem" onclick="openUserRequestModal();document.getElementById('dotsMenu').classList.remove('open')">
             <div class="dm-item-ico">🔑</div>
-            <div><div class="dm-item-name">User Request</div></div>
+            <div><div class="dm-item-name" id="codeMenuItemLabel">User Request</div></div>
           </div>
           <div class="dm-item" onclick="go('profile');document.getElementById('dotsMenu').classList.remove('open')">
             <div class="dm-item-ico">⚙️</div>
@@ -559,15 +559,32 @@
 </div>
 
 <!-- ══ Admin: Pending पोस्ट review ══ -->
+<!-- ══ Admin: Create a Code ══ -->
+<div class="overlay" id="createCodeModal" onclick="if(event.target===this)closeOv('createCodeModal')">
+  <div class="modal-sheet">
+    <div class="sett-grp-lbl" style="padding-left:0">🔑 Create a Code</div>
+    <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:12px">जुन किताब(हरू) मा अध्याय थप्ने/सम्पादन गर्ने अनुमति दिने हो, ती छान्नुहोस्।</div>
+    <div class="f-group">
+      <label class="f-label">Code</label>
+      <input class="f-input" id="ccCodeInput" type="text" inputmode="numeric" placeholder="जस्तै: 1233">
+    </div>
+    <div class="f-group">
+      <label class="f-label">किताब(हरू) छान्नुहोस्</label>
+      <div id="ccBookCheckList" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-sm);padding:8px"></div>
+    </div>
+    <div id="ccError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;text-align:center;display:none"></div>
+    <button class="btn-p" style="width:100%;margin-bottom:16px" onclick="adminSaveNewCode()">✅ OK — Code बनाउनुस्</button>
+
+    <div class="sett-grp-lbl" style="padding-left:0">भइरहेका Code हरू</div>
+    <div id="ccExistingList" style="margin-top:6px"></div>
+  </div>
+</div>
+
 <!-- ══ User Request — Code राखेर अध्याय थप्ने अनुमति ══ -->
 <div class="overlay" id="userRequestModal" onclick="if(event.target===this)closeOv('userRequestModal')">
   <div class="modal-sheet">
     <div class="sett-grp-lbl" style="padding-left:0">🔑 User Request</div>
-    <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:14px">कुनै विषयको अध्याय थप्न/सम्पादन गर्न, Admin ले दिएको Code यहाँ राख्नुहोस्।</div>
-    <div class="f-group">
-      <label class="f-label">विषय (किताब) छान्नुहोस्</label>
-      <select class="f-select" id="urBookSelect"></select>
-    </div>
+    <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:14px">कुनै विषयको अध्याय थप्न/सम्पादन गर्न, Admin ले दिएको Code यहाँ राख्नुहोस्। सही भए, उक्त विषय(हरू) मा "➕ नयाँ अध्याय" देखिन थाल्छ।</div>
     <div class="f-group">
       <label class="f-label">Code</label>
       <input class="f-input" id="urCodeInput" type="text" inputmode="numeric" placeholder="जस्तै: 1233">
