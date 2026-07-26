@@ -1253,6 +1253,7 @@ function renderChapterListHtml(bookId) {
         <div class="ch-title-txt">${ch.title||('अध्याय '+(i+1))}</div>
         ${pendingTag}
         <button id="chbm-${bookId}-${i}" onclick="event.stopPropagation();toggleChapterBm('${bookId}',${i})" title="Bookmark" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">${chIsBm?'🔖':'🏷️'}</button>
+        <button onclick="event.stopPropagation();openPrintOptions('${bookId}',${i})" title="Print" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">🖨️</button>
         ${App.isAdmin && ch.status === 'pending' ? `<button onclick="event.stopPropagation();adminChapterApproveInline('${bookId}',${i})" title="स्वीकृत गर्नुस्" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">✅</button>` : ''}
         ${canEdit ? `<button onclick="event.stopPropagation();adminInlineChapterEdit('${bookId}',${i})" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">✏️</button>` : ''}
         ${canEdit ? `<button onclick="event.stopPropagation();adminInlineChapterDelete('${bookId}',${i})" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0">🗑️</button>` : ''}
@@ -1725,6 +1726,54 @@ function rememberMyChapter(bookId, chapterId) {
   } catch (e) {}
 }
 window.rememberMyChapter = rememberMyChapter;
+
+/* ════════════════════════════════════
+   PRINT — अध्याय (screen मा जस्तै style मा, orientation/column छानेर)
+   ════════════════════════════════════ */
+App._printTarget = null;
+function openPrintOptions(bookId, idx) {
+  App._printTarget = { bookId, idx };
+  openOv('printOptionsModal');
+}
+window.openPrintOptions = openPrintOptions;
+
+function doPrintChapter() {
+  if (!App._printTarget) return;
+  const { bookId, idx } = App._printTarget;
+  const ch = (App.chaptersCache[bookId] || [])[idx];
+  if (!ch) { closeOv('printOptionsModal'); return; }
+
+  const orientation = document.querySelector('input[name="printOrient"]:checked')?.value || 'portrait';
+  const cols = document.getElementById('printColsSelect').value || '1';
+
+  // सुरुमा भएको @page rule (भए) हटाएर, यही print को लागि नयाँ राख्ने
+  let styleTag = document.getElementById('printPageStyle');
+  if (!styleTag) {
+    styleTag = document.createElement('style');
+    styleTag.id = 'printPageStyle';
+    document.head.appendChild(styleTag);
+  }
+  styleTag.textContent = `
+    @page { size: ${orientation}; margin: 14mm; }
+    @media print {
+      #printArea .print-body {
+        column-count: ${cols};
+        column-gap: 24px;
+        ${cols > 1 ? 'column-rule: 1px solid var(--divider);' : ''}
+      }
+    }
+  `;
+
+  const area = document.getElementById('printArea');
+  area.innerHTML = `
+    <div class="print-title">${ch.title || ('अध्याय ' + (idx + 1))}</div>
+    <div class="print-body ch-read-content" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content || '')}</div>
+  `;
+
+  closeOv('printOptionsModal');
+  setTimeout(() => window.print(), 200); // sheet बन्द हुने animation सकिएपछि print dialog खोल्ने
+}
+window.doPrintChapter = doPrintChapter;
 
 function findBookLocation(bookId) {
   for (const yr of (App.data?.years || [])) {
