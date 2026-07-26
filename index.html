@@ -559,6 +559,37 @@
 </div>
 
 <!-- ══ Admin: Pending पोस्ट review ══ -->
+<!-- Print हुने बेला मात्र देखिने, बाँकी बेला पूर्ण रूपमा लुकेको -->
+<div id="printArea" style="display:none"></div>
+
+<!-- ══ Print options ══ -->
+<div class="overlay" id="printOptionsModal" onclick="if(event.target===this)closeOv('printOptionsModal')">
+  <div class="modal-sheet">
+    <div class="sett-grp-lbl" style="padding-left:0">🖨️ Print विकल्प</div>
+    <div class="f-group">
+      <label class="f-label">दिशा (Orientation)</label>
+      <div style="display:flex;gap:10px">
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer">
+          <input type="radio" name="printOrient" value="portrait" checked> 📄 Portrait
+        </label>
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer">
+          <input type="radio" name="printOrient" value="landscape"> 📃 Landscape
+        </label>
+      </div>
+    </div>
+    <div class="f-group">
+      <label class="f-label">कलम (Columns)</label>
+      <select class="f-select" id="printColsSelect">
+        <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+        <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+    <button class="btn-p" style="width:100%" onclick="doPrintChapter()">🖨️ Print गर्नुहोस्</button>
+  </div>
+</div>
+
 <!-- ══ Admin: Create a Code ══ -->
 <div class="overlay" id="createCodeModal" onclick="if(event.target===this)closeOv('createCodeModal')">
   <div class="modal-sheet">
