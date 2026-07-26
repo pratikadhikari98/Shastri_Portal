@@ -1688,3 +1688,22 @@ input[type=range].dm-slider {
   border-radius: var(--r-sm);
 }
 .contrib-role { font-size: 0.72rem; font-weight: 500; color: var(--text-3); margin-top: 2px; }
+
+/* ═══════════════════════════════════
+   PRINT — अध्याय छाप्दा screen मा जस्तै देखिने, तर orientation/column अनुसार मिलाएर
+   ═══════════════════════════════════ */
+@media screen {
+  #printArea { display: none !important; }
+}
+@media print {
+  body > *:not(#printArea) { display: none !important; }
+  #printArea {
+    display: block !important;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact; /* highlight/रंग screen मा जस्तै छापिने */
+  }
+  #printArea .print-title {
+    font-family: var(--font-s); font-size: 1.5rem; font-weight: 800;
+    margin-bottom: 14px; color: var(--accent);
+    column-span: all; /* धेरै column भए पनि शीर्षक पूरै चौडाइमा */
+  }
+}
