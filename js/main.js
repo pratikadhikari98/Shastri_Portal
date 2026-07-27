@@ -1737,60 +1737,6 @@ function openPrintOptions(bookId, idx) {
 }
 window.openPrintOptions = openPrintOptions;
 
-// content लाई वास्तविक A4 पेजको क्षमता अनुसार साँच्चै paginate गर्ने
-// (अक्षर-गन्ती अनुमानले होइन, वास्तवमा browser मा render गरेर हेर्दा जति एउटा पेजमा अट्छ त्यति मात्र)
-function _paginateContentReal(bodyHtml, contentWmm, contentHmm, fontFamily) {
-  const mm2px = 96 / 25.4;
-  const wPx = contentWmm * mm2px;
-  const hPx = contentHmm * mm2px;
-
-  const measure = document.createElement('div');
-  measure.className = 'ch-read-content';
-  measure.style.cssText = `position:absolute; left:-9999px; top:0; visibility:hidden; width:${wPx}px; ${fontFamily}`;
-  document.body.appendChild(measure);
-
-  const temp = document.createElement('div');
-  temp.innerHTML = bodyHtml;
-  const nodes = Array.from(temp.childNodes).filter(nd => nd.nodeType === 1 || (nd.textContent || '').trim());
-
-  const pages = [];
-  let currentNodes = [];
-
-  for (const nd of nodes) {
-    measure.appendChild(nd);
-    if (measure.scrollHeight > hPx && currentNodes.length > 0) {
-      measure.removeChild(nd);
-      pages.push(currentNodes);
-      currentNodes = [];
-      measure.innerHTML = '';
-      measure.appendChild(nd);
-      currentNodes.push(nd);
-    } else {
-      currentNodes.push(nd);
-    }
-  }
-  if (currentNodes.length) pages.push(currentNodes);
-  if (!pages.length) pages.push([]);
-
-  document.body.removeChild(measure);
-  return pages.map(nodeArr => nodeArr.map(n => n.outerHTML || n.textContent || '').join(''));
-}
-
-// N वटा tile लाई sheet मा राख्दा कुन rows x cols ले content (contentW x contentH) लाई
-// सबैभन्दा कम खाली ठाउँ छोडेर (अर्थात् सबैभन्दा ठूलो scale दिएर) fit गर्छ भनेर छान्ने
-function _bestGridFor(n, contentW, contentH, sheetContentW, sheetContentH, gapMm) {
-  let best = null;
-  for (let cols = 1; cols <= n; cols++) {
-    const rows = Math.ceil(n / cols);
-    const tileW = (sheetContentW - gapMm * (cols - 1)) / cols;
-    const tileH = (sheetContentH - gapMm * (rows - 1)) / rows;
-    if (tileW <= 0 || tileH <= 0) continue;
-    const scale = Math.min(tileW / contentW, tileH / contentH);
-    if (!best || scale > best.scale) best = { rows, cols, scale };
-  }
-  return best || { rows: Math.ceil(Math.sqrt(n)), cols: Math.ceil(Math.sqrt(n)), scale: 0.3 };
-}
-
 function doPrintChapter() {
   if (!App._printTarget) return;
   const { bookId, idx } = App._printTarget;
@@ -1799,7 +1745,6 @@ function doPrintChapter() {
 
   const orientation = document.querySelector('input[name="printOrient"]:checked')?.value || 'portrait';
   const cols = parseInt(document.getElementById('printColsSelect').value || '1', 10);
-  const pagesPerSheet = parseInt(document.getElementById('printPagesPerSheetSelect')?.value || '1', 10);
   const fontFamily = ch.font && typeof fontCssFor === 'function' ? `font-family:${fontCssFor(ch.font)}` : '';
   const titleHtml = `<div class="print-title">${ch.title || ('अध्याय ' + (idx + 1))}</div>`;
   const bodyHtml = renderMd(ch.content || '');
@@ -1814,97 +1759,18 @@ function doPrintChapter() {
   const area = document.getElementById('printArea');
   const pageW = orientation === 'landscape' ? 297 : 210;
   const pageH = orientation === 'landscape' ? 210 : 297;
-  const NORMAL_MARGIN = 14;
 
-  if (pagesPerSheet <= 1) {
-    // सामान्य — एउटा physical page = एउटा logical page
-    styleTag.textContent = `
-      @page { size: ${pageW}mm ${pageH}mm; margin: ${NORMAL_MARGIN}mm; }
-      @media print {
-        #printArea .print-body {
-          column-count: ${cols};
-          column-gap: 24px;
-          ${cols > 1 ? 'column-rule: 1px solid var(--divider);' : ''}
-        }
+  styleTag.textContent = `
+    @page { size: ${pageW}mm ${pageH}mm; margin: 14mm; }
+    @media print {
+      #printArea .print-body {
+        column-count: ${cols};
+        column-gap: 24px;
+        ${cols > 1 ? 'column-rule: 1px solid var(--divider);' : ''}
       }
-    `;
-    area.innerHTML = `${titleHtml}<div class="print-body ch-read-content" style="${fontFamily}">${bodyHtml}</div>`;
-
-  } else {
-    // पेज प्रति सिट (N-up) — वास्तविक A4 पेज साइज अनुसार content लाई पहिले साँच्चै paginate गर्ने,
-    // त्यसपछि content को आकारसँग सबैभन्दा राम्रो fit हुने rows x cols छानेर, ती वास्तविक पेजहरूलाई
-    // scale down गरी sheet मा tile गर्ने (ठ्याक्कै browser को native "pages per sheet" ले गर्ने तरिकाले)
-    const SHEET_MARGIN = 6, GAP_MM = 1.5;
-    const fullContentW = pageW - NORMAL_MARGIN * 2;
-    const fullContentH = pageH - NORMAL_MARGIN * 2;
-
-    const realPages = _paginateContentReal(bodyHtml, fullContentW, fullContentH, fontFamily);
-    const totalSheets = Math.max(1, Math.ceil(realPages.length / pagesPerSheet));
-
-    const sheetContentW = pageW - SHEET_MARGIN * 2;
-    const sheetContentH = pageH - SHEET_MARGIN * 2;
-    const { rows, cols: gridCols, scale } = _bestGridFor(pagesPerSheet, fullContentW, fullContentH, sheetContentW, sheetContentH, GAP_MM);
-
-    let sheetsHtml = '';
-    for (let s = 0; s < totalSheets; s++) {
-      const slice = realPages.slice(s * pagesPerSheet, (s + 1) * pagesPerSheet);
-      const tileW = (sheetContentW - GAP_MM * (gridCols - 1)) / gridCols;
-      const tileH = (sheetContentH - GAP_MM * (rows - 1)) / rows;
-      const renderedW = fullContentW * scale;
-      const renderedH = fullContentH * scale;
-      const offsetX = Math.max(0, (tileW - renderedW) / 2);
-      const offsetY = Math.max(0, (tileH - renderedH) / 2);
-
-      const tilesHtml = slice.map(pageHtml => `
-        <div class="nup-page" style="width:${tileW}mm;height:${tileH}mm">
-          <div class="nup-page-inner ch-read-content" style="${fontFamily};left:${offsetX}mm;top:${offsetY}mm;width:${fullContentW}mm;height:${fullContentH}mm;transform:scale(${scale});column-count:${cols};column-gap:12px;${cols > 1 ? 'column-rule:1px solid var(--divider);' : ''}">${pageHtml}</div>
-        </div>`).join('');
-
-      sheetsHtml += `<div class="print-sheet">${s === 0 ? titleHtml : ''}
-        <div class="nup-grid" style="grid-template-columns:repeat(${gridCols},1fr);grid-template-rows:repeat(${rows},1fr)">${tilesHtml}</div>
-      </div>`;
     }
-
-    styleTag.textContent = `
-      @page { size: ${pageW}mm ${pageH}mm; margin: 0; }
-      @media print {
-        html, body { margin: 0; padding: 0; }
-        #printArea .print-sheet {
-          width: ${pageW}mm;
-          height: ${pageH}mm;
-          box-sizing: border-box;
-          padding: ${SHEET_MARGIN}mm;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          break-after: page;
-        }
-        #printArea .print-sheet:last-child { break-after: auto; }
-        #printArea .print-sheet .print-title {
-          flex: 0 0 auto;
-          font-size: 1rem;
-          margin-bottom: 3mm;
-        }
-        #printArea .nup-grid {
-          flex: 1 1 auto;
-          min-height: 0;
-          display: grid;
-          gap: ${GAP_MM}mm;
-        }
-        #printArea .nup-page {
-          overflow: hidden;
-          position: relative;
-          box-sizing: border-box;
-        }
-        #printArea .nup-page-inner {
-          position: absolute;
-          transform-origin: top left;
-          overflow: hidden;
-        }
-      }
-    `;
-    area.innerHTML = sheetsHtml;
-  }
+  `;
+  area.innerHTML = `${titleHtml}<div class="print-body ch-read-content" style="${fontFamily}">${bodyHtml}</div>`;
 
   closeOv('printOptionsModal');
   setTimeout(() => window.print(), 200); // sheet बन्द हुने animation सकिएपछि print dialog खोल्ने
