@@ -1734,8 +1734,44 @@ App._printTarget = null;
 function openPrintOptions(bookId, idx) {
   App._printTarget = { bookId, idx };
   openOv('printOptionsModal');
+  onPrintPageModeChange();
 }
 window.openPrintOptions = openPrintOptions;
+
+// "एउटै लामो पेज" छान्दा पेज-प्रति-सिट लागू नहुने भएकोले लुकाउने/देखाउने
+function onPrintPageModeChange() {
+  const pageMode = document.querySelector('input[name="printPageMode"]:checked')?.value || 'normal';
+  const grp = document.getElementById('pagesPerSheetGroup');
+  if (grp) grp.style.display = (pageMode === 'single') ? 'none' : '';
+}
+window.onPrintPageModeChange = onPrintPageModeChange;
+
+// content (top-level nodes) लाई N वटा भागमा पढ्ने क्रम मिलाएर (सन्तुलित हुने गरी) बाँड्ने
+function _splitNodesIntoBins(nodes, n) {
+  const total = nodes.reduce((s, nd) => s + (nd.textContent || '').length, 0) || 1;
+  const target = total / n;
+  const bins = [[]];
+  let acc = 0;
+  for (const nd of nodes) {
+    if (acc >= target && bins.length < n) { bins.push([]); acc = 0; }
+    bins[bins.length - 1].push(nd);
+    acc += (nd.textContent || '').length;
+  }
+  while (bins.length < n) bins.push([]);
+  return bins;
+}
+
+// N को लागि उपयुक्त rows x cols grid (orientation अनुसार) रोज्ने
+function _gridDimsFor(n, orientation) {
+  let cols = Math.ceil(Math.sqrt(n));
+  let rows = Math.ceil(n / cols);
+  if (orientation === 'landscape') {
+    if (rows > cols) { const t = rows; rows = cols; cols = t; }
+  } else {
+    if (cols > rows) { const t = rows; rows = cols; cols = t; }
+  }
+  return { rows, cols };
+}
 
 function doPrintChapter() {
   if (!App._printTarget) return;
@@ -1744,37 +1780,96 @@ function doPrintChapter() {
   if (!ch) { closeOv('printOptionsModal'); return; }
 
   const orientation = document.querySelector('input[name="printOrient"]:checked')?.value || 'portrait';
-  const cols = document.getElementById('printColsSelect').value || '1';
-  const pageMode = document.querySelector('input[name="printPageMode"]:checked')?.value || 'multi';
+  const cols = parseInt(document.getElementById('printColsSelect').value || '1', 10);
+  const pageMode = document.querySelector('input[name="printPageMode"]:checked')?.value || 'normal';
+  const pagesPerSheet = parseInt(document.getElementById('printPagesPerSheetSelect')?.value || '1', 10);
+  const fontFamily = ch.font && typeof fontCssFor === 'function' ? `font-family:${fontCssFor(ch.font)}` : '';
+  const titleHtml = `<div class="print-title">${ch.title || ('अध्याय ' + (idx + 1))}</div>`;
+  const bodyHtml = renderMd(ch.content || '');
 
-  // सुरुमा भएको @page rule (भए) हटाएर, यही print को लागि नयाँ राख्ने
   let styleTag = document.getElementById('printPageStyle');
   if (!styleTag) {
     styleTag = document.createElement('style');
     styleTag.id = 'printPageStyle';
     document.head.appendChild(styleTag);
   }
-  // "एउटै लामो पेज" मा height धेरै ठूलो राखिन्छ — ताकि content कतै नकाटियोस्, page-break नै नआओस्
-  const pageSize = pageMode === 'single'
-    ? (orientation === 'landscape' ? '297mm 3000mm' : '210mm 3000mm')
-    : orientation;
-  styleTag.textContent = `
-    @page { size: ${pageSize}; margin: 14mm; }
-    @media print {
-      #printArea .print-body {
-        column-count: ${cols};
-        column-gap: 24px;
-        ${cols > 1 ? 'column-rule: 1px solid var(--divider);' : ''}
-        ${pageMode === 'single' ? 'column-fill: auto;' : ''}
-      }
-    }
-  `;
 
   const area = document.getElementById('printArea');
-  area.innerHTML = `
-    <div class="print-title">${ch.title || ('अध्याय ' + (idx + 1))}</div>
-    <div class="print-body ch-read-content" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content || '')}</div>
-  `;
+
+  if (pageMode === 'single') {
+    // "एउटै लामो पेज" — height धेरै ठूलो राखी page-break नै नआउने
+    const pageSize = orientation === 'landscape' ? '297mm 3000mm' : '210mm 3000mm';
+    styleTag.textContent = `
+      @page { size: ${pageSize}; margin: 14mm; }
+      @media print {
+        #printArea .print-body {
+          column-count: ${cols};
+          column-gap: 24px;
+          ${cols > 1 ? 'column-rule: 1px solid var(--divider);' : ''}
+          column-fill: auto;
+        }
+      }
+    `;
+    area.innerHTML = `${titleHtml}<div class="print-body ch-read-content" style="${fontFamily}">${bodyHtml}</div>`;
+
+  } else if (pagesPerSheet <= 1) {
+    // सामान्य — एउटा physical page = एउटा logical page (हालको जस्तै)
+    styleTag.textContent = `
+      @page { size: ${orientation}; margin: 14mm; }
+      @media print {
+        #printArea .print-body {
+          column-count: ${cols};
+          column-gap: 24px;
+          ${cols > 1 ? 'column-rule: 1px solid var(--divider);' : ''}
+        }
+      }
+    `;
+    area.innerHTML = `${titleHtml}<div class="print-body ch-read-content" style="${fontFamily}">${bodyHtml}</div>`;
+
+  } else {
+    // पेज प्रति सिट (N-up) — content लाई N वटा साना, बोर्डर भएका mini-page मा grid मा राख्ने
+    const temp = document.createElement('div');
+    temp.innerHTML = bodyHtml;
+    const nodes = Array.from(temp.childNodes).filter(nd => nd.nodeType === 1 || (nd.textContent || '').trim());
+    const bins = _splitNodesIntoBins(nodes, pagesPerSheet);
+    const { rows, cols: gridCols } = _gridDimsFor(pagesPerSheet, orientation);
+
+    const miniPagesHtml = bins.map((bin, i) => {
+      const wrap = document.createElement('div');
+      bin.forEach(nd => wrap.appendChild(nd.cloneNode(true)));
+      return `<div class="nup-page">
+        <div class="nup-page-body ch-read-content" style="${fontFamily};column-count:${cols};column-gap:12px;${cols > 1 ? 'column-rule:1px solid var(--divider);' : ''}">${wrap.innerHTML}</div>
+        <div class="nup-page-num">${i + 1}</div>
+      </div>`;
+    }).join('');
+
+    styleTag.textContent = `
+      @page { size: ${orientation}; margin: 8mm; }
+      @media print {
+        #printArea .nup-grid {
+          display: grid;
+          grid-template-columns: repeat(${gridCols}, 1fr);
+          grid-template-rows: repeat(${rows}, 1fr);
+          gap: 4mm;
+          width: 100%;
+          height: calc(100vh - 8mm);
+        }
+        #printArea .nup-page {
+          border: 1px solid #000;
+          padding: 4mm;
+          overflow: hidden;
+          position: relative;
+          box-sizing: border-box;
+          font-size: ${Math.max(0.55, 1 / Math.sqrt(pagesPerSheet)).toFixed(2)}rem;
+        }
+        #printArea .nup-page-num {
+          position: absolute; bottom: 2mm; right: 3mm;
+          font-size: 0.6rem; color: #666;
+        }
+      }
+    `;
+    area.innerHTML = `${titleHtml}<div class="nup-grid">${miniPagesHtml}</div>`;
+  }
 
   closeOv('printOptionsModal');
   setTimeout(() => window.print(), 200); // sheet बन्द हुने animation सकिएपछि print dialog खोल्ने
