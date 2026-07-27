@@ -1734,17 +1734,8 @@ App._printTarget = null;
 function openPrintOptions(bookId, idx) {
   App._printTarget = { bookId, idx };
   openOv('printOptionsModal');
-  onPrintPageModeChange();
 }
 window.openPrintOptions = openPrintOptions;
-
-// "एउटै लामो पेज" छान्दा पेज-प्रति-सिट लागू नहुने भएकोले लुकाउने/देखाउने
-function onPrintPageModeChange() {
-  const pageMode = document.querySelector('input[name="printPageMode"]:checked')?.value || 'normal';
-  const grp = document.getElementById('pagesPerSheetGroup');
-  if (grp) grp.style.display = (pageMode === 'single') ? 'none' : '';
-}
-window.onPrintPageModeChange = onPrintPageModeChange;
 
 // content (top-level nodes) लाई N वटा भागमा पढ्ने क्रम मिलाएर (सन्तुलित हुने गरी) बाँड्ने
 function _splitNodesIntoBins(nodes, n) {
@@ -1781,7 +1772,6 @@ function doPrintChapter() {
 
   const orientation = document.querySelector('input[name="printOrient"]:checked')?.value || 'portrait';
   const cols = parseInt(document.getElementById('printColsSelect').value || '1', 10);
-  const pageMode = document.querySelector('input[name="printPageMode"]:checked')?.value || 'normal';
   const pagesPerSheet = parseInt(document.getElementById('printPagesPerSheetSelect')?.value || '1', 10);
   const fontFamily = ch.font && typeof fontCssFor === 'function' ? `font-family:${fontCssFor(ch.font)}` : '';
   const titleHtml = `<div class="print-title">${ch.title || ('अध्याय ' + (idx + 1))}</div>`;
@@ -1795,27 +1785,17 @@ function doPrintChapter() {
   }
 
   const area = document.getElementById('printArea');
+  const MARGIN_MM = pagesPerSheet > 1 ? 8 : 14;
+  // A4 भित्रको वास्तविक content area (mm) — @page मार्जिन घटाएर, किनकि print media मा vh/vw भरपर्दो हुँदैन
+  const pageW = orientation === 'landscape' ? 297 : 210;
+  const pageH = orientation === 'landscape' ? 210 : 297;
+  const contentW = pageW - MARGIN_MM * 2;
+  const contentH = pageH - MARGIN_MM * 2;
 
-  if (pageMode === 'single') {
-    // "एउटै लामो पेज" — height धेरै ठूलो राखी page-break नै नआउने
-    const pageSize = orientation === 'landscape' ? '297mm 3000mm' : '210mm 3000mm';
+  if (pagesPerSheet <= 1) {
+    // सामान्य — एउटा physical page = एउटा logical page
     styleTag.textContent = `
-      @page { size: ${pageSize}; margin: 14mm; }
-      @media print {
-        #printArea .print-body {
-          column-count: ${cols};
-          column-gap: 24px;
-          ${cols > 1 ? 'column-rule: 1px solid var(--divider);' : ''}
-          column-fill: auto;
-        }
-      }
-    `;
-    area.innerHTML = `${titleHtml}<div class="print-body ch-read-content" style="${fontFamily}">${bodyHtml}</div>`;
-
-  } else if (pagesPerSheet <= 1) {
-    // सामान्य — एउटा physical page = एउटा logical page (हालको जस्तै)
-    styleTag.textContent = `
-      @page { size: ${orientation}; margin: 14mm; }
+      @page { size: ${orientation}; margin: ${MARGIN_MM}mm; }
       @media print {
         #printArea .print-body {
           column-count: ${cols};
@@ -1844,19 +1824,21 @@ function doPrintChapter() {
     }).join('');
 
     styleTag.textContent = `
-      @page { size: ${orientation}; margin: 8mm; }
+      @page { size: ${orientation}; margin: ${MARGIN_MM}mm; }
       @media print {
+        html, body { width: ${contentW}mm; height: ${contentH}mm; }
+        #printArea { width: ${contentW}mm; }
         #printArea .nup-grid {
           display: grid;
           grid-template-columns: repeat(${gridCols}, 1fr);
           grid-template-rows: repeat(${rows}, 1fr);
           gap: 4mm;
-          width: 100%;
-          height: calc(100vh - 8mm);
+          width: ${contentW}mm;
+          height: ${contentH - 12}mm;
         }
         #printArea .nup-page {
           border: 1px solid #000;
-          padding: 4mm;
+          padding: 3mm;
           overflow: hidden;
           position: relative;
           box-sizing: border-box;
