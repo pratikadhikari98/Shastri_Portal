@@ -1848,10 +1848,16 @@ function doPrintChapter() {
     let sheetsHtml = '';
     for (let s = 0; s < totalSheets; s++) {
       const slice = realPages.slice(s * pagesPerSheet, (s + 1) * pagesPerSheet);
+      const tileW = (sheetContentW - GAP_MM * (gridCols - 1)) / gridCols;
+      const tileH = (sheetContentH - GAP_MM * (rows - 1)) / rows;
+      const renderedW = fullContentW * scale;
+      const renderedH = fullContentH * scale;
+      const offsetX = Math.max(0, (tileW - renderedW) / 2);
+      const offsetY = Math.max(0, (tileH - renderedH) / 2);
 
       const tilesHtml = slice.map(pageHtml => `
-        <div class="nup-page">
-          <div class="nup-page-inner ch-read-content" style="${fontFamily};width:${fullContentW}mm;height:${fullContentH}mm;zoom:${scale};column-count:${cols};column-gap:12px;${cols > 1 ? 'column-rule:1px solid var(--divider);' : ''}">${pageHtml}</div>
+        <div class="nup-page" style="width:${tileW}mm;height:${tileH}mm">
+          <div class="nup-page-inner ch-read-content" style="${fontFamily};left:${offsetX}mm;top:${offsetY}mm;width:${fullContentW}mm;height:${fullContentH}mm;transform:scale(${scale});column-count:${cols};column-gap:12px;${cols > 1 ? 'column-rule:1px solid var(--divider);' : ''}">${pageHtml}</div>
         </div>`).join('');
 
       sheetsHtml += `<div class="print-sheet">${s === 0 ? titleHtml : ''}
@@ -1889,15 +1895,11 @@ function doPrintChapter() {
           overflow: hidden;
           position: relative;
           box-sizing: border-box;
-          min-height: 0;
-          min-width: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
         }
         #printArea .nup-page-inner {
+          position: absolute;
+          transform-origin: top left;
           overflow: hidden;
-          flex-shrink: 0;
         }
       }
     `;
