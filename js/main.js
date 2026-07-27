@@ -1745,6 +1745,7 @@ function doPrintChapter() {
 
   const orientation = document.querySelector('input[name="printOrient"]:checked')?.value || 'portrait';
   const cols = document.getElementById('printColsSelect').value || '1';
+  const pageMode = document.querySelector('input[name="printPageMode"]:checked')?.value || 'multi';
 
   // सुरुमा भएको @page rule (भए) हटाएर, यही print को लागि नयाँ राख्ने
   let styleTag = document.getElementById('printPageStyle');
@@ -1753,13 +1754,18 @@ function doPrintChapter() {
     styleTag.id = 'printPageStyle';
     document.head.appendChild(styleTag);
   }
+  // "एउटै लामो पेज" मा height धेरै ठूलो राखिन्छ — ताकि content कतै नकाटियोस्, page-break नै नआओस्
+  const pageSize = pageMode === 'single'
+    ? (orientation === 'landscape' ? '297mm 3000mm' : '210mm 3000mm')
+    : orientation;
   styleTag.textContent = `
-    @page { size: ${orientation}; margin: 14mm; }
+    @page { size: ${pageSize}; margin: 14mm; }
     @media print {
       #printArea .print-body {
         column-count: ${cols};
         column-gap: 24px;
         ${cols > 1 ? 'column-rule: 1px solid var(--divider);' : ''}
+        ${pageMode === 'single' ? 'column-fill: auto;' : ''}
       }
     }
   `;
