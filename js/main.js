@@ -1737,19 +1737,43 @@ function openPrintOptions(bookId, idx) {
 }
 window.openPrintOptions = openPrintOptions;
 
-// content (top-level nodes) लाई N वटा भागमा पढ्ने क्रम मिलाएर (सन्तुलित हुने गरी) बाँड्ने
-function _splitNodesIntoBins(nodes, n) {
-  const total = nodes.reduce((s, nd) => s + (nd.textContent || '').length, 0) || 1;
-  const target = total / n;
-  const bins = [[]];
-  let acc = 0;
+// content लाई वास्तविक A4 पेजको क्षमता अनुसार साँच्चै paginate गर्ने
+// (अक्षर-गन्ती अनुमानले होइन, वास्तवमा browser मा render गरेर हेर्दा जति एउटा पेजमा अट्छ त्यति मात्र)
+function _paginateContentReal(bodyHtml, contentWmm, contentHmm, fontFamily) {
+  const mm2px = 96 / 25.4;
+  const wPx = contentWmm * mm2px;
+  const hPx = contentHmm * mm2px;
+
+  const measure = document.createElement('div');
+  measure.className = 'ch-read-content';
+  measure.style.cssText = `position:absolute; left:-9999px; top:0; visibility:hidden; width:${wPx}px; ${fontFamily}`;
+  document.body.appendChild(measure);
+
+  const temp = document.createElement('div');
+  temp.innerHTML = bodyHtml;
+  const nodes = Array.from(temp.childNodes).filter(nd => nd.nodeType === 1 || (nd.textContent || '').trim());
+
+  const pages = [];
+  let currentNodes = [];
+
   for (const nd of nodes) {
-    if (acc >= target && bins.length < n) { bins.push([]); acc = 0; }
-    bins[bins.length - 1].push(nd);
-    acc += (nd.textContent || '').length;
+    measure.appendChild(nd);
+    if (measure.scrollHeight > hPx && currentNodes.length > 0) {
+      measure.removeChild(nd);
+      pages.push(currentNodes);
+      currentNodes = [];
+      measure.innerHTML = '';
+      measure.appendChild(nd);
+      currentNodes.push(nd);
+    } else {
+      currentNodes.push(nd);
+    }
   }
-  while (bins.length < n) bins.push([]);
-  return bins;
+  if (currentNodes.length) pages.push(currentNodes);
+  if (!pages.length) pages.push([]);
+
+  document.body.removeChild(measure);
+  return pages.map(nodeArr => nodeArr.map(n => n.outerHTML || n.textContent || '').join(''));
 }
 
 // N को लागि उपयुक्त rows x cols grid — साधारण N-up परम्परा अनुसार (जस्तै pdf24/Chrome ले 6-up मा 3 column x 2 row बनाउँछ, 2x3 होइन)
@@ -1780,14 +1804,14 @@ function doPrintChapter() {
   }
 
   const area = document.getElementById('printArea');
-  const MARGIN_MM = pagesPerSheet > 1 ? 8 : 14;
   const pageW = orientation === 'landscape' ? 297 : 210;
   const pageH = orientation === 'landscape' ? 210 : 297;
+  const NORMAL_MARGIN = 14;
 
   if (pagesPerSheet <= 1) {
     // सामान्य — एउटा physical page = एउटा logical page
     styleTag.textContent = `
-      @page { size: ${pageW}mm ${pageH}mm; margin: ${MARGIN_MM}mm; }
+      @page { size: ${pageW}mm ${pageH}mm; margin: ${NORMAL_MARGIN}mm; }
       @media print {
         #printArea .print-body {
           column-count: ${cols};
@@ -1799,24 +1823,38 @@ function doPrintChapter() {
     area.innerHTML = `${titleHtml}<div class="print-body ch-read-content" style="${fontFamily}">${bodyHtml}</div>`;
 
   } else {
-    // पेज प्रति सिट (N-up) — content लाई N वटा साना, बोर्डर भएका mini-page मा grid मा राख्ने
-    // ध्यान: @page मार्जिन धेरै mobile "Save as PDF" इन्जिनले ठीकसँग नमान्ने भएकोले,
-    // यहाँ margin:0 राखेर बरु भित्रैबाट एउटा exact-A4-साइजको wrapper (padding सहित) बनाइन्छ,
-    // जसले सधैं ठ्याक्कै एउटा physical sheet भित्र सबै मिल्ने ग्यारेन्टी दिन्छ।
-    const temp = document.createElement('div');
-    temp.innerHTML = bodyHtml;
-    const nodes = Array.from(temp.childNodes).filter(nd => nd.nodeType === 1 || (nd.textContent || '').trim());
-    const bins = _splitNodesIntoBins(nodes, pagesPerSheet);
-    const { rows, cols: gridCols } = _gridDimsFor(pagesPerSheet, orientation);
+    // पेज प्रति सिट (N-up) — वास्तविक A4 पेज साइज अनुसार content लाई पहिले साँच्चै paginate गर्ने,
+    // त्यसपछि ती वास्तविक पेजहरूलाई (जति नै संख्या भए पनि) N-N वटा गरेर sheet मा scale down गरी tile गर्ने
+    // (ठ्याक्कै browser को native "pages per sheet" ले गर्ने तरिकाले — border/शीर्षक थपिँदैन)
+    const SHEET_MARGIN = 6, GAP_MM = 2;
+    const fullContentW = pageW - NORMAL_MARGIN * 2;
+    const fullContentH = pageH - NORMAL_MARGIN * 2;
 
-    const miniPagesHtml = bins.map((bin, i) => {
-      const wrap = document.createElement('div');
-      bin.forEach(nd => wrap.appendChild(nd.cloneNode(true)));
-      return `<div class="nup-page">
-        <div class="nup-page-body ch-read-content" style="${fontFamily};column-count:${cols};column-gap:12px;${cols > 1 ? 'column-rule:1px solid var(--divider);' : ''}">${wrap.innerHTML}</div>
-        <div class="nup-page-num">${i + 1}</div>
+    const realPages = _paginateContentReal(bodyHtml, fullContentW, fullContentH, fontFamily);
+    const totalSheets = Math.max(1, Math.ceil(realPages.length / pagesPerSheet));
+
+    const sheetContentW = pageW - SHEET_MARGIN * 2;
+    const sheetContentH = pageH - SHEET_MARGIN * 2;
+
+    let sheetsHtml = '';
+    let maxGridCols = 1;
+    for (let s = 0; s < totalSheets; s++) {
+      const slice = realPages.slice(s * pagesPerSheet, (s + 1) * pagesPerSheet);
+      const { rows, cols: gridCols } = _gridDimsFor(pagesPerSheet, orientation);
+      maxGridCols = Math.max(maxGridCols, gridCols);
+      const tileW = (sheetContentW - GAP_MM * (gridCols - 1)) / gridCols;
+      const tileH = (sheetContentH - GAP_MM * (rows - 1)) / rows;
+      const scale = Math.min(tileW / fullContentW, tileH / fullContentH);
+
+      const tilesHtml = slice.map(pageHtml => `
+        <div class="nup-page">
+          <div class="nup-page-inner ch-read-content" style="${fontFamily};width:${fullContentW}mm;height:${fullContentH}mm;transform:scale(${scale});column-count:${cols};column-gap:12px;${cols > 1 ? 'column-rule:1px solid var(--divider);' : ''}">${pageHtml}</div>
+        </div>`).join('');
+
+      sheetsHtml += `<div class="print-sheet">${s === 0 ? titleHtml : ''}
+        <div class="nup-grid" style="grid-template-columns:repeat(${gridCols},1fr);grid-template-rows:repeat(${rows},1fr)">${tilesHtml}</div>
       </div>`;
-    }).join('');
+    }
 
     styleTag.textContent = `
       @page { size: ${pageW}mm ${pageH}mm; margin: 0; }
@@ -1826,40 +1864,38 @@ function doPrintChapter() {
           width: ${pageW}mm;
           height: ${pageH}mm;
           box-sizing: border-box;
-          padding: ${MARGIN_MM}mm;
+          padding: ${SHEET_MARGIN}mm;
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          break-after: page;
         }
+        #printArea .print-sheet:last-child { break-after: auto; }
         #printArea .print-sheet .print-title {
           flex: 0 0 auto;
           font-size: 1rem;
-          margin-bottom: 4mm;
+          margin-bottom: 3mm;
         }
         #printArea .nup-grid {
           flex: 1 1 auto;
           min-height: 0;
           display: grid;
-          grid-template-columns: repeat(${gridCols}, 1fr);
-          grid-template-rows: repeat(${rows}, 1fr);
-          gap: 4mm;
+          gap: ${GAP_MM}mm;
         }
         #printArea .nup-page {
-          border: 1px solid #000;
-          padding: 3mm;
           overflow: hidden;
           position: relative;
           box-sizing: border-box;
           min-height: 0;
-          font-size: ${Math.max(0.55, 1 / Math.sqrt(pagesPerSheet)).toFixed(2)}rem;
+          min-width: 0;
         }
-        #printArea .nup-page-num {
-          position: absolute; bottom: 2mm; right: 3mm;
-          font-size: 0.6rem; color: #666;
+        #printArea .nup-page-inner {
+          transform-origin: top left;
+          overflow: hidden;
         }
       }
     `;
-    area.innerHTML = `<div class="print-sheet">${titleHtml}<div class="nup-grid">${miniPagesHtml}</div></div>`;
+    area.innerHTML = sheetsHtml;
   }
 
   closeOv('printOptionsModal');
