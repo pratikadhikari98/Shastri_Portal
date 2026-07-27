@@ -1752,15 +1752,10 @@ function _splitNodesIntoBins(nodes, n) {
   return bins;
 }
 
-// N को लागि उपयुक्त rows x cols grid (orientation अनुसार) रोज्ने
+// N को लागि उपयुक्त rows x cols grid — साधारण N-up परम्परा अनुसार (जस्तै pdf24/Chrome ले 6-up मा 3 column x 2 row बनाउँछ, 2x3 होइन)
 function _gridDimsFor(n, orientation) {
-  let cols = Math.ceil(Math.sqrt(n));
-  let rows = Math.ceil(n / cols);
-  if (orientation === 'landscape') {
-    if (rows > cols) { const t = rows; rows = cols; cols = t; }
-  } else {
-    if (cols > rows) { const t = rows; rows = cols; cols = t; }
-  }
+  const cols = Math.ceil(Math.sqrt(n));
+  const rows = Math.ceil(n / cols);
   return { rows, cols };
 }
 
