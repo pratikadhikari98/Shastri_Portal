@@ -1786,16 +1786,13 @@ function doPrintChapter() {
 
   const area = document.getElementById('printArea');
   const MARGIN_MM = pagesPerSheet > 1 ? 8 : 14;
-  // A4 भित्रको वास्तविक content area (mm) — @page मार्जिन घटाएर, किनकि print media मा vh/vw भरपर्दो हुँदैन
   const pageW = orientation === 'landscape' ? 297 : 210;
   const pageH = orientation === 'landscape' ? 210 : 297;
-  const contentW = pageW - MARGIN_MM * 2;
-  const contentH = pageH - MARGIN_MM * 2;
 
   if (pagesPerSheet <= 1) {
     // सामान्य — एउटा physical page = एउटा logical page
     styleTag.textContent = `
-      @page { size: ${orientation}; margin: ${MARGIN_MM}mm; }
+      @page { size: ${pageW}mm ${pageH}mm; margin: ${MARGIN_MM}mm; }
       @media print {
         #printArea .print-body {
           column-count: ${cols};
@@ -1808,6 +1805,9 @@ function doPrintChapter() {
 
   } else {
     // पेज प्रति सिट (N-up) — content लाई N वटा साना, बोर्डर भएका mini-page मा grid मा राख्ने
+    // ध्यान: @page मार्जिन धेरै mobile "Save as PDF" इन्जिनले ठीकसँग नमान्ने भएकोले,
+    // यहाँ margin:0 राखेर बरु भित्रैबाट एउटा exact-A4-साइजको wrapper (padding सहित) बनाइन्छ,
+    // जसले सधैं ठ्याक्कै एउटा physical sheet भित्र सबै मिल्ने ग्यारेन्टी दिन्छ।
     const temp = document.createElement('div');
     temp.innerHTML = bodyHtml;
     const nodes = Array.from(temp.childNodes).filter(nd => nd.nodeType === 1 || (nd.textContent || '').trim());
@@ -1824,17 +1824,30 @@ function doPrintChapter() {
     }).join('');
 
     styleTag.textContent = `
-      @page { size: ${orientation}; margin: ${MARGIN_MM}mm; }
+      @page { size: ${pageW}mm ${pageH}mm; margin: 0; }
       @media print {
-        html, body { width: ${contentW}mm; height: ${contentH}mm; }
-        #printArea { width: ${contentW}mm; }
+        html, body { margin: 0; padding: 0; }
+        #printArea .print-sheet {
+          width: ${pageW}mm;
+          height: ${pageH}mm;
+          box-sizing: border-box;
+          padding: ${MARGIN_MM}mm;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        #printArea .print-sheet .print-title {
+          flex: 0 0 auto;
+          font-size: 1rem;
+          margin-bottom: 4mm;
+        }
         #printArea .nup-grid {
+          flex: 1 1 auto;
+          min-height: 0;
           display: grid;
           grid-template-columns: repeat(${gridCols}, 1fr);
           grid-template-rows: repeat(${rows}, 1fr);
           gap: 4mm;
-          width: ${contentW}mm;
-          height: ${contentH - 12}mm;
         }
         #printArea .nup-page {
           border: 1px solid #000;
@@ -1842,6 +1855,7 @@ function doPrintChapter() {
           overflow: hidden;
           position: relative;
           box-sizing: border-box;
+          min-height: 0;
           font-size: ${Math.max(0.55, 1 / Math.sqrt(pagesPerSheet)).toFixed(2)}rem;
         }
         #printArea .nup-page-num {
@@ -1850,7 +1864,7 @@ function doPrintChapter() {
         }
       }
     `;
-    area.innerHTML = `${titleHtml}<div class="nup-grid">${miniPagesHtml}</div>`;
+    area.innerHTML = `<div class="print-sheet">${titleHtml}<div class="nup-grid">${miniPagesHtml}</div></div>`;
   }
 
   closeOv('printOptionsModal');
