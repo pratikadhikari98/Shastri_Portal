@@ -1706,5 +1706,4 @@ input[type=range].dm-slider {
     margin-bottom: 14px; color: var(--accent);
     column-span: all; /* धेरै column भए पनि शीर्षक पूरै चौडाइमा */
   }
-  #printArea .nup-page-inner { column-span: none; }
 }
