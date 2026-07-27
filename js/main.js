@@ -1776,11 +1776,19 @@ function _paginateContentReal(bodyHtml, contentWmm, contentHmm, fontFamily) {
   return pages.map(nodeArr => nodeArr.map(n => n.outerHTML || n.textContent || '').join(''));
 }
 
-// N को लागि उपयुक्त rows x cols grid — साधारण N-up परम्परा अनुसार (जस्तै pdf24/Chrome ले 6-up मा 3 column x 2 row बनाउँछ, 2x3 होइन)
-function _gridDimsFor(n, orientation) {
-  const cols = Math.ceil(Math.sqrt(n));
-  const rows = Math.ceil(n / cols);
-  return { rows, cols };
+// N वटा tile लाई sheet मा राख्दा कुन rows x cols ले content (contentW x contentH) लाई
+// सबैभन्दा कम खाली ठाउँ छोडेर (अर्थात् सबैभन्दा ठूलो scale दिएर) fit गर्छ भनेर छान्ने
+function _bestGridFor(n, contentW, contentH, sheetContentW, sheetContentH, gapMm) {
+  let best = null;
+  for (let cols = 1; cols <= n; cols++) {
+    const rows = Math.ceil(n / cols);
+    const tileW = (sheetContentW - gapMm * (cols - 1)) / cols;
+    const tileH = (sheetContentH - gapMm * (rows - 1)) / rows;
+    if (tileW <= 0 || tileH <= 0) continue;
+    const scale = Math.min(tileW / contentW, tileH / contentH);
+    if (!best || scale > best.scale) best = { rows, cols, scale };
+  }
+  return best || { rows: Math.ceil(Math.sqrt(n)), cols: Math.ceil(Math.sqrt(n)), scale: 0.3 };
 }
 
 function doPrintChapter() {
@@ -1824,9 +1832,9 @@ function doPrintChapter() {
 
   } else {
     // पेज प्रति सिट (N-up) — वास्तविक A4 पेज साइज अनुसार content लाई पहिले साँच्चै paginate गर्ने,
-    // त्यसपछि ती वास्तविक पेजहरूलाई (जति नै संख्या भए पनि) N-N वटा गरेर sheet मा scale down गरी tile गर्ने
-    // (ठ्याक्कै browser को native "pages per sheet" ले गर्ने तरिकाले — border/शीर्षक थपिँदैन)
-    const SHEET_MARGIN = 6, GAP_MM = 2;
+    // त्यसपछि content को आकारसँग सबैभन्दा राम्रो fit हुने rows x cols छानेर, ती वास्तविक पेजहरूलाई
+    // scale down गरी sheet मा tile गर्ने (ठ्याक्कै browser को native "pages per sheet" ले गर्ने तरिकाले)
+    const SHEET_MARGIN = 6, GAP_MM = 1.5;
     const fullContentW = pageW - NORMAL_MARGIN * 2;
     const fullContentH = pageH - NORMAL_MARGIN * 2;
 
@@ -1835,20 +1843,15 @@ function doPrintChapter() {
 
     const sheetContentW = pageW - SHEET_MARGIN * 2;
     const sheetContentH = pageH - SHEET_MARGIN * 2;
+    const { rows, cols: gridCols, scale } = _bestGridFor(pagesPerSheet, fullContentW, fullContentH, sheetContentW, sheetContentH, GAP_MM);
 
     let sheetsHtml = '';
-    let maxGridCols = 1;
     for (let s = 0; s < totalSheets; s++) {
       const slice = realPages.slice(s * pagesPerSheet, (s + 1) * pagesPerSheet);
-      const { rows, cols: gridCols } = _gridDimsFor(pagesPerSheet, orientation);
-      maxGridCols = Math.max(maxGridCols, gridCols);
-      const tileW = (sheetContentW - GAP_MM * (gridCols - 1)) / gridCols;
-      const tileH = (sheetContentH - GAP_MM * (rows - 1)) / rows;
-      const scale = Math.min(tileW / fullContentW, tileH / fullContentH);
 
       const tilesHtml = slice.map(pageHtml => `
         <div class="nup-page">
-          <div class="nup-page-inner ch-read-content" style="${fontFamily};width:${fullContentW}mm;height:${fullContentH}mm;transform:scale(${scale});column-count:${cols};column-gap:12px;${cols > 1 ? 'column-rule:1px solid var(--divider);' : ''}">${pageHtml}</div>
+          <div class="nup-page-inner ch-read-content" style="${fontFamily};width:${fullContentW}mm;height:${fullContentH}mm;zoom:${scale};column-count:${cols};column-gap:12px;${cols > 1 ? 'column-rule:1px solid var(--divider);' : ''}">${pageHtml}</div>
         </div>`).join('');
 
       sheetsHtml += `<div class="print-sheet">${s === 0 ? titleHtml : ''}
@@ -1888,10 +1891,13 @@ function doPrintChapter() {
           box-sizing: border-box;
           min-height: 0;
           min-width: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         #printArea .nup-page-inner {
-          transform-origin: top left;
           overflow: hidden;
+          flex-shrink: 0;
         }
       }
     `;
