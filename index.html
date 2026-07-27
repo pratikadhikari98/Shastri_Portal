@@ -586,6 +586,17 @@
         <option value="10">10</option>
       </select>
     </div>
+    <div class="f-group">
+      <label class="f-label">पेज</label>
+      <div style="display:flex;gap:10px">
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer">
+          <input type="radio" name="printPageMode" value="multi" checked> 📑 धेरै पेज
+        </label>
+        <label style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer">
+          <input type="radio" name="printPageMode" value="single"> 📜 एउटै लामो पेज
+        </label>
+      </div>
+    </div>
     <button class="btn-p" style="width:100%" onclick="doPrintChapter()">🖨️ Print गर्नुहोस्</button>
   </div>
 </div>
