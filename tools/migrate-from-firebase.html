@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firebase → GitHub सार्ने (एकपटक मात्र)</title>
+<style>
+  body{font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:16px;line-height:1.6;color:#222}
+  input{width:100%;padding:10px;margin:4px 0 12px;border:1px solid #bbb;border-radius:8px;font-size:15px;box-sizing:border-box}
+  button{padding:12px 18px;border:0;border-radius:10px;background:#d94f1e;color:#fff;font-size:15px;font-weight:700;margin-right:8px}
+  button:disabled{opacity:.5}
+  #log{white-space:pre-wrap;background:#111;color:#9f9;padding:12px;border-radius:10px;font-size:13px;min-height:120px;margin-top:14px}
+  .warn{background:#fff3cd;padding:10px;border-radius:8px;font-size:14px}
+</style>
+</head>
+<body>
+<h2>🚚 Firebase → GitHub (एकपटक मात्र)</h2>
+<div class="warn">
+  यसले Firebase मा भएको किताब, विषय, सूचना, समाचार, अध्याय र फोटो पढेर GitHub repo मा फाइल बनाएर commit गर्छ।
+  <b>GitHub मा भएका data/books.json, subjects.json, news.json, feed.json र data/chapters/*.json बदलिन्छन्।</b>
+  काम सकेपछि यो <code>tools/</code> फोल्डर मेटाइदिनुस्।
+</div>
+<p></p>
+<label>GitHub username</label><input id="owner" autocapitalize="off">
+<label>Repository</label><input id="repo" autocapitalize="off">
+<label>GitHub token (Contents: Read and write)</label><input id="token" type="password">
+<button id="b1">1) Firebase बाट पढ्नुस्</button>
+<button id="b2" disabled>2) GitHub मा लेख्नुस्</button>
+<div id="log">तयार।</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="../js/github-api.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyAvCpiezexkjmVHIR_2WaUZc-1M1g2saco",
+  authDomain: "pratik-adhikari-a8884.firebaseapp.com",
+  projectId: "pratik-adhikari-a8884"
+});
+const db = firebase.firestore();
+const $ = id => document.getElementById(id);
+const log = m => { $('log').textContent += '\n' + m; $('log').scrollTop = 1e9; };
+let pulled = null;
+
+const h = location.hostname;
+if (h.endsWith('.github.io')) { $('owner').value = h.split('.')[0]; $('repo').value = location.pathname.split('/').filter(Boolean)[0] || ''; }
+
+$('b1').onclick = async () => {
+  $('b1').disabled = true; $('log').textContent = 'Firebase बाट पढ्दैछ…';
+  try {
+    const out = { books: null, subjects: null, news: [], feed: [], chapters: {} };
+    const bs = await db.collection('site_content').doc('books').get();
+    if (bs.exists) out.books = bs.data().years || null;
+    const ss = await db.collection('site_content').doc('subjects').get();
+    if (ss.exists) out.subjects = ss.data().subjects || null;
+    const ns = await db.collection('notices').orderBy('createdAt', 'desc').get();
+    out.news = ns.docs.map(d => d.data());
+    const fs = await db.collection('feed_posts').orderBy('createdAt', 'desc').get();
+    out.feed = fs.docs.map(d => d.data()).filter(p => p.status !== 'pending');
+    const ids = [];
+    (out.books || []).forEach(y => Object.values(y.subjects || {}).forEach(arr => (arr || []).forEach(b => ids.push(b.id))));
+    for (const id of ids) {
+      let items = [];
+      const sn = await db.collection('chapters').doc(id).collection('items').orderBy('order').get();
+      if (!sn.empty) items = sn.docs.map(d => d.data());
+      else {
+        const lg = await db.collection('chapters').doc(id).get();
+        if (lg.exists && Array.isArray(lg.data().chapters)) items = lg.data().chapters;
+      }
+      items = items.filter(c => c.status !== 'pending');
+      if (items.length) out.chapters[id] = items;
+    }
+    pulled = out;
+    log(`किताबका वर्ष: ${out.books ? out.books.length : 0} · विषय: ${out.subjects ? Object.keys(out.subjects).length : 0}`);
+    log(`सूचना: ${out.news.length} · समाचार: ${out.feed.length} · अध्याय भएका किताब: ${Object.keys(out.chapters).length}`);
+    log('ठीक लाग्यो भने "2) GitHub मा लेख्नुस्" थिच्नुस्।');
+    $('b2').disabled = false;
+  } catch (e) { log('❌ ' + e.message); }
+  $('b1').disabled = false;
+};
+
+$('b2').onclick = async () => {
+  const owner = $('owner').value.trim(), repo = $('repo').value.trim(), token = $('token').value.trim();
+  if (!owner || !repo || !token) return log('❌ username, repo, token तीनवटै चाहिन्छ');
+  $('b2').disabled = true;
+  try {
+    const v = await GH.verify(token, owner, repo);
+    if (!v.ok) throw new Error(v.error);
+    GH.saveCfg(owner, repo, v.defaultBranch || 'main');
+    GH.setToken(token, false);
+    const img = async (p) => {
+      if (p.image && p.image.startsWith('data:')) { p.image = await GH.uploadImage(p.image); log('  🖼 फोटो अपलोड: ' + p.image); }
+      return p;
+    };
+    const clean = p => { const o = { title: p.title || '', content: p.content || '', date: p.date || '', category: p.category || '', image: p.image || '' }; if (p.font && p.font !== 'siddhanta') o.font = p.font; if (p.authorName) o.authorName = p.authorName; return o; };
+
+    if (pulled.books) { await GH.writeJson('data/books.json', { years: pulled.books }, 'Migrate books from Firebase'); log('✅ data/books.json'); }
+    if (pulled.subjects) { await GH.writeJson('data/subjects.json', pulled.subjects, 'Migrate subjects from Firebase'); log('✅ data/subjects.json'); }
+    if (pulled.news.length) { const l = []; for (const p of pulled.news) l.push(clean(await img(p))); await GH.writeJson('data/news.json', l, 'Migrate notices from Firebase'); log('✅ data/news.json'); }
+    if (pulled.feed.length) { const l = []; for (const p of pulled.feed) l.push(clean(await img(p))); await GH.writeJson('data/feed.json', l, 'Migrate feed from Firebase'); log('✅ data/feed.json'); }
+    for (const [id, items] of Object.entries(pulled.chapters)) {
+      const l = items.map(c => ({ title: c.title || '', content: c.content || '', font: c.font || 'siddhanta' }));
+      await GH.writeJson(`data/chapters/${id}.json`, l, 'Migrate chapters: ' + id); log(`✅ data/chapters/${id}.json (${l.length})`);
+    }
+    GH.clearToken();
+    log('\n🎉 सकियो! अब Firebase बिना नै साइट चल्छ। tools/ फोल्डर मेटाउनुस्।');
+  } catch (e) { log('❌ ' + e.message); $('b2').disabled = false; }
+};
+</script>
+</body>
+</html>
