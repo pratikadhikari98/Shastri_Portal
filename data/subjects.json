@@ -1,0 +1,27 @@
+{
+  "vyakaran": {
+    "label": "व्याकरण",
+    "short": "व्या",
+    "g": "#BBDEFB,#1565C0"
+  },
+  "english": {
+    "label": "English Literature",
+    "short": "अ",
+    "g": "#C8E6C9,#43A047"
+  },
+  "nepali": {
+    "label": "नेपाली साहित्य",
+    "short": "ने",
+    "g": "#FFE0B2,#FF8A65"
+  },
+  "sanskrit": {
+    "label": "संस्कृत साहित्य",
+    "short": "सं",
+    "g": "#D1C4E9,#7B1FA2"
+  },
+  "jyotish": {
+    "label": "ज्योतिष शास्त्र",
+    "short": "ज्यो",
+    "g": "#FFF9C4,#F57F17"
+  }
+}
