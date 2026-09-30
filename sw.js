@@ -1,8 +1,8 @@
-// शास्त्री पोर्टल — Service Worker v13
+// शास्त्री पोर्टल — Service Worker v14
 // ⚠️ यहाँदेखि app shell (html/css/js) लाई NETWORK-FIRST बनाइयो —
 //    अब जहिले पनि internet भएसम्म GitHub बाट ताजा (latest) फाइल नै ल्याउँछ,
 //    cache चाहिं offline हुँदा मात्र प्रयोग हुन्छ। यसले "पुरानै देखिने" समस्या जरैबाट हटाउँछ।
-const APP_CACHE      = 'shastri-app-v16';     // App shell (auto)
+const APP_CACHE      = 'shastri-app-v17';     // App shell (auto)
 const OFFLINE_CACHE  = 'shastri-offline-v2';  // User-triggered "Save for offline" content
 
 const APP_ASSETS = [
@@ -11,14 +11,16 @@ const APP_ASSETS = [
   './css/style.css',
   './js/main.js',
   './data/books.json',
-  './data/news.js',
+  './data/subjects.json',
+  './data/news.json',
+  './data/feed.json',
   './data/contributors.js',
   './manifest.json',
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(APP_CACHE).then(c => c.addAll(APP_ASSETS)).then(() => self.skipWaiting())
+    caches.open(APP_CACHE).then(c => Promise.all(APP_ASSETS.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting())
   );
 });
 
@@ -31,6 +33,9 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // GitHub API (Admin को सम्पादन) र लेख्ने (PUT/POST/DELETE) request लाई कहिल्यै नछेक्ने
+  if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).hostname === 'api.github.com') return;
   // Chapter/news JS — network first, fallback to offline cache, then app cache
   if (e.request.url.includes('/data/chapters/') || e.request.url.includes('/data/news')) {
     e.respondWith(

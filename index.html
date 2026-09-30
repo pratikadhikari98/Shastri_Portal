@@ -88,12 +88,6 @@
   </div>
   <div class="header-right">
 
-    <!-- ADMIN: Pending post notification -->
-    <button class="hdr-btn" id="pendingBtn" title="Pending पोस्ट" onclick="openPendingPostsPanel()" style="display:none;position:relative">
-      🔔
-      <span id="pendingBadge" style="display:none;position:absolute;top:2px;right:2px;min-width:16px;height:16px;padding:0 3px;background:#D6303F;color:#fff;border-radius:10px;font-size:0.62rem;font-weight:800;align-items:center;justify-content:center;line-height:16px;text-align:center">0</span>
-    </button>
-
     <!-- SEARCH BUTTON — छुँदा मात्र सर्च बार देखिने -->
     <button class="hdr-btn" id="searchBtn" title="खोज्नुस्" data-i18n-title="search">🔍</button>
 
@@ -146,10 +140,6 @@
           <div class="dm-item" id="shareBtn">
             <div class="dm-item-ico">🔗</div>
             <div><div class="dm-item-name" data-i18n="dm_share">Website Share गर्नुस्</div></div>
-          </div>
-          <div class="dm-item" id="codeMenuItem" onclick="openUserRequestModal();document.getElementById('dotsMenu').classList.remove('open')">
-            <div class="dm-item-ico">🔑</div>
-            <div><div class="dm-item-name" id="codeMenuItemLabel">User Request</div></div>
           </div>
           <div class="dm-item" onclick="go('profile');document.getElementById('dotsMenu').classList.remove('open')">
             <div class="dm-item-ico">⚙️</div>
@@ -338,10 +328,10 @@
 
     <div class="sett-group s4b" id="adminLoginBox">
       <div class="sett-grp-lbl">🔐 Admin</div>
-      <div class="sett-row" onclick="adminLogin()">
+      <div class="sett-row" onclick="openAdminLogin()">
         <div class="sett-left">
           <div class="sett-ico" style="background:#fff3e0">🔐</div>
-          <div><div class="sett-name">Admin Login</div><div class="sett-desc">सूचना/content व्यवस्थापन गर्न Google खाताले लगइन गर्नुस्</div></div>
+          <div><div class="sett-name">Admin Login</div><div class="sett-desc">GitHub token राखेर सबै content सम्पादन गर्नुस्</div></div>
         </div><span style="color:var(--text-3)">→</span>
       </div>
     </div>
@@ -558,7 +548,6 @@
   <div id="boxTypeList" style="display:flex;flex-direction:column;gap:4px"></div>
 </div>
 
-<!-- ══ Admin: Pending पोस्ट review ══ -->
 <!-- Print हुने बेला मात्र देखिने, बाँकी बेला पूर्ण रूपमा लुकेको -->
 <div id="printArea" style="display:none"></div>
 
@@ -590,45 +579,26 @@
   </div>
 </div>
 
-<!-- ══ Admin: Create a Code ══ -->
-<div class="overlay" id="createCodeModal" onclick="if(event.target===this)closeOv('createCodeModal')">
+<!-- Admin Login — GitHub token -->
+<div class="overlay" id="adminLoginModal" onclick="if(event.target===this)closeOv('adminLoginModal')">
   <div class="modal-sheet">
-    <div class="sett-grp-lbl" style="padding-left:0">🔑 Create a Code</div>
-    <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:12px">जुन किताब(हरू) मा अध्याय थप्ने/सम्पादन गर्ने अनुमति दिने हो, ती छान्नुहोस्।</div>
-    <div class="f-group">
-      <label class="f-label">Code</label>
-      <input class="f-input" id="ccCodeInput" type="text" inputmode="numeric" placeholder="जस्तै: 1233">
+    <div class="m-handle"></div>
+    <div class="m-title">🔐 Admin Login (GitHub)</div>
+    <div style="font-size:0.76rem;color:var(--text-3);line-height:1.6;margin-bottom:12px">
+      GitHub मा <b>Fine-grained token</b> बनाउनुस् — यही repo मात्र छानेर, <b>Contents: Read and write</b> अनुमति दिनुस्। Token यही फोन/browser मा मात्र बस्छ।
+      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">Token बनाउने →</a>
     </div>
-    <div class="f-group">
-      <label class="f-label">किताब(हरू) छान्नुहोस्</label>
-      <div id="ccBookCheckList" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-sm);padding:8px"></div>
+    <div class="form-panel">
+      <div class="f-group"><label class="f-label">GitHub username</label><input class="f-input" id="adminGhOwner" type="text" autocapitalize="off" autocomplete="off"></div>
+      <div class="f-group"><label class="f-label">Repository नाम</label><input class="f-input" id="adminGhRepo" type="text" autocapitalize="off" autocomplete="off"></div>
+      <div class="f-group"><label class="f-label">Token</label><input class="f-input" id="adminGhToken" type="password" placeholder="github_pat_..." autocomplete="off"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;margin-bottom:8px"><input type="checkbox" id="adminGhRemember" checked style="width:16px;height:16px"> यो फोनमा याद राख्नुस्</label>
+      <div id="adminGhError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;display:none"></div>
     </div>
-    <div id="ccError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;text-align:center;display:none"></div>
-    <button class="btn-p" style="width:100%;margin-bottom:16px" onclick="adminSaveNewCode()">✅ OK — Code बनाउनुस्</button>
-
-    <div class="sett-grp-lbl" style="padding-left:0">भइरहेका Code हरू</div>
-    <div id="ccExistingList" style="margin-top:6px"></div>
-  </div>
-</div>
-
-<!-- ══ User Request — Code राखेर अध्याय थप्ने अनुमति ══ -->
-<div class="overlay" id="userRequestModal" onclick="if(event.target===this)closeOv('userRequestModal')">
-  <div class="modal-sheet">
-    <div class="sett-grp-lbl" style="padding-left:0">🔑 User Request</div>
-    <div style="font-size:0.78rem;color:var(--text-3);margin-bottom:14px">कुनै विषयको अध्याय थप्न/सम्पादन गर्न, Admin ले दिएको Code यहाँ राख्नुहोस्। सही भए, उक्त विषय(हरू) मा "➕ नयाँ अध्याय" देखिन थाल्छ।</div>
-    <div class="f-group">
-      <label class="f-label">Code</label>
-      <input class="f-input" id="urCodeInput" type="text" inputmode="numeric" placeholder="जस्तै: 1233">
+    <div class="m-btns">
+      <button class="btn-s" onclick="closeOv('adminLoginModal')">रद्द</button>
+      <button class="btn-p" id="adminGhBtn" onclick="adminConnect()">✅ जोड्नुस्</button>
     </div>
-    <div id="urError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;text-align:center;display:none"></div>
-    <button class="btn-p" style="width:100%" onclick="submitUserRequest()">✅ Code प्रयोग गर्नुस्</button>
-  </div>
-</div>
-
-<div class="overlay" id="pendingPostsModal" onclick="if(event.target===this)closeOv('pendingPostsModal')">
-  <div class="modal-sheet">
-    <div class="sett-grp-lbl" style="padding-left:0">🔔 समीक्षा बाँकी पोस्ट</div>
-    <div id="pendingPostsList" style="margin-top:8px"></div>
   </div>
 </div>
 
@@ -655,8 +625,8 @@
       <input class="f-input" id="noticeFormTitle" type="text" placeholder="सूचनाको शीर्षक">
     </div>
     <div class="f-group" id="noticeFormAuthorGroup" style="display:none">
-      <label class="f-label">तपाईंको नाम *</label>
-      <input class="f-input" id="noticeFormAuthor" type="text" placeholder="तपाईंको नाम लेख्नुस्">
+      <label class="f-label">लेखकको नाम (ऐच्छिक)</label>
+      <input class="f-input" id="noticeFormAuthor" type="text" placeholder="खाली छोडे 'शास्त्री पोर्टल' देखिन्छ">
     </div>
     <div class="f-group">
       <label class="f-label">विवरण *</label>
@@ -758,6 +728,11 @@
     <div class="f-group">
       <label class="f-label">Cover Image URL</label>
       <input class="f-input" id="bookFormCover" type="text" placeholder="images/... वा https://...">
+      <input type="file" accept="image/*" id="bookFormCoverFile" style="display:none" onchange="handleBookCoverChange(event)">
+      <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+        <button type="button" class="btn-s" onclick="document.getElementById('bookFormCoverFile').click()">📷 फोटो छानेर अपलोड</button>
+        <img id="bookCoverPreview" style="display:none;max-width:60px;max-height:80px;border-radius:8px;object-fit:cover">
+      </div>
     </div>
     <div class="f-group">
       <label class="f-label">विवरण</label>
@@ -797,10 +772,6 @@
     <div class="f-group">
       <label class="f-label">अध्यायको शीर्षक *</label>
       <input class="f-input" id="chapterFormTitle" type="text" placeholder="जस्तै: पहिलो अध्याय">
-    </div>
-    <div class="f-group" id="chapterFormAuthorGroup" style="display:none">
-      <label class="f-label">तपाईंको नाम *</label>
-      <input class="f-input" id="chapterFormAuthor" type="text" placeholder="तपाईंको नाम लेख्नुस्">
     </div>
     <div class="f-group">
       <label class="f-label">अध्यायको सामग्री</label>
@@ -885,12 +856,8 @@
 
 <div class="toast" id="toastEl"></div>
 
-<!-- 🔐 Admin Login — Firebase (Google Sign-In + Firestore) -->
-<!-- Setup: SETUP_GUIDE.md को "Admin Login (Firebase)" खण्ड हेर्नुस् -->
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js"></script>
+<!-- 🔐 Admin — GitHub API (Firebase छैन) -->
+<script src="js/github-api.js"></script>
 
 <script src="js/main.js"></script>
 <script src="js/admin.js"></script>
