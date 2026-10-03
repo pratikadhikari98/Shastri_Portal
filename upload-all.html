@@ -125,7 +125,7 @@ async function gh(path, opts = {}) {
   let res, lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {           // कमजोर नेटवर्कमा २ पटक फेरि प्रयास
     try {
-      res = await fetch(API + path, {
+      res = await fetch(API + (path ? '/' + path : ''), {
         ...opts, cache: 'no-store',
         headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + TOKEN, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) }
       });
@@ -161,7 +161,7 @@ $('b1').onclick = async () => {
   $('b1').disabled = true; $('b2').disabled = true; PLAN = null;
   $('log').textContent = 'जाँच्दैछ…';
   try {
-    API = `https://api.github.com/repos/${owner}/${repo}/`;
+    API = `https://api.github.com/repos/${owner}/${repo}`;   // अन्त्यमा '/' नराख्ने: GitHub ले '/' भएको URL को preflight (CORS) अस्वीकार गर्छ
     const info = await gh('');
     if (!info.permissions || !info.permissions.push) throw new Error('यो token ले यो repo मा लेख्न पाउँदैन (Contents: Read and write चाहिन्छ)');
     const branch = info.default_branch;
