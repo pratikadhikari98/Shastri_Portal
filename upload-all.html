@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zip → GitHub (एकै चोटि सबै अपलोड)</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:16px;line-height:1.6;color:#222;background:#faf7f2}
+  h2{margin:.2em 0 .4em}
+  label{display:block;font-weight:700;font-size:14px;margin-top:10px}
+  input[type=text],input[type=password]{width:100%;padding:11px;margin:4px 0;border:1px solid #bbb;border-radius:10px;font-size:16px;background:#fff}
+  input[type=file]{width:100%;padding:12px;margin:4px 0;border:2px dashed #d94f1e;border-radius:10px;background:#fff;font-size:15px}
+  button{padding:13px 18px;border:0;border-radius:12px;background:#d94f1e;color:#fff;font-size:16px;font-weight:700;margin:12px 8px 0 0}
+  button:disabled{opacity:.45}
+  button.sec{background:#555}
+  .note{background:#fff3cd;padding:10px 12px;border-radius:10px;font-size:14px}
+  #log{white-space:pre-wrap;background:#111;color:#9f9;padding:12px;border-radius:10px;font-size:13px;min-height:110px;margin-top:14px;word-break:break-word}
+  code{background:#eee;padding:1px 5px;border-radius:5px}
+</style>
+</head>
+<body>
+<h2>📦 Zip → GitHub (एकै चोटि)</h2>
+<div class="note">
+  Zip भित्रका सबै फाइल <b>एउटै commit</b> मा तपाईंको repo मा जान्छन्। फोन बाटै चल्छ, फोल्डर छान्न पर्दैन।<br>
+  • <code>data/</code> र <code>images/</code> मा पहिल्यै भएका फाइल <b>कहिल्यै बदलिँदैनन्</b> (तपाईंको किताब/अध्याय/फोटो सुरक्षित)।<br>
+  • <code>js/firebase-config.js</code> र <code>data/news.js</code> आफैं मेटिन्छन्।<br>
+  • पहिले "जाँच्नुस्" थिच्नुस्, के-के हुन्छ देखेर मात्र "अपलोड" थिच्नुस्।
+</div>
+
+<label>GitHub username</label><input type="text" id="owner" autocapitalize="off" autocomplete="off">
+<label>Repository नाम</label><input type="text" id="repo" autocapitalize="off" autocomplete="off">
+<label>Token (Contents: Read and write)</label><input type="password" id="token" autocomplete="off">
+<label>Zip फाइल छान्नुस्</label><input type="file" id="zip" accept=".zip,application/zip">
+
+<button id="b1">1) जाँच्नुस्</button>
+<button id="b2" class="sec" disabled>2) अपलोड (commit)</button>
+<div id="log">तयार।</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const log = m => { const l = $('log'); l.textContent += '\n' + m; l.scrollTop = 1e9; };
+const PROTECT = ['data/', 'images/'];                       // पहिल्यै भएका फाइल नबदल्ने
+const DELETE  = ['js/firebase-config.js', 'data/news.js'];  // हटाउने
+const SKIP_RE = /(^|\/)(\.git\/|__MACOSX\/|\.DS_Store$)|^tools\/upload-all\.html$/;
+
+/* repo नाम GitHub Pages को URL बाट आफैं */
+const host = location.hostname;
+if (host.endsWith('.github.io')) { $('owner').value = host.split('.')[0]; $('repo').value = location.pathname.split('/').filter(Boolean)[0] || ''; }
+
+/* ── न्यूनतम zip पाठक (कुनै CDN/library चाहिँदैन) ── */
+function readEntries(buf) {
+  const dv = new DataView(buf), u8 = new Uint8Array(buf);
+  let i = buf.byteLength - 22;
+  while (i >= 0 && dv.getUint32(i, true) !== 0x06054b50) i--;
+  if (i < 0) throw new Error('यो zip फाइल होइन जस्तो छ');
+  const total = dv.getUint16(i + 10, true);
+  let p = dv.getUint32(i + 16, true);
+  const out = [];
+  for (let n = 0; n < total; n++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('zip बिग्रिएको छ');
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nlen = dv.getUint16(p + 28, true), elen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const lho = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nlen));
+    out.push({ name, method, csize, lho });
+    p += 46 + nlen + elen + clen;
+  }
+  return out;
+}
+async function extract(buf, e) {
+  const dv = new DataView(buf);
+  const nlen = dv.getUint16(e.lho + 26, true), elen = dv.getUint16(e.lho + 28, true);
+  const start = e.lho + 30 + nlen + elen;
+  const data = new Uint8Array(buf, start, e.csize);
+  if (e.method === 0) return data.slice();
+  if (e.method === 8) {
+    const s = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  }
+  throw new Error('यो zip को compression समर्थित छैन');
+}
+
+/* ── git blob sha1 (GitHub सँग तुलना गर्न) ── */
+async function gitSha(bytes) {
+  const head = new TextEncoder().encode('blob ' + bytes.length + '\0');
+  const all = new Uint8Array(head.length + bytes.length);
+  all.set(head); all.set(bytes, head.length);
+  const d = await crypto.subtle.digest('SHA-1', all);
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function toB64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+/* ── GitHub API ── */
+let API = '', TOKEN = '';
+async function gh(path, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts, cache: 'no-store',
+    headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + TOKEN, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) }
+  });
+  if (!res.ok) {
+    let m = ''; try { m = (await res.json()).message; } catch (e) {}
+    if (res.status === 401) throw new Error('Token गलत वा म्याद सकिएको छ');
+    if (res.status === 404) throw new Error('Repo/branch भेटिएन, वा token मा यो repo को access छैन');
+    throw new Error(`GitHub ${res.status}: ${m}`);
+  }
+  return res.json();
+}
+
+let PLAN = null;
+
+$('b1').onclick = async () => {
+  const owner = $('owner').value.trim(), repo = $('repo').value.trim(), file = $('zip').files[0];
+  TOKEN = $('token').value.trim();
+  if (!owner || !repo || !TOKEN || !file) return log('❌ username, repo, token र zip चारैवटा चाहिन्छ');
+  $('b1').disabled = true; $('b2').disabled = true; PLAN = null;
+  $('log').textContent = 'जाँच्दैछ…';
+  try {
+    API = `https://api.github.com/repos/${owner}/${repo}/`;
+    const info = await gh('');
+    if (!info.permissions || !info.permissions.push) throw new Error('यो token ले यो repo मा लेख्न पाउँदैन (Contents: Read and write चाहिन्छ)');
+    const branch = info.default_branch;
+    const ref = await gh(`git/ref/heads/${branch}`);
+    const parent = ref.object.sha;
+    const commit = await gh(`git/commits/${parent}`);
+    const baseTree = commit.tree.sha;
+    const tree = await gh(`git/trees/${baseTree}?recursive=1`);
+    if (tree.truncated) log('⚠️ Repo धेरै ठूलो छ, केही फाइल सूचीमा नआउन सक्छ');
+    const existing = new Map(tree.tree.filter(t => t.type === 'blob').map(t => [t.path, t.sha]));
+
+    const buf = await file.arrayBuffer();
+    let entries = readEntries(buf).filter(e => !e.name.endsWith('/'));
+    // zip भित्र एउटै माथिल्लो फोल्डर (जस्तै Shastri_Portal-main/) छ भने हटाउने
+    const firsts = new Set(entries.map(e => e.name.split('/')[0]));
+    const hasRoot = firsts.size === 1 && entries.every(e => e.name.includes('/'));
+    const rootLen = hasRoot ? [...firsts][0].length + 1 : 0;
+
+    const add = [], change = [], same = [], protectedSkip = [];
+    for (const e of entries) {
+      const path = e.name.slice(rootLen);
+      if (!path || SKIP_RE.test(path)) continue;
+      const bytes = await extract(buf, e);
+      const sha = await gitSha(bytes);
+      const have = existing.get(path);
+      if (have && PROTECT.some(p => path.startsWith(p))) { protectedSkip.push(path); continue; }
+      if (have === sha) { same.push(path); continue; }
+      (have ? change : add).push({ path, bytes, sha });
+    }
+    const willHaveNewsJson = existing.has('data/news.json') || add.some(a => a.path === 'data/news.json');
+    const del = DELETE.filter(p => existing.has(p) && (p !== 'data/news.js' || willHaveNewsJson));
+
+    PLAN = { branch, parent, baseTree, add, change, del };
+    log(`✅ Repo: ${owner}/${repo} (branch: ${branch})`);
+    log(`➕ नयाँ फाइल: ${add.length}`);       add.forEach(f => log('   + ' + f.path));
+    log(`✏️ बदलिने फाइल: ${change.length}`);  change.forEach(f => log('   ~ ' + f.path));
+    log(`🗑️ मेटिने फाइल: ${del.length}`);     del.forEach(p => log('   - ' + p));
+    log(`⏭ उस्तै भएकाले छोडिने: ${same.length} · 🔒 सुरक्षित (data/ images/) छोडिने: ${protectedSkip.length}`);
+    if (!add.length && !change.length && !del.length) log('\nकेही बदल्न बाँकी छैन।');
+    else { log('\nठीक लाग्यो भने "2) अपलोड" थिच्नुस्।'); $('b2').disabled = false; }
+  } catch (e) { log('❌ ' + e.message); }
+  $('b1').disabled = false;
+};
+
+$('b2').onclick = async () => {
+  if (!PLAN) return;
+  $('b1').disabled = true; $('b2').disabled = true;
+  try {
+    const { branch, parent, baseTree, add, change, del } = PLAN;
+    const files = [...add, ...change];
+    let done = 0;
+    const entries = [];
+    const queue = files.slice();
+    async function worker() {
+      while (queue.length) {
+        const f = queue.shift();
+        const b = await gh('git/blobs', { method: 'POST', body: JSON.stringify({ content: toB64(f.bytes), encoding: 'base64' }) });
+        entries.push({ path: f.path, mode: '100644', type: 'blob', sha: b.sha });
+        log(`  ⬆ (${++done}/${files.length}) ${f.path}`);
+      }
+    }
+    await Promise.all([worker(), worker(), worker()]);
+    del.forEach(p => entries.push({ path: p, mode: '100644', type: 'blob', sha: null }));
+    log('Commit बनाउँदैछ…');
+    const t = await gh('git/trees', { method: 'POST', body: JSON.stringify({ base_tree: baseTree, tree: entries }) });
+    const c = await gh('git/commits', { method: 'POST', body: JSON.stringify({ message: 'Update: GitHub admin + speed (zip upload)', tree: t.sha, parents: [parent] }) });
+    await gh(`git/refs/heads/${branch}`, { method: 'PATCH', body: JSON.stringify({ sha: c.sha }) });
+    log('\n🎉 सकियो! एउटै commit मा सबै गयो।');
+    log('GitHub Pages ले १–२ मिनेटमा नयाँ साइट देखाउँछ। त्यसपछि साइट एक पटक reload गर्नुस्।');
+    PLAN = null;
+  } catch (e) { log('❌ ' + e.message + '\n(केही बिग्रिएको छैन — commit बन्न नसकेकाले repo जस्ताको तस्तै छ। फेरि "जाँच्नुस्" थिच्नुस्।)'); $('b2').disabled = false; }
+  $('b1').disabled = false;
+};
+</script>
+</body>
+</html>
