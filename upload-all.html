@@ -21,6 +21,7 @@
 </head>
 <body>
 <h2>📦 Zip → GitHub (एकै चोटि)</h2>
+<div id="envBanner" style="display:none;background:#fde2e2;color:#8a1c1c;padding:10px 12px;border-radius:10px;font-size:14px;margin-bottom:10px"></div>
 <div class="note">
   Zip भित्रका सबै फाइल <b>एउटै commit</b> मा तपाईंको repo मा जान्छन्। फोन बाटै चल्छ, फोल्डर छान्न पर्दैन।<br>
   • <code>data/</code> र <code>images/</code> मा पहिल्यै भएका फाइल <b>कहिल्यै बदलिँदैनन्</b> (तपाईंको किताब/अध्याय/फोटो सुरक्षित)।<br>
@@ -97,25 +98,65 @@ function toB64(bytes) {
 
 /* ── GitHub API ── */
 let API = '', TOKEN = '';
+/* पेज कहाँबाट खुलेको छ — गलत ठाउँबाट खुले GitHub सँग जोडिन मिल्दैन ("Failed to fetch" को सबैभन्दा ठूलो कारण) */
+function envProblem() {
+  const h = location.hostname, pr = location.protocol;
+  if (/claude|anthropic/i.test(h)) return 'artifact';
+  if (pr === 'file:' || pr === 'content:' || location.origin === 'null') return 'file';
+  return '';
+}
+const ENV_MSG = {
+  artifact: '❌ यो पेज Claude को artifact लिंकबाट खुलेको छ। त्यहाँबाट GitHub सँग जोडिन दिइँदैन।\n👉 upload-all.html लाई आफ्नै साइटको repo मा (root मा) हालेर, "तपाईंको-साइट/upload-all.html" बाट खोल्नुस्।',
+  file: '❌ यो पेज फोनको Files/Downloads बाट (file:// वा content://) खुलेको छ। यसरी GitHub सँग जोडिन भरपर्दो हुँदैन।\n👉 upload-all.html लाई आफ्नै साइटको repo मा (root मा) हालेर, "तपाईंको-साइट/upload-all.html" बाट खोल्नुस्।'
+};
+if (envProblem()) { const b = $('envBanner'); b.textContent = ENV_MSG[envProblem()].replace(/\\n/g, '\n'); b.style.whiteSpace = 'pre-wrap'; b.style.display = 'block'; }
+
+async function diagnose() {
+  const env = envProblem();
+  if (env) return ENV_MSG[env];
+  let reach = false;
+  try { const r = await fetch('https://api.github.com/zen', { cache: 'no-store' }); reach = r.status < 500; } catch (e) {}
+  if (!reach) return '❌ api.github.com सम्म पुग्न सकिएन (इन्टरनेट वा blocking)।\n👉 अर्को नेटवर्क (Wi-Fi ↔ mobile data) बाट हेर्नुस्; VPN, Private DNS र ad-blocker बन्द गर्नुस्; browser मा https://api.github.com खुल्छ कि हेर्नुस्।';
+  if (!/^[\x21-\x7E]+$/.test(TOKEN)) return '❌ Token मा खाली ठाउँ वा अमान्य अक्षर छ। Token फेरि copy गरेर (अघि-पछि space नराखी) paste गर्नुस्।';
+  return '❌ GitHub सम्म पुगियो तर request रोकियो।\n👉 Chrome को Incognito tab मा खोल्नुस्; नभए Site settings → Clear data गरेर फेरि खोल्नुस्।';
+}
+
 async function gh(path, opts = {}) {
-  const res = await fetch(API + path, {
-    ...opts, cache: 'no-store',
-    headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + TOKEN, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) }
-  });
+  let res, lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {           // कमजोर नेटवर्कमा २ पटक फेरि प्रयास
+    try {
+      res = await fetch(API + path, {
+        ...opts, cache: 'no-store',
+        headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + TOKEN, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) }
+      });
+      break;
+    } catch (e) { lastErr = e; await new Promise(r => setTimeout(r, 700 * (attempt + 1))); }
+  }
+  if (!res) throw new Error(await diagnose());
   if (!res.ok) {
     let m = ''; try { m = (await res.json()).message; } catch (e) {}
     if (res.status === 401) throw new Error('Token गलत वा म्याद सकिएको छ');
-    if (res.status === 404) throw new Error('Repo/branch भेटिएन, वा token मा यो repo को access छैन');
+    if (res.status === 404) throw new Error('Repo/branch भेटिएन, वा token मा यो repo को access छैन (username र repo नाम जाँच्नुस्)');
     throw new Error(`GitHub ${res.status}: ${m}`);
   }
   return res.json();
 }
 
+/* टाइप गर्दा/paste गर्दा आएका अनावश्यक कुरा सफा गर्ने */
+function cleanName(v) {
+  v = v.trim().replace(/[\s\u200b-\u200f\ufeff]/g, '').replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '');
+  return v;
+}
+
 let PLAN = null;
 
 $('b1').onclick = async () => {
-  const owner = $('owner').value.trim(), repo = $('repo').value.trim(), file = $('zip').files[0];
-  TOKEN = $('token').value.trim();
+  let owner = cleanName($('owner').value), repo = cleanName($('repo').value);
+  if (owner.includes('/')) { const [o, r] = owner.split('/'); owner = o; if (!repo) repo = r; }   // "user/repo" एकै ठाउँमा राखे पनि चल्ने
+  if (repo.includes('/')) repo = repo.split('/').pop();
+  $('owner').value = owner; $('repo').value = repo;
+  const file = $('zip').files[0];
+  TOKEN = $('token').value.replace(/[\s\u200b-\u200f\ufeff"'“”]/g, '');
   if (!owner || !repo || !TOKEN || !file) return log('❌ username, repo, token र zip चारैवटा चाहिन्छ');
   $('b1').disabled = true; $('b2').disabled = true; PLAN = null;
   $('log').textContent = 'जाँच्दैछ…';
@@ -161,7 +202,7 @@ $('b1').onclick = async () => {
     log(`⏭ उस्तै भएकाले छोडिने: ${same.length} · 🔒 सुरक्षित (data/ images/) छोडिने: ${protectedSkip.length}`);
     if (!add.length && !change.length && !del.length) log('\nकेही बदल्न बाँकी छैन।');
     else { log('\nठीक लाग्यो भने "2) अपलोड" थिच्नुस्।'); $('b2').disabled = false; }
-  } catch (e) { log('❌ ' + e.message); }
+  } catch (e) { log((e.message.startsWith('❌') ? '' : '❌ ') + e.message); }
   $('b1').disabled = false;
 };
 
@@ -191,7 +232,7 @@ $('b2').onclick = async () => {
     log('\n🎉 सकियो! एउटै commit मा सबै गयो।');
     log('GitHub Pages ले १–२ मिनेटमा नयाँ साइट देखाउँछ। त्यसपछि साइट एक पटक reload गर्नुस्।');
     PLAN = null;
-  } catch (e) { log('❌ ' + e.message + '\n(केही बिग्रिएको छैन — commit बन्न नसकेकाले repo जस्ताको तस्तै छ। फेरि "जाँच्नुस्" थिच्नुस्।)'); $('b2').disabled = false; }
+  } catch (e) { log((e.message.startsWith('❌') ? '' : '❌ ') + e.message + '\n(केही बिग्रिएको छैन — commit बन्न नसकेकाले repo जस्ताको तस्तै छ। फेरि "जाँच्नुस्" थिच्नुस्।)'); $('b2').disabled = false; }
   $('b1').disabled = false;
 };
 </script>
