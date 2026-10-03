@@ -1,15 +1,18 @@
-// शास्त्री पोर्टल — Service Worker v14
-// ⚠️ यहाँदेखि app shell (html/css/js) लाई NETWORK-FIRST बनाइयो —
-//    अब जहिले पनि internet भएसम्म GitHub बाट ताजा (latest) फाइल नै ल्याउँछ,
-//    cache चाहिं offline हुँदा मात्र प्रयोग हुन्छ। यसले "पुरानै देखिने" समस्या जरैबाट हटाउँछ।
-const APP_CACHE      = 'shastri-app-v17';     // App shell (auto)
+// शास्त्री पोर्टल — Service Worker v16
+// ⚡ Speed: app shell/फन्ट/फोटो = STALE-WHILE-REVALIDATE (cache बाट तुरुन्तै, पछाडि ताजा तान्ने)
+//    data/* = network-first तर ढिलो नेटवर्कमा २.५s पछि cache। कोड अपडेट गर्दा APP_CACHE को नम्बर बढाउनुस्।
+const APP_CACHE      = 'shastri-app-v19';     // App shell (auto)
 const OFFLINE_CACHE  = 'shastri-offline-v2';  // User-triggered "Save for offline" content
 
 const APP_ASSETS = [
   './',
   './index.html',
   './css/style.css',
+  './fonts/Siddhanta.woff',
   './js/main.js',
+  './js/admin.js',
+  './js/github-api.js',
+  './js/editor-toolbar.js',
   './data/books.json',
   './data/subjects.json',
   './data/news.json',
@@ -36,27 +39,40 @@ self.addEventListener('fetch', e => {
   // GitHub API (Admin को सम्पादन) र लेख्ने (PUT/POST/DELETE) request लाई कहिल्यै नछेक्ने
   if (e.request.method !== 'GET') return;
   if (new URL(e.request.url).hostname === 'api.github.com') return;
-  // Chapter/news JS — network first, fallback to offline cache, then app cache
-  if (e.request.url.includes('/data/chapters/') || e.request.url.includes('/data/news')) {
-    e.respondWith(
-      fetch(e.request).catch(() =>
-        caches.match(e.request, { cacheName: OFFLINE_CACHE }).then(r => r || caches.match(e.request))
-      )
-    );
+  const url = e.request.url;
+  const isData = url.includes('/data/');
+
+  // ⚡ डाटा (किताब/सूचना/अध्याय): network-first, तर ढिलो नेटवर्कमा २.५ सेकेन्डपछि cache दिने
+  //    (ताजा डाटा आउनासाथ cache अपडेट हुन्छ)
+  if (isData) {
+    e.respondWith((async () => {
+      const cacheMatch = () => caches.match(e.request).then(r => r || caches.match(e.request, { cacheName: OFFLINE_CACHE }));
+      const net = fetch(e.request).then(res => {
+        if (res && res.ok) { const c = res.clone(); caches.open(APP_CACHE).then(ca => ca.put(e.request, c)); }
+        return res;
+      });
+      const cached = await cacheMatch();
+      if (!cached) return net.catch(() => new Response('', { status: 504 }));
+      return Promise.race([net.catch(() => cached), new Promise(r => setTimeout(() => r(cached), 2500))]);
+    })());
     return;
   }
-  // बाँकी सबै (html/css/js/manifest/books.json) — NETWORK FIRST
-  // (internet भए सधैं ताजा फाइल; offline भए मात्र cache बाट देखाउने)
-  e.respondWith(
-    fetch(e.request).then(res => {
-      const clone = res.clone();
-      caches.open(APP_CACHE).then(c => c.put(e.request, clone));
+
+  // ⚡ बाँकी सबै (html/css/js/फन्ट/फोटो): STALE-WHILE-REVALIDATE
+  //    cache भए तुरुन्तै देखाउने (network कुर्दैन), पछाडि ताजा फाइल तानेर अर्को पटकका लागि राख्ने
+  e.respondWith((async () => {
+    const cached = await caches.match(e.request);
+    const refresh = fetch(e.request).then(res => {
+      if (res && res.ok && (res.type === 'basic' || res.type === 'cors')) { const c = res.clone(); caches.open(APP_CACHE).then(ca => ca.put(e.request, c)); }
       return res;
-    }).catch(() =>
-      caches.match(e.request).then(cached => cached || caches.match(e.request, { cacheName: OFFLINE_CACHE }))
-        .then(r => r || caches.match('./index.html'))
-    )
-  );
+    });
+    if (cached) { refresh.catch(() => {}); return cached; }
+    try { return await refresh; }
+    catch (err) {
+      const off = await caches.match(e.request, { cacheName: OFFLINE_CACHE });
+      return off || (e.request.mode === 'navigate' ? caches.match('./index.html') : Response.error());
+    }
+  })());
 });
 
 // ── "Save for offline" / "Delete offline data" — triggered from the app's ⋮ menu ──

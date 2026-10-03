@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyFont();
   // Pre-load profile name in header if needed
   // (full load happens when profile page opens)
-  await loadData();
+  const _hadCache = await loadData();   // cache भए तुरुन्तै फर्कन्छ (network कुर्दैन)
   renderHome();
   renderContributors();
   startClock();
@@ -101,6 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyLanguage(App.lang);
   await restoreLastLocation();
   App._booting = false;
+  if (_hadCache) refreshDataInBackground();   // ताजा डाटा चुपचाप तानेर फरक भए मात्र पुनः देखाउने
 });
 
 /* ════════════════════════════════════
@@ -120,15 +121,18 @@ async function fetchJson(path, ms = 6000) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
     try {
-      // no-cache: हरेक पटक GitHub Pages सँग जाँचेर ताजा फाइल लिने (परिवर्तन छिटो देखियोस्)
-      const r = await fetch(path, { signal: ctrl.signal, cache: 'no-cache' });
+      const r = await fetch(path, { signal: ctrl.signal });
       return r.ok ? await r.json() : null;
     } finally { clearTimeout(t); }
   } catch { return null; }
 }
 
-/* सबै डाटा GitHub repo का static फाइलबाट: data/books.json, subjects.json, news.json, feed.json */
-async function loadData() {
+/* सबै डाटा GitHub repo का static फाइलबाट: data/books.json, subjects.json, news.json, feed.json
+   ⚡ Cache-first: दोस्रो पटकदेखि localStorage को डाटाले सिधै screen बनाउँछ (network कुर्नै पर्दैन),
+   ताजा डाटा पछाडि तानिन्छ। पहिलो पटक मात्र network कुर्नुपर्छ। */
+const DATA_CACHE_KEY = 'sp_data_cache_v1';
+
+async function fetchAllData() {
   const [books, subjects, newsJson, feedJson, contribs] = await Promise.all([
     fetchJson('data/books.json'),
     fetchJson('data/subjects.json'),
@@ -136,18 +140,56 @@ async function loadData() {
     fetchJson('data/feed.json'),
     fetchJsData('data/contributors.js'),
   ]);
-
-  const validBooks = books && typeof books === 'object' && Array.isArray(books.years) && books.years.length;
-  App.data = validBooks ? books : makeFallback();
-
-  if (subjects && typeof subjects === 'object') Object.assign(SUBJ, subjects);
-
   let news = Array.isArray(newsJson) ? newsJson : null;
-  if (!news) { const legacy = await fetchJsData('data/news.js'); news = Array.isArray(legacy) ? legacy : []; }
-  App.data.news = news;
+  if (!news) { const legacy = await fetchJsData('data/news.js'); news = Array.isArray(legacy) ? legacy : null; }
+  return { books, subjects, news, feed: Array.isArray(feedJson) ? feedJson : null, contribs: Array.isArray(contribs) ? contribs : null };
+}
 
-  App.feedPosts = Array.isArray(feedJson) ? feedJson : [];
-  App.contributors = Array.isArray(contribs) ? contribs : [];
+function applyRawData(raw) {
+  const validBooks = raw.books && typeof raw.books === 'object' && Array.isArray(raw.books.years) && raw.books.years.length;
+  App.data = validBooks ? raw.books : makeFallback();
+  if (raw.subjects && typeof raw.subjects === 'object') Object.assign(SUBJ, raw.subjects);
+  App.data.news = Array.isArray(raw.news) ? raw.news : [];
+  App.feedPosts = Array.isArray(raw.feed) ? raw.feed : [];
+  App.contributors = Array.isArray(raw.contribs) ? raw.contribs : [];
+}
+
+function readDataCache() {
+  try { const r = JSON.parse(localStorage.getItem(DATA_CACHE_KEY) || 'null'); return (r && r.books) ? r : null; } catch (e) { return null; }
+}
+function writeDataCache(raw) {
+  try { localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(raw)); } catch (e) {}
+}
+
+async function loadData() {
+  const cached = readDataCache();
+  if (cached) { applyRawData(cached); return true; }
+  const raw = await fetchAllData();
+  applyRawData(raw);
+  if (raw.books) writeDataCache(raw);
+  return false;
+}
+
+async function refreshDataInBackground() {
+  try {
+    if (App.isAdmin) return;                       // Admin ले GitHub API बाट आफ्नै ताजा डाटा लिन्छ
+    const cached = readDataCache() || {};
+    const fresh = await fetchAllData();
+    if (!fresh.books) return;                      // network समस्या — cache मै रहन दिने
+    // नयाँ नआएको भाग पुरानै राख्ने
+    const merged = {
+      books: fresh.books, subjects: fresh.subjects || cached.subjects || null,
+      news: fresh.news || cached.news || null, feed: fresh.feed || cached.feed || null,
+      contribs: fresh.contribs || cached.contribs || null
+    };
+    if (JSON.stringify(merged) === JSON.stringify(cached)) return;   // केही फरक छैन → केही नगर्ने
+    writeDataCache(merged);
+    if (App.isAdmin) return;
+    applyRawData(merged);
+    if (typeof refreshBookViews === 'function') refreshBookViews(); else renderHome();
+    if (typeof refreshNoticeViews === 'function') refreshNoticeViews();
+    if (typeof renderContributors === 'function') renderContributors();
+  } catch (e) { /* चुपचाप — cache ले काम चलाइरहेको छ */ }
 }
 
 function makeFallback() {
@@ -173,6 +215,12 @@ function makeFallback() {
    THEME  ← KEY FIX
    ════════════════════════════════════ */
 function applyTheme(t, save=true) {
+  if (save) {   // प्रयोगकर्ताले थीम बदल्दा मात्र नरम रङ-परिवर्तन (सधैं होइन)
+    const root = document.documentElement;
+    root.classList.add('theme-switching');
+    clearTimeout(applyTheme._t);
+    applyTheme._t = setTimeout(() => root.classList.remove('theme-switching'), 650);
+  }
   App.theme = t;
   document.documentElement.setAttribute('data-theme', t);
   document.body.setAttribute('data-theme', t);
@@ -232,90 +280,9 @@ window.applyFont = applyFont;
 /* ════════════════════════════════════
    ANIMATED CANVAS BACKGROUND
    ════════════════════════════════════ */
-function initBackgroundCanvas() {
-  const c = document.getElementById('bgCanvas');
-  if (!c) return;
-  window._bgCanvas = c;
-  window._bgCtx = c.getContext('2d');
-  resizeBg();
-  window.addEventListener('resize', resizeBg);
-  // कमजोर फोन (कम RAM/CPU core) मा निरन्तर animation नराखी, एक पटक मात्र कोरेर स्थिर राख्ने —
-  // धेरै low-end Android मा यही ठूलो jank/hang को कारण हुन्थ्यो
-  const lowEnd = (navigator.deviceMemory && navigator.deviceMemory <= 3) ||
-                 (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
-  if (lowEnd) {
-    drawBg(); // एक पटक मात्र
-  } else {
-    animateBg();
-  }
-}
-
-function resizeBg() {
-  const c = window._bgCanvas;
-  if (!c) return;
-  c.width = window.innerWidth;
-  c.height = window.innerHeight;
-}
-
-let _bgT = 0;
-let _bgLastDraw = 0;
-const _BG_FRAME_MS = 120; // ~8fps — bistara chalne blob को लागि पर्याप्त, कमजोर फोनमा पनि नअड्किने
-function animateBg(ts) {
-  requestAnimationFrame(animateBg);
-  if (document.hidden) return; // ट्याब/एप पृष्ठभूमिमा हुँदा नकोर्ने — ब्याट्री/CPU बचत
-  if (ts && ts - _bgLastDraw < _BG_FRAME_MS) return; // display refresh जति भए पनि थ्रोटल गर्ने
-  _bgLastDraw = ts || 0;
-  _bgT += 0.02;
-  drawBg();
-}
-
-function drawBg() {
-  const c = window._bgCanvas;
-  const ctx = window._bgCtx;
-  if (!c || !ctx) return;
-  const W = c.width, H = c.height;
-  const t = App.theme;
-
-  // Theme color maps
-  const colors = {
-    light:  { bg:'#EAE6DE', a:'rgba(245,192,122,0.55)', b:'rgba(168,216,176,0.45)', c:'rgba(144,196,232,0.40)', d:'rgba(196,168,224,0.40)' },
-    green:  { bg:'#E2EDE6', a:'rgba(168,228,184,0.55)', b:'rgba(212,240,168,0.45)', c:'rgba(136,200,168,0.40)', d:'rgba(184,232,200,0.40)' },
-    blue:   { bg:'#DDE8F4', a:'rgba(144,200,248,0.55)', b:'rgba(168,216,255,0.45)', c:'rgba(200,232,255,0.40)', d:'rgba(136,184,232,0.40)' },
-    purple: { bg:'#EAE2F5', a:'rgba(200,168,240,0.55)', b:'rgba(224,200,255,0.45)', c:'rgba(184,136,232,0.40)', d:'rgba(216,184,255,0.40)' },
-    rose:   { bg:'#F2E8EC', a:'rgba(248,184,200,0.55)', b:'rgba(255,216,224,0.45)', c:'rgba(240,168,184,0.40)', d:'rgba(232,200,216,0.40)' },
-    slate:  { bg:'#E0E6EC', a:'rgba(184,200,216,0.55)', b:'rgba(200,216,232,0.45)', c:'rgba(168,184,200,0.40)', d:'rgba(208,220,232,0.40)' },
-    autumn: { bg:'#F0E8DC', a:'rgba(245,192,138,0.60)', b:'rgba(232,160,96,0.50)',  c:'rgba(240,208,160,0.45)', d:'rgba(216,144,96,0.45)' },
-    teal:   { bg:'#DCF0EC', a:'rgba(136,221,208,0.55)', b:'rgba(168,237,224,0.50)', c:'rgba(200,245,236,0.45)', d:'rgba(104,204,192,0.45)' },
-    coral:  { bg:'#FBEAE2', a:'rgba(255,200,184,0.55)', b:'rgba(255,224,208,0.50)', c:'rgba(255,176,160,0.45)', d:'rgba(255,216,192,0.45)' },
-    dark:   { bg:'#0C0A07', a:'rgba(180,90,20,0.45)',   b:'rgba(40,110,60,0.38)',  c:'rgba(30,80,160,0.38)',  d:'rgba(90,50,160,0.32)' },
-  };
-  const col = colors[t] || colors.light;
-
-  ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = col.bg;
-  ctx.fillRect(0, 0, W, H);
-
-  const blobs = [
-    { x: 0.15 + Math.sin(_bgT*0.7)*0.08, y: 0.18 + Math.cos(_bgT*0.5)*0.06, r:0.55, col:col.a },
-    { x: 0.82 + Math.cos(_bgT*0.6)*0.08, y: 0.15 + Math.sin(_bgT*0.8)*0.07, r:0.48, col:col.b },
-    { x: 0.12 + Math.sin(_bgT*0.9)*0.07, y: 0.82 + Math.cos(_bgT*0.4)*0.06, r:0.52, col:col.c },
-    { x: 0.80 + Math.cos(_bgT*0.5)*0.07, y: 0.80 + Math.sin(_bgT*0.7)*0.06, r:0.46, col:col.d },
-  ];
-
-  blobs.forEach(b => {
-    const grd = ctx.createRadialGradient(b.x*W, b.y*H, 0, b.x*W, b.y*H, b.r * Math.min(W,H));
-    grd.addColorStop(0, b.col);
-    grd.addColorStop(1, 'transparent');
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, W, H);
-  });
-
-  // Dark overlay for dark theme
-  if (t === 'dark') {
-    ctx.fillStyle = 'rgba(0,0,0,0.30)';
-    ctx.fillRect(0, 0, W, H);
-  }
-}
+/* पृष्ठभूमि अब CSS (body::before/after) को स्थिर gradient हो — JS animation/canvas छैन, त्यसैले frame drop हुँदैन */
+function initBackgroundCanvas() {}
+function drawBg() {}
 
 /* ════════════════════════════════════
    CLOCK
@@ -1020,7 +987,7 @@ function bookCardHtml(b, yearId, key) {
   const coverHtml = b.cover
     ? `<!-- has cover photo -->
        <img
-         src="${b.cover}"
+         src="${b.cover}" loading="lazy" decoding="async"
          alt="${b.title}"
          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
        >
@@ -1060,7 +1027,7 @@ function renderSubjectPage(subjectId, yearId) {
     <a class="back-btn" onclick="go('year',{yearId:${yearId}});return false;" href="#">← ${yr.title}</a>
     <div class="subj-hero" style="background:linear-gradient(135deg,${c1},${c2})">
       ${book.cover
-        ? `<img src="${book.cover}" alt="${book.title}"
+        ? `<img src="${book.cover}" loading="lazy" decoding="async" alt="${book.title}"
                style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;z-index:0"
                onerror="this.style.display='none';document.getElementById('hero-emoji-${book.id}').style.display='flex'">`
         : ''}
@@ -1372,7 +1339,7 @@ function renderMd(text) {
   );
 
   let html = escaped
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1">')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" loading="lazy" decoding="async">')
     .replace(/^# (.+)$/gm,'<h1>$1</h1>')
     .replace(/^## (.+)$/gm,'<h2>$1</h2>')
     .replace(/^### (.+)$/gm,'<h3>$1</h3>')
@@ -1777,20 +1744,8 @@ window.delNote=delNote;
 /* ════════════════════════════════════
    COURSES
    ════════════════════════════════════ */
-async function renderNewsListPage() {
-  const el = document.getElementById('newsListPage');
-  if (!el) return;
-  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
-  const items = App.feedPosts || [];
-
-  const addBtn = !App.isAdmin ? '' : `<button onclick="openNoticeForm(null,'feed')" style="width:100%;padding:12px;margin-bottom:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:none;border-radius:var(--r-md);font-weight:700;font-size:0.86rem;cursor:pointer;box-shadow:0 4px 14px var(--accent-glow)">➕ नयाँ पोस्ट लेख्नुस्</button>`;
-
-  if (!items.length) {
-    el.innerHTML = addBtn + '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">अझै कुनै समाचार छैन</div></div>';
-    return;
-  }
-
-  el.innerHTML = addBtn + items.map((n, i) => {
+/* समाचार पेजको एउटा card — वास्तविक पेज र Admin को पूर्वावलोकन (preview=true) दुवैमा उही markup */
+function feedCardHtml(n, i, preview) {
     const bodyHtml = renderMd(n.content || '');
     const isAuthored = !!n.authorName;
     const avatarHtml = isAuthored
@@ -1804,7 +1759,7 @@ async function renderNewsListPage() {
           <div style="font-size:0.8rem;font-weight:700;color:var(--text-1)">${isAuthored ? n.authorName : 'शास्त्री पोर्टल'}</div>
           <div style="font-size:0.68rem;color:var(--text-3)">${n.date||''}${n.category?' · '+n.category:''}</div>
         </div>
-        ${App.isAdmin ? `<div style="display:flex;gap:8px;flex-shrink:0">
+        ${App.isAdmin && !preview ? `<div style="display:flex;gap:8px;flex-shrink:0">
           <button onclick="event.stopPropagation();editFeedPostByIdx(${i})" style="background:none;border:none;font-size:1rem;cursor:pointer">✏️</button>
           <button onclick="event.stopPropagation();deleteFeedPostAt(${i})" style="background:none;border:none;font-size:1rem;cursor:pointer">🗑️</button>
         </div>` : ''}
@@ -1815,7 +1770,23 @@ async function renderNewsListPage() {
         <div class="feed-body ch-read-content" id="feedBody${i}" style="padding:0;font-size:0.8rem;line-height:1.6;max-height:5.2em;overflow:hidden;transition:max-height 0.32s var(--ease-out)">${bodyHtml}</div>
       </div>
     </div>`;
-  }).join('');
+}
+window.feedCardHtml = feedCardHtml;
+
+async function renderNewsListPage() {
+  const el = document.getElementById('newsListPage');
+  if (!el) return;
+  el.innerHTML = '<div class="spin-wrap"><div class="spinner"></div></div>';
+  const items = App.feedPosts || [];
+
+  const addBtn = !App.isAdmin ? '' : `<button onclick="openNoticeForm(null,'feed')" style="width:100%;padding:12px;margin-bottom:14px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border:none;border-radius:var(--r-md);font-weight:700;font-size:0.86rem;cursor:pointer;box-shadow:0 4px 14px var(--accent-glow)">➕ नयाँ पोस्ट लेख्नुस्</button>`;
+
+  if (!items.length) {
+    el.innerHTML = addBtn + '<div class="empty"><div class="empty-ico">📭</div><div class="empty-t">अझै कुनै समाचार छैन</div></div>';
+    return;
+  }
+
+  el.innerHTML = addBtn + items.map((n, i) => feedCardHtml(n, i, false)).join('');
 }
 window.renderNewsListPage = renderNewsListPage;
 

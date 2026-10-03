@@ -207,8 +207,7 @@ function openNoticeForm(notice = null, target = 'notices', idx = null) {
 }
 window.openNoticeForm = openNoticeForm;
 
-async function saveNoticeForm() {
-  if (!App.isAdmin) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
+function collectNoticeForm() {
   const isFeed = App._noticeTarget === 'feed';
   const contentEl = document.getElementById('noticeFormContent');
   const data = {
@@ -220,24 +219,45 @@ async function saveNoticeForm() {
     font:     contentEl.dataset.fontKey || 'siddhanta',
   };
   if (isFeed) { const a = document.getElementById('noticeFormAuthor').value.trim(); if (a) data.authorName = a; }
-  if (!data.title || !data.content) { toast('⚠️ शीर्षक र विवरण आवश्यक छ'); return; }
+  if (!data.title || !data.content) { toast('⚠️ शीर्षक र विवरण आवश्यक छ'); return null; }
+  return { isFeed, data, idx: App._noticeEditIdx };
+}
 
-  toast('⏳ GitHub मा सुरक्षित गर्दैछ…');
-  const ok = await ghSave(async () => {
-    if (App._noticeImg) data.image = await GH.uploadImage(App._noticeImg);
-    const src = isFeed ? App.feedPosts : (App.data.news || []);
-    const list = src.map(cleanPost);
-    const i = App._noticeEditIdx;
-    if (i !== null && i !== undefined && list[i]) list[i] = cleanPost(data); else list.unshift(cleanPost(data));
-    await GH.writeJson(isFeed ? DATA_FEED : DATA_NEWS, list, (isFeed ? 'Update feed: ' : 'Update notice: ') + data.title);
-    if (isFeed) App.feedPosts = list; else App.data.news = list;
-  }, 'सुरक्षित गर्न सकिएन');
-  if (!ok) return;
-  toast('✅ सुरक्षित भयो (१–२ मिनेटमा सबैले देख्छन्)');
-  closeOv('noticeFormModal');
-  if (isFeed) renderNewsListPage(); else refreshNoticeViews();
+/* "👁 पूर्वावलोकन" बटन — सिधै सेभ गर्दैन, पहिले साइटमा जस्तो देखिन्छ त्यही देखाउँछ */
+async function saveNoticeForm() {
+  if (!App.isAdmin) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
+  const c = collectNoticeForm();
+  if (!c) return;
+  const { isFeed, data, idx } = c;
+  const shown = { ...data, image: App._noticeImg ? App._noticeImg.dataUrl : data.image };
+  const render = n => isFeed ? feedCardHtml(n, 'P', true) : noticePreviewHtml(n);
+  const list = isFeed ? (App.feedPosts || []) : (App.data.news || []);
+  const old = (idx !== null && idx !== undefined) ? list[idx] : null;
+  adminPreview({
+    title: isFeed ? '👁 समाचार पोस्ट — पूर्वावलोकन' : '👁 सूचना — पूर्वावलोकन',
+    after: render(shown),
+    before: old ? render(old) : null,
+    onConfirm: async () => { const ok = await commitNotice(c); if (ok) pvDone('noticeFormModal'); return ok; }
+  });
 }
 window.saveNoticeForm = saveNoticeForm;
+
+async function commitNotice({ isFeed, data, idx }) {
+  toast('⏳ GitHub मा commit गर्दैछ…');
+  const ok = await ghSave(async () => {
+    const d = { ...data };
+    if (App._noticeImg) d.image = await GH.uploadImage(App._noticeImg);
+    const src = isFeed ? App.feedPosts : (App.data.news || []);
+    const list = src.map(cleanPost);
+    if (idx !== null && idx !== undefined && list[idx]) list[idx] = cleanPost(d); else list.unshift(cleanPost(d));
+    await GH.writeJson(isFeed ? DATA_FEED : DATA_NEWS, list, (isFeed ? 'Update feed: ' : 'Update notice: ') + d.title);
+    if (isFeed) App.feedPosts = list; else App.data.news = list;
+  }, 'सुरक्षित गर्न सकिएन');
+  if (!ok) return false;
+  toast('✅ Commit भयो (१–२ मिनेटमा सबैले देख्छन्)');
+  if (isFeed) renderNewsListPage(); else refreshNoticeViews();
+  return true;
+}
 
 async function deleteNoticeAt(i) {
   if (!App.isAdmin) return;
@@ -305,7 +325,9 @@ function renderAdminNoticeList() {
    किताब (Books) — data/books.json  { years: [...] }
    ════════════════════════════════════ */
 async function saveBooksToGitHub(msg = 'Update books') {
-  return ghSave(() => GH.writeJson(DATA_BOOKS, { years: App.data.years }, msg), 'किताब सुरक्षित गर्न सकिएन');
+  const ok = await ghSave(() => GH.writeJson(DATA_BOOKS, { years: App.data.years }, msg), 'किताब सुरक्षित गर्न सकिएन');
+  if (ok) { App._drafts.books = null; renderDirtyBar(); }
+  return ok;
 }
 
 App.adminBook = { yearId: 1, subjectId: 'nepali', editingIdx: null };
@@ -367,16 +389,17 @@ function renderAdminBooksList() {
     </div>`).join('');
 }
 
-async function adminBookMove(idx, dir) {
+function adminBookMove(idx, dir) {
   if (!App.isAdmin) return;
   const arr = getCurrentSubjectArr();
   if (!arr) return;
   const n = idx + dir;
   if (n < 0 || n >= arr.length) return;
+  if (!App._drafts.books) App._drafts.books = JSON.stringify(App.data.years);   // रद्द गर्न मिल्ने गरी पहिलेको अवस्था सुरक्षित
   [arr[idx], arr[n]] = [arr[n], arr[idx]];
   renderAdminBooksList();
-  if (await saveBooksToGitHub('Reorder books')) refreshBookViews();
-  else { [arr[idx], arr[n]] = [arr[n], arr[idx]]; renderAdminBooksList(); }
+  refreshBookViews();          // साइटमा तुरुन्तै देखिन्छ (अझै commit भएको छैन)
+  renderDirtyBar();
 }
 window.adminBookMove = adminBookMove;
 
@@ -427,35 +450,77 @@ function adminBookEdit(idx) {
 }
 window.adminBookEdit = adminBookEdit;
 
-async function adminBookSave() {
-  if (!App.isAdmin) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
-  const title  = document.getElementById('bookFormTitle').value.trim();
-  const author = document.getElementById('bookFormAuthor').value.trim();
-  let cover    = document.getElementById('bookFormCover').value.trim();
+function collectBookForm() {
   const descEl = document.getElementById('bookFormDesc');
-  const desc   = descEl.value.trim();
-  const font   = descEl.dataset.fontKey || 'siddhanta';
-  const pdf    = document.getElementById('bookFormPdf').value.trim();
-  if (!title) { toast('⚠️ शीर्षक आवश्यक छ'); return; }
+  const v = {
+    title:  document.getElementById('bookFormTitle').value.trim(),
+    author: document.getElementById('bookFormAuthor').value.trim(),
+    cover:  document.getElementById('bookFormCover').value.trim(),
+    description: descEl.value.trim(),
+    font:   descEl.dataset.fontKey || 'siddhanta',
+    pdf:    document.getElementById('bookFormPdf').value.trim()
+  };
+  if (!v.title) { toast('⚠️ शीर्षक आवश्यक छ'); return null; }
+  return v;
+}
+
+function bookPreviewHtml(b, yr, key) {
+  const s = SUBJ[key] || { short: 'क', g: '#EEE,#CCC', label: key };
+  const [c1, c2] = s.g.split(',');
+  const row = bookCardHtml({ id: 'pv', title: b.title, author: b.author || '', cover: b.cover || '' }, yr.id, key);
+  const hero = `<div class="subj-hero" style="background:linear-gradient(135deg,${c1},${c2})">
+      ${b.cover ? `<img src="${escapeHtml(b.cover)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;z-index:0" onerror="this.style.display='none'">` : ''}
+      <span class="subj-hero-emoji" style="${b.cover ? 'display:none' : 'display:flex'}">${escapeHtml(s.short)}</span>
+      <div class="subj-hero-overlay" style="z-index:2">
+        ${b.cover ? '<div></div>' : `<div><div class="sh-title">${escapeHtml(b.title)}</div><div class="sh-meta">${escapeHtml(s.label)} · ${escapeHtml(yr.title)}</div></div>`}
+      </div></div>`;
+  const ff = (b.font && typeof fontCssFor === 'function') ? `font-family:${fontCssFor(b.font)}` : '';
+  const info = `<div class="info-card"><h3>📖 किताबको बारेमा</h3><div style="${ff}">${renderMd(b.description || 'विवरण यहाँ राख्नुस्।')}</div></div>
+      <div class="info-card"><h3>👨‍🏫 लेखक</h3><p>${escapeHtml(b.author || '')}</p></div>`;
+  return pvLbl('सूचीमा देखिँदा') + `<div class="books-list">${row}</div>` + pvLbl('किताब खोल्दा') + hero + info;
+}
+
+async function adminBookSave() {          // "👁 पूर्वावलोकन" बटन
+  if (!App.isAdmin) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
+  const v = collectBookForm();
+  if (!v) return;
   const arr = getCurrentSubjectArr();
-  if (!arr) return;
+  const yr = (App.data.years || []).find(y => y.id === App.adminBook.yearId);
+  if (!arr || !yr) return;
+  const key = App.adminBook.subjectId;
+  const eIdx = App.adminBook.editingIdx;
+  const old = (eIdx !== null && arr[eIdx]) ? arr[eIdx] : null;
+  const shown = { ...v, cover: App._bookCoverImg ? App._bookCoverImg.dataUrl : v.cover };
+  adminPreview({
+    title: '👁 किताब — पूर्वावलोकन',
+    after: bookPreviewHtml(shown, yr, key),
+    before: old ? bookPreviewHtml(old, yr, key) : null,
+    onConfirm: async () => { const ok = await commitBook(v); if (ok) pvDone('bookFormModal'); return ok; }
+  });
+}
+window.adminBookSave = adminBookSave;
+
+async function commitBook(v) {
+  const arr = getCurrentSubjectArr();
+  if (!arr) return false;
   const snap = JSON.stringify(App.data.years);
-  toast('⏳ GitHub मा सुरक्षित गर्दैछ…');
+  toast('⏳ GitHub मा commit गर्दैछ…');
   const ok = await ghSave(async () => {
+    let cover = v.cover;
     if (App._bookCoverImg) cover = await GH.uploadImage(App._bookCoverImg, 'images/covers');
-    const bookData = { title, author, cover, description: desc, font, pdf };
+    const bookData = { title: v.title, author: v.author, cover, description: v.description, font: v.font, pdf: v.pdf };
     const eIdx = App.adminBook.editingIdx;
     if (eIdx !== null && arr[eIdx]) arr[eIdx] = { id: arr[eIdx].id, ...bookData };
     else arr.push({ id: `${App.adminBook.subjectId.slice(0, 3)}${App.adminBook.yearId}_${Date.now()}`, ...bookData });
-    await GH.writeJson(DATA_BOOKS, { years: App.data.years }, 'Update book: ' + title);
+    await GH.writeJson(DATA_BOOKS, { years: App.data.years }, 'Update book: ' + v.title);
   }, 'किताब सुरक्षित गर्न सकिएन');
-  if (!ok) { App.data.years = JSON.parse(snap); return; }
-  toast('✅ किताब सुरक्षित भयो');
-  closeOv('bookFormModal');
+  if (!ok) { App.data.years = JSON.parse(snap); return false; }
+  App._drafts.books = null; renderDirtyBar();
+  toast('✅ किताब commit भयो');
   renderAdminBooksList();
   refreshBookViews();
+  return true;
 }
-window.adminBookSave = adminBookSave;
 
 async function adminBookDelete(idx) {
   if (!App.isAdmin) return;
@@ -484,11 +549,15 @@ window.refreshBookViews = refreshBookViews;
    ════════════════════════════════════ */
 async function saveChapters(bookId, list, msg) {
   const payload = list.map(c => ({ title: c.title || '', content: c.content || '', font: c.font || 'siddhanta' }));
-  return ghSave(() => GH.writeJson(chapterPath(bookId), payload, msg || 'Update chapters: ' + bookId), 'अध्याय सुरक्षित गर्न सकिएन');
+  const ok = await ghSave(() => GH.writeJson(chapterPath(bookId), payload, msg || 'Update chapters: ' + bookId), 'अध्याय सुरक्षित गर्न सकिएन');
+  if (ok) { delete App._drafts.chapters[bookId]; renderDirtyBar(); }
+  return ok;
 }
 
 /* GitHub बाट ताजा अध्याय ल्याएर cache मा राख्ने (नभए पुरानो .js फाइलबाट) */
 async function adminSyncChapters(bookId) {
+  // अनसेभ क्रम-परिवर्तन (draft) भए GitHub बाट पुरानो ल्याएर नमेट्ने
+  if (App._drafts.chapters[bookId] && App.chaptersCache[bookId]) return App.chaptersCache[bookId];
   let chs = null;
   try { chs = await GH.readJson(chapterPath(bookId)); } catch (e) { toast('⚠️ ' + e.message); }
   if (!Array.isArray(chs)) chs = (typeof loadChaptersForBook === 'function') ? await loadChaptersForBook(bookId) : [];
@@ -570,25 +639,44 @@ function adminChapterEdit(idx) {
 }
 window.adminChapterEdit = adminChapterEdit;
 
-async function adminChapterSave() {
+function chapterPreviewHtml(c, num) {
+  const ff = (c.font && typeof fontCssFor === 'function') ? `font-family:${fontCssFor(c.font)}` : '';
+  return `<div class="ch-list"><div class="chapter-item open">
+    <div class="ch-head"><div class="ch-num">${toN(num)}</div><div class="ch-title-txt">${escapeHtml(c.title || ('अध्याय ' + num))}</div></div>
+    <div class="ch-read-body"><div class="ch-read-content" style="${ff}">${renderMd(c.content || '')}</div></div>
+  </div></div>`;
+}
+
+async function adminChapterSave() {       // "👁 पूर्वावलोकन" बटन
   if (!App.isAdmin) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
   const bookId = App.adminChapter.bookId;
   const title = document.getElementById('chapterFormTitle').value.trim();
   const contentEl = document.getElementById('chapterFormContent');
   if (!title) { toast('⚠️ शीर्षक आवश्यक छ'); return; }
   const item = { title, content: contentEl.value, font: contentEl.dataset.fontKey || 'siddhanta' };
-  const list = (App.chaptersCache[bookId] || []).map(c => ({ ...c }));
+  const cur = App.chaptersCache[bookId] || [];
   const i = App.adminChapter.editingIdx;
-  if (i !== null && list[i]) list[i] = item; else list.push(item);
-  toast('⏳ GitHub मा सुरक्षित गर्दैछ…');
-  if (!(await saveChapters(bookId, list, 'Update chapter: ' + title))) return;
-  App.chaptersCache[bookId] = list;
-  toast('✅ अध्याय सुरक्षित भयो');
-  closeOv('chapterFormModal');
-  renderAdminChaptersList();
-  refreshInlineChapterView(bookId);
+  const isEdit = (i !== null && i !== undefined && cur[i]);
+  adminPreview({
+    title: '👁 अध्याय — पूर्वावलोकन',
+    after: chapterPreviewHtml(item, isEdit ? i + 1 : cur.length + 1),
+    before: isEdit ? chapterPreviewHtml(cur[i], i + 1) : null,
+    onConfirm: async () => { const ok = await commitChapter(bookId, item, isEdit ? i : null); if (ok) pvDone('chapterFormModal'); return ok; }
+  });
 }
 window.adminChapterSave = adminChapterSave;
+
+async function commitChapter(bookId, item, i) {
+  const list = (App.chaptersCache[bookId] || []).map(c => ({ ...c }));
+  if (i !== null && list[i]) list[i] = item; else list.push(item);
+  toast('⏳ GitHub मा commit गर्दैछ…');
+  if (!(await saveChapters(bookId, list, 'Update chapter: ' + item.title))) return false;
+  App.chaptersCache[bookId] = list;
+  toast('✅ अध्याय commit भयो');
+  renderAdminChaptersList();
+  refreshInlineChapterView(bookId);
+  return true;
+}
 
 async function adminChapterDelete(idx) {
   if (!App.isAdmin) return;
@@ -604,17 +692,17 @@ async function adminChapterDelete(idx) {
 }
 window.adminChapterDelete = adminChapterDelete;
 
-async function adminChapterMove(idx, dir) {
+function adminChapterMove(idx, dir) {
   if (!App.isAdmin) return;
   const bookId = App.adminChapter.bookId;
-  const list = (App.chaptersCache[bookId] || []).map(c => ({ ...c }));
+  const list = App.chaptersCache[bookId] || [];
   const n = idx + dir;
   if (n < 0 || n >= list.length) return;
+  if (!App._drafts.chapters[bookId]) App._drafts.chapters[bookId] = JSON.stringify(list);
   [list[idx], list[n]] = [list[n], list[idx]];
-  if (!(await saveChapters(bookId, list, 'Reorder chapters'))) return;
-  App.chaptersCache[bookId] = list;
   renderAdminChaptersList();
-  refreshInlineChapterView(bookId);
+  refreshInlineChapterView(bookId);   // साइटमा तुरुन्तै देखिन्छ (अझै commit भएको छैन)
+  renderDirtyBar();
 }
 window.adminChapterMove = adminChapterMove;
 
@@ -717,7 +805,15 @@ function adminSubjectEdit(key) {
 }
 window.adminSubjectEdit = adminSubjectEdit;
 
-async function adminSubjectSave() {
+function subjectPreviewHtml(key, label, short, g) {
+  const [c1, c2] = (g || '#EEE,#CCC').split(',');
+  return pvLbl('विषयको सूची') + `<div class="sett-row"><div class="sett-left">
+      <div class="sett-ico" style="background:linear-gradient(135deg,${c1},${c2})">${escapeHtml(short || '?')}</div>
+      <div><div class="sett-name">${escapeHtml(label || key)}</div><div class="sett-desc">key: ${escapeHtml(key)}</div></div></div></div>`
+    + pvLbl('किताब ट्याबमा') + `<div style="display:flex;gap:8px"><span class="tab-btn on" style="flex:none;padding:8px 14px;white-space:nowrap">${escapeHtml(short || '?')} ${escapeHtml(label || key)}</span></div>`;
+}
+
+async function adminSubjectSave() {       // "👁 पूर्वावलोकन" बटन
   if (!App.isAdmin) { toast('⚠️ पहिले Admin Login गर्नुस्'); return; }
   const isNew = !App.adminSubject.editingKey;
   const rawKey = document.getElementById('subjectFormKey').value.trim().toLowerCase();
@@ -726,11 +822,24 @@ async function adminSubjectSave() {
   const short  = document.getElementById('subjectFormShort').value.trim();
   if (!key || !label) { toast('⚠️ Key र नाम दुवै आवश्यक छ'); return; }
   if (isNew && SUBJ[key]) { toast('⚠️ यो key पहिल्यै अस्तित्वमा छ'); return; }
+  const g = isNew ? SUBJECT_PALETTE[Object.keys(SUBJ).length % SUBJECT_PALETTE.length] : SUBJ[key].g;
+  const shortFinal = short || (isNew ? label.slice(0, 2) : SUBJ[key].short);
+  const old = isNew ? null : SUBJ[key];
+  adminPreview({
+    title: '👁 विषय — पूर्वावलोकन',
+    after: subjectPreviewHtml(key, label, shortFinal, g),
+    before: old ? subjectPreviewHtml(key, old.label, old.short, old.g) : null,
+    onConfirm: async () => { const ok = await commitSubject({ isNew, key, label, short: shortFinal, g }); if (ok) pvDone('subjectFormModal'); return ok; }
+  });
+}
+window.adminSubjectSave = adminSubjectSave;
 
+async function commitSubject({ isNew, key, label, short, g }) {
+  const snapYears = JSON.stringify(App.data.years), snapSubj = JSON.stringify(SUBJ);
+  toast('⏳ GitHub मा commit गर्दैछ…');
   let ok;
   if (isNew) {
-    const g = SUBJECT_PALETTE[Object.keys(SUBJ).length % SUBJECT_PALETTE.length];
-    SUBJ[key] = { label, short: short || label.slice(0, 2), g };
+    SUBJ[key] = { label, short, g };
     (App.data.years || []).forEach(y => {
       if (!y.subjects) y.subjects = {};
       if (!Array.isArray(y.subjects[key])) y.subjects[key] = [];
@@ -738,18 +847,133 @@ async function adminSubjectSave() {
     ok = (await saveBooksToGitHub('Add subject: ' + key)) && (await saveSubjectsToGitHub());
   } else {
     SUBJ[key].label = label;
-    SUBJ[key].short = short || SUBJ[key].short;
+    SUBJ[key].short = short;
     ok = await saveSubjectsToGitHub();
   }
-  if (ok) {
-    toast(isNew ? '✅ नयाँ विषय थपियो' : '✅ विषय अपडेट भयो');
-    closeOv('subjectFormModal');
-    renderAdminSubjectsList();
-    renderAdminBooksSubjectTabs();
-    refreshBookViews();
+  if (!ok) {
+    App.data.years = JSON.parse(snapYears);
+    Object.keys(SUBJ).forEach(k => delete SUBJ[k]); Object.assign(SUBJ, JSON.parse(snapSubj));
+    return false;
   }
+  toast(isNew ? '✅ नयाँ विषय commit भयो' : '✅ विषय commit भयो');
+  renderAdminSubjectsList();
+  renderAdminBooksSubjectTabs();
+  refreshBookViews();
+  return true;
 }
-window.adminSubjectSave = adminSubjectSave;
+
+/* ════════════════════════════════════
+   पूर्वावलोकन (Preview) — सेभ गर्नु अघि साइटमा जस्तो देखिन्छ त्यही हेर्ने;
+   चित्त बुझेमा मात्र "Commit" थिच्ने। सम्पादन गरेको भए "पहिले / अहिले" दुवै हेर्न मिल्छ।
+   ════════════════════════════════════ */
+App._pv = null;
+App._drafts = { books: null, chapters: {} };   // अनसेभ क्रम-परिवर्तन (पहिलेको अवस्थाको snapshot)
+
+const pvLbl = t => `<div style="font-size:.72rem;font-weight:700;color:var(--text-3);margin:12px 2px 6px">${t}</div>`;
+
+function noticePreviewHtml(n) {
+  // साइटको असली chalkboard लाई clone गरेर त्यसमा नयाँ पाठ भर्ने → ठ्याक्कै उस्तै देखिन्छ
+  let board = '';
+  const src = document.getElementById('newsBoard');
+  if (src) {
+    const c = src.cloneNode(true);
+    c.removeAttribute('id'); c.removeAttribute('onclick');
+    const q = id => c.querySelector('#' + id);
+    const t = q('newsBoardTitle'), d = q('newsBoardDesc'), dt = q('newsBoardDate'), dots = q('newsBoardDots');
+    if (t) { t.textContent = n.title; t.style.opacity = '1'; t.removeAttribute('id'); }
+    if (d) {
+      d.innerHTML = renderMd(n.content || '');
+      d.style.fontFamily = (n.font && typeof fontCssFor === 'function') ? fontCssFor(n.font) : '';
+      d.style.opacity = '1'; d.removeAttribute('id');
+    }
+    if (dt) { dt.textContent = n.date ? `मिति :- ${n.date}` : ''; dt.style.opacity = '1'; dt.removeAttribute('id'); }
+    if (dots) { dots.innerHTML = ''; dots.removeAttribute('id'); }
+    board = c.outerHTML;
+  }
+  const ff = (n.font && typeof fontCssFor === 'function') ? `font-family:${fontCssFor(n.font)}` : '';
+  const full = `<div class="info-card">
+      ${n.image ? `<img src="${escapeHtml(n.image)}" alt="" style="width:100%;border-radius:12px;margin-bottom:10px;display:block">` : ''}
+      <h3>${escapeHtml(n.title)}</h3>
+      <div style="font-size:.72rem;color:var(--text-3);margin:2px 0 8px">${escapeHtml(n.date || '')}${n.category ? ' · ' + escapeHtml(n.category) : ''}</div>
+      <div style="${ff}">${renderMd(n.content || '')}</div></div>`;
+  return pvLbl('होम पेजको चकबोर्डमा') + board + pvLbl('थिच्दा खुल्ने पूरा सूचना') + full;
+}
+
+function adminPreview({ title, after, before, okLabel, onConfirm }) {
+  App._pv = { after, before: before || null, mode: 'after', onConfirm, busy: false };
+  document.getElementById('adminPreviewTitle').textContent = title || '👁 पूर्वावलोकन';
+  document.getElementById('adminPreviewOk').textContent = okLabel || '✅ ठीक छ, Commit गर्नुस्';
+  document.getElementById('adminPreviewTabs').style.display = before ? 'flex' : 'none';
+  pvRender();
+  document.getElementById('adminPreviewBody').scrollTop = 0;
+  openOv('adminPreviewModal');
+}
+function pvRender() {
+  const v = App._pv;
+  if (!v) return;
+  // pointer-events:none — पूर्वावलोकनका लिंक/बटन दबिँदा साइट नबदलियोस्; स्क्रोल भने चल्छ
+  document.getElementById('adminPreviewBody').innerHTML = `<div style="pointer-events:none">${v.mode === 'before' ? v.before : v.after}</div>`;
+  document.getElementById('pvTabAfter').classList.toggle('on', v.mode === 'after');
+  document.getElementById('pvTabBefore').classList.toggle('on', v.mode === 'before');
+}
+function pvMode(m) { if (App._pv) { App._pv.mode = m; pvRender(); } }
+window.pvMode = pvMode;
+
+async function pvConfirm() {
+  const v = App._pv;
+  if (!v || v.busy) return;
+  v.busy = true;
+  const btn = document.getElementById('adminPreviewOk');
+  btn.disabled = true;
+  try { await v.onConfirm(); } catch (e) { toast('❌ ' + e.message); }
+  btn.disabled = false; v.busy = false;
+}
+window.pvConfirm = pvConfirm;
+
+function pvDone(formId) {
+  closeOv('adminPreviewModal');
+  if (formId) setTimeout(() => closeOv(formId), 160);   // history.back() पूरा भएपछि मात्र फारम बन्द गर्ने
+}
+
+/* क्रम मिलाएको तर commit नगरेको अवस्थामा माथि देखिने bar */
+function renderDirtyBar() {
+  let bar = document.getElementById('adminDirtyBar');
+  const n = (App._drafts.books ? 1 : 0) + Object.keys(App._drafts.chapters).length;
+  if (!n) { if (bar) bar.remove(); return; }
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'adminDirtyBar';
+    bar.style.cssText = 'position:fixed;left:10px;right:10px;top:calc(8px + env(safe-area-inset-top,0px));z-index:400;background:#2b2b2b;color:#fff;border-radius:14px;padding:9px 10px 9px 14px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(0,0,0,.35);font-size:.8rem';
+    document.body.appendChild(bar);
+  }
+  bar.innerHTML = `<span style="flex:1;line-height:1.35">● अनसेभ क्रम-परिवर्तन<br><span style="opacity:.7;font-size:.7rem">साइटमा हेर्न मिल्छ, अझै commit भएको छैन</span></span>
+    <button onclick="adminDraftsDiscard()" style="background:#555;color:#fff;border:0;border-radius:10px;padding:8px 11px;font-weight:700">↩ रद्द</button>
+    <button onclick="adminDraftsCommit()" style="background:#d94f1e;color:#fff;border:0;border-radius:10px;padding:8px 11px;font-weight:700">✅ Commit</button>`;
+}
+async function adminDraftsCommit() {
+  const d = App._drafts;
+  toast('⏳ GitHub मा commit गर्दैछ…');
+  if (d.books && !(await saveBooksToGitHub('Reorder books'))) return;
+  for (const id of Object.keys(d.chapters)) {
+    if (!(await saveChapters(id, App.chaptersCache[id] || [], 'Reorder chapters'))) return;
+  }
+  renderDirtyBar();
+  toast('✅ क्रम commit भयो');
+}
+window.adminDraftsCommit = adminDraftsCommit;
+
+function adminDraftsDiscard() {
+  const d = App._drafts;
+  if (d.books) { App.data.years = JSON.parse(d.books); d.books = null; }
+  Object.keys(d.chapters).forEach(id => { App.chaptersCache[id] = JSON.parse(d.chapters[id]); delete d.chapters[id]; });
+  renderDirtyBar();
+  if (document.getElementById('adminBooksList')) renderAdminBooksList();
+  if (document.getElementById('adminChaptersList') && App.adminChapter.bookId) renderAdminChaptersList();
+  refreshBookViews();
+  if (App.currentChapterBookId) refreshInlineChapterView(App.currentChapterBookId);
+  toast('↩ क्रम-परिवर्तन रद्द भयो');
+}
+window.adminDraftsDiscard = adminDraftsDiscard;
 
 /* ── सुरु ── */
 window.addEventListener('load', () => { adminAutoLogin(); });
