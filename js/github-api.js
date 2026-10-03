@@ -64,7 +64,6 @@ const GH = {
       cache: 'no-store',
       headers: {
         'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
         ...(t ? { 'Authorization': 'Bearer ' + t } : {}),
         ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
         ...(opts.headers || {})

@@ -374,6 +374,12 @@
           <div><div class="sett-name">विषय (Subject) व्यवस्थापन</div><div class="sett-desc">नाम थप्नुस् / सम्पादन गर्नुस्</div></div>
         </div><span style="color:var(--text-3)">→</span>
       </div>
+      <div class="sett-row" onclick="zipUploadOpen()">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#e3f2fd">📦</div>
+          <div><div class="sett-name">Zip बाट साइट अपडेट</div><div class="sett-desc">नयाँ संस्करणको zip एकै चोटि GitHub मा हाल्नुस्</div></div>
+        </div><span style="color:var(--text-3)">→</span>
+      </div>
       <div class="sett-row" onclick="adminLogout()">
         <div class="sett-left">
           <div class="sett-ico" style="background:#ffebee">🚪</div>
@@ -874,6 +880,17 @@
 
 <div class="toast" id="toastEl"></div>
 
+<!-- Admin: Zip बाट साइट अपडेट (यो पूर्वावलोकन modal भन्दा अघि राख्ने) -->
+<div class="overlay" id="zipUploadModal" onclick="if(event.target===this)closeOv('zipUploadModal')">
+  <div class="modal-sheet zu-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title">📦 Zip बाट साइट अपडेट</div>
+    <div class="zu-steps" id="zuSteps"></div>
+    <div id="zuBody"></div>
+    <div class="m-btns" id="zuBtns"></div>
+  </div>
+</div>
+
 <!-- Admin: पूर्वावलोकन — सेभ गर्नु अघि साइटमा जस्तो देखिन्छ हेर्ने (यो सबैभन्दा माथि रहनुपर्छ) -->
 <div class="overlay" id="adminPreviewModal" style="z-index:330">
   <div class="modal-sheet" style="display:flex;flex-direction:column;max-height:92vh">
@@ -893,6 +910,7 @@
 
 <!-- 🔐 Admin — GitHub API (Firebase छैन) -->
 <script src="js/github-api.js"></script>
+<script src="js/zip-upload.js" defer></script>
 
 <script src="js/main.js"></script>
 <script src="js/admin.js"></script>
