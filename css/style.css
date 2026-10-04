@@ -1826,3 +1826,33 @@ html.lite .overlay { transition: none !important; }
 .mdimg-chip.on { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border-color:transparent; box-shadow:0 4px 14px var(--accent-glow); }
 .mdimg-hint { font-size:0.74rem; color:var(--text-3); line-height:1.5; margin:10px 2px 0; min-height:2.4em; }
 .mdimg-btns { display:flex; gap:9px; margin-top:12px; }
+
+
+/* ═══════════════════════════════════
+   अध्याय पढ्ने पाना — किनारै-किनारासम्म (side खाली नदेखिने) र बुँदाको ग्याप
+   ═══════════════════════════════════ */
+.content { --pad: 16px; }
+@media (min-width:500px) { .content { --pad: 20px; } }
+
+/* खुलेको अध्यायले पाना (content) को पूरा चौडाइ ढाक्छ — दायाँ-बायाँ पृष्ठभूमि देखिँदैन */
+.ch-list { overflow: visible; }
+.ch-list > .chapter-item:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
+.ch-list > .chapter-item:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
+.ch-list > .chapter-item:only-child  { border-radius: var(--r-lg); }
+.ch-list > .chapter-item.open {
+  margin-left: calc(-1 * var(--pad)); margin-right: calc(-1 * var(--pad));
+  max-width: none; width: auto;
+  border-radius: 0; box-shadow: none;
+  border-top: 1px solid var(--divider);
+}
+.ch-list > .chapter-item.open .ch-head { padding-left: calc(14px + 2px); padding-right: 16px; }
+.ch-read-content { padding: 16px 16px 14px; }
+
+/* बुँदा: नजिक-नजिक, सुन्दर */
+.ch-read-content ul, .ch-read-content ol { margin: 4px 0 12px; padding-left: 22px; }
+.ch-read-content li { margin-bottom: 3px; line-height: 1.85; }
+.ch-read-content li:last-child { margin-bottom: 0; }
+
+/* header/nav मा blur नभएकाले पछाडिको अक्षर नदेखियोस् — पारदर्शी रङलाई ठोस पृष्ठभूमिमाथि राखिन्छ */
+.site-header { background: linear-gradient(var(--header-bg), var(--header-bg)), var(--bg); }
+.bot-nav::before { background: linear-gradient(var(--header-bg), var(--header-bg)), var(--bg); }

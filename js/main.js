@@ -1374,7 +1374,9 @@ function renderMd(text) {
     })
     .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
     .replace(/^- (.+)$/gm,'<li>$1</li>')
-    .replace(/(<li>.*?<\/li>\n?)+/gs,m=>`<ul>${m}</ul>`)
+    // बुँदाहरू (- ...) बीच खाली लाइन वा खाली ठाउँ भए पनि एउटै सूचीमा जोड्ने र वरपरका अनावश्यक लाइन-ब्रेक हटाउने
+    // (पहिले हरेक बुँदा छुट्टै <ul> बन्थ्यो र बीचमा </p><p>, <br> थपिएर ठूलो ग्याप आउँथ्यो)
+    .replace(/<li>[^\n]*?<\/li>(?:\s*<li>[^\n]*?<\/li>)*\s*/g, m => '<ul>' + m.replace(/<\/li>\s+<li>/g, '</li><li>').replace(/\s+$/, '') + '</ul>')
     .replace(/\n\n/g,'</p><p>')
     .replace(/\n/g,'<br>');
 
