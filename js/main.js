@@ -760,7 +760,7 @@ function initHistoryNav() {
    बराबरी (key) दिइएको छ। सूचीमा नभएको शब्द भए सामान्य फन्टमै देखिन्छ (केही बिग्रँदैन)।
    फन्ट लोड हुनुअघि र लोड नभए Unicode पाठ देखिन्छ (html.an-ready आएपछि मात्र फन्ट देखिन्छ)।
    ════════════════════════════════════ */
-const ANANDA_MAP = { 'प्रथम': 'k|yd', 'द्वितीय': 'låtLo', 'तृतीय': 't[tLo', 'चतुर्थ': "rt'y{", 'वर्ष': 'ji{' };
+const ANANDA_MAP = { 'प्रथम': 'k|yd', 'द्वितीय': 'låtLo', 'तृतीय': 't[tLo', 'चतुर्थ': "rt'y{", 'वर्ष': 'jif{' };   // ष को पूरा रूप: i (आधा) + f
 function anandaHtml(text) {
   const words = String(text == null ? '' : text).trim().split(/\s+/);
   if (!words[0] || !words.every(w => ANANDA_MAP[w])) return text;
