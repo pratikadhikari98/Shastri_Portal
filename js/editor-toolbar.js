@@ -120,6 +120,117 @@ async function mdInsertImage(id) {
 }
 window.mdInsertImage = mdInsertImage;
 
+
+/* ════════════════════════════════════
+   📷 फोटो अपलोड — textarea को कर्सर भएको जुनसुकै ठाउँमा
+   - फोटो छान्दा browser मै सानो बनाइन्छ (max 1200px) र "![](pending:ID)" राखिन्छ
+   - साँच्चै GitHub मा अपलोड "Commit" गर्दा मात्र हुन्छ (पूर्वावलोकनमा तुरुन्तै देखिन्छ)
+   - आकार (पूरा/७५%/५०%/३०%) र स्थिति (बीचमा / अक्षर वरिपरि बायाँ / दायाँ) छान्न मिल्छ
+   ════════════════════════════════════ */
+const MD_TA_IDS = new Set();
+/* App._mdImgs (pending id -> {dataUrl,b64}) र App._mdImgUp (id -> GitHub path) js/admin.js मा तयार हुन्छन् */
+function _mdStore() { App._mdImgs = App._mdImgs || {}; App._mdImgUp = App._mdImgUp || {}; return App._mdImgs; }
+let _mdImgCtx = null;
+let _mdImgSeq = 0;
+
+function mdUploadImage(id) {
+  const ta = _mdTa(id); if (!ta) return;
+  _mdImgCtx = { id, start: ta.selectionStart, end: ta.selectionEnd };
+  let inp = document.getElementById('mdImgFile');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'mdImgFile'; inp.style.display = 'none';
+    inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) _mdImgStart(f); };
+    document.body.appendChild(inp);
+  }
+  inp.value = '';
+  inp.click();
+}
+window.mdUploadImage = mdUploadImage;
+
+async function _mdImgStart(file) {
+  if (!window.GH) { toast('⚠️ GitHub module लोड भएको छैन'); return; }
+  try {
+    toast('⏳ फोटो तयार गर्दैछ…');
+    const prepared = await GH.prepareImage(file, 1200, 0.82);
+    _mdImgCtx.prepared = prepared;
+    _mdImgCtx.size = '100'; _mdImgCtx.align = 'center';
+    _mdImgSheet();
+  } catch (e) { toast('⚠️ ' + e.message); }
+}
+
+function _mdImgSheet() {
+  document.getElementById('mdImgSheet')?.remove();
+  const c = _mdImgCtx;
+  const sheet = document.createElement('div');
+  sheet.id = 'mdImgSheet'; sheet.className = 'mdimg-back';
+  const chip = (grp, val, label) => `<button type="button" class="mdimg-chip" data-grp="${grp}" data-val="${val}" onclick="mdImgPick('${grp}','${val}')">${label}</button>`;
+  sheet.innerHTML = `<div class="mdimg-card">
+      <div class="mdimg-title">📷 फोटो कसरी राख्ने?</div>
+      <div class="mdimg-prev"><img src="${c.prepared.dataUrl}" alt=""></div>
+      <div class="mdimg-lbl">आकार</div>
+      <div class="mdimg-row">${chip('size', '100', 'पूरा')}${chip('size', '75', '७५%')}${chip('size', '50', '५०%')}${chip('size', '30', '३०%')}</div>
+      <div class="mdimg-lbl">स्थिति</div>
+      <div class="mdimg-row">${chip('align', 'center', 'बीचमा')}${chip('align', 'left', '◧ बायाँ (अक्षर वरिपरि)')}${chip('align', 'right', 'दायाँ (अक्षर वरिपरि) ◨')}</div>
+      <div class="mdimg-hint" id="mdImgHint"></div>
+      <div class="mdimg-btns">
+        <button type="button" class="btn-s" onclick="mdImgCancel()">रद्द</button>
+        <button type="button" class="btn-p" onclick="mdImgConfirm()">✅ यहाँ राख्नुस्</button>
+      </div></div>`;
+  sheet.addEventListener('click', e => { if (e.target === sheet) mdImgCancel(); });
+  document.body.appendChild(sheet);
+  _mdImgRefresh();
+}
+
+function _mdImgRefresh() {
+  const c = _mdImgCtx; if (!c) return;
+  document.querySelectorAll('#mdImgSheet .mdimg-chip').forEach(b => b.classList.toggle('on', c[b.dataset.grp] === b.dataset.val));
+  const h = document.getElementById('mdImgHint');
+  if (h) h.textContent = c.align === 'center' ? 'फोटो आफ्नै लाइनमा, बीचमा देखिन्छ।' : 'फोटो छेउमा र अक्षर यसको वरिपरि बग्छ (पत्रिकामा जस्तै)। ५०% वा ३०% राख्दा राम्रो देखिन्छ।';
+}
+function mdImgPick(grp, val) {
+  if (!_mdImgCtx) return;
+  _mdImgCtx[grp] = val;
+  if (grp === 'align' && val !== 'center' && _mdImgCtx.size === '100') _mdImgCtx.size = '50';   // अक्षर वरिपरि राख्दा आधा आकार उपयुक्त
+  _mdImgRefresh();
+}
+window.mdImgPick = mdImgPick;
+
+function mdImgCancel() { document.getElementById('mdImgSheet')?.remove(); _mdImgCtx = null; }
+window.mdImgCancel = mdImgCancel;
+
+function mdImgConfirm() {
+  const c = _mdImgCtx; if (!c) return;
+  const ta = _mdTa(c.id);
+  document.getElementById('mdImgSheet')?.remove();
+  if (!ta) { _mdImgCtx = null; return; }
+  const pid = 'i' + Date.now().toString(36).slice(-5) + (++_mdImgSeq);
+  _mdStore()[pid] = c.prepared;
+  const opts = (c.size !== '100' ? '|' + c.size : '') + (c.align !== 'center' ? '|' + c.align : '');
+  const md = `![${opts}](pending:${pid})`;
+  const v = ta.value, s = Math.min(c.start, v.length), e = Math.min(c.end, v.length);
+  const pre  = (s > 0 && v[s - 1] !== '\n') ? '\n' : '';
+  const post = (v[e] !== undefined && v[e] !== '\n') ? '\n' : '\n';
+  ta.value = v.slice(0, s) + pre + md + post + v.slice(e);
+  const pos = s + pre.length + md.length + post.length;
+  ta.focus(); ta.setSelectionRange(pos, pos);
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+  _mdImgCtx = null;
+  toast('✅ फोटो राखियो — पूर्वावलोकनमा हेर्न सकिन्छ');
+}
+window.mdImgConfirm = mdImgConfirm;
+
+/* कम्प्युटरमा clipboard बाट फोटो paste गर्दा पनि कर्सरकै ठाउँमा */
+document.addEventListener('paste', e => {
+  const ta = e.target;
+  if (!ta || ta.tagName !== 'TEXTAREA' || !MD_TA_IDS.has(ta.id)) return;
+  const f = [...(e.clipboardData?.files || [])].find(x => x.type.startsWith('image/'));
+  if (!f) return;
+  e.preventDefault();
+  _mdImgCtx = { id: ta.id, start: ta.selectionStart, end: ta.selectionEnd };
+  _mdImgStart(f);
+});
+
 /* वैदिक/संस्कृत विशेष अक्षरहरू — क्रमैसँग, cursor भएको ठाउँमा सिधै insert हुने */
 const VEDIC_CHARS = ['ॐ','ऽ','॥','।','ᳬ','ᳫ','ᳪ','ᳩ','ᳰ','ᳮ','ᳱ','ᳯ','꣱','꣰','꣯','꣮','꣭','꣬','꣫','꣠','꣡','꣢','꣣','꣤','꣥','꣦','꣧','꣨','꣩','꣪','॰'];
 
@@ -317,6 +428,7 @@ window.fontCssFor = fontCssFor;
    opts.title = पूरा-स्क्रिन खोल्दा देखिने heading
    opts.fullscreenBtn = false भए ⛶ बटन नदेखाउने (पूरा-स्क्रिन भित्रैको toolbar मा दोहोरो नआउन) */
 function renderMdToolbar(textareaId, opts = {}) {
+  MD_TA_IDS.add(textareaId);   // यो textarea मा फोटो paste गर्न पनि मिल्ने
   const title = opts.title || 'सम्पादन';
   const showFs = opts.fullscreenBtn !== false;
   return `
@@ -337,7 +449,8 @@ function renderMdToolbar(textareaId, opts = {}) {
     <button type="button" class="tb-btn" onclick="mdInsertBlock('${textareaId}','\\n---\\n')" title="भाग छुट्याउने रेखा">― रेखा</button>
     <button type="button" class="tb-btn tb-btn-box" onclick="mdInsertBox('${textareaId}',this)" title="सूचना/सुझाव बक्स">📦 बक्स</button>
     <button type="button" class="tb-btn" onclick="mdInsertTable('${textareaId}')" title="तालिका">▦ तालिका</button>
-    <button type="button" class="tb-btn" onclick="mdInsertImage('${textareaId}')" title="फोटो">🖼️ फोटो</button>
+    <button type="button" class="tb-btn tb-btn-photo" onclick="mdUploadImage('${textareaId}')" title="कर्सर भएको ठाउँमा फोटो अपलोड">📷 फोटो अपलोड</button>
+    <button type="button" class="tb-btn" onclick="mdInsertImage('${textareaId}')" title="इन्टरनेटको फोटो (URL)">🔗 URL फोटो</button>
   </div>`;
 }
 window.renderMdToolbar = renderMdToolbar;

@@ -1339,7 +1339,22 @@ function renderMd(text) {
   );
 
   let html = escaped
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" loading="lazy" decoding="async">')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, src) => {
+      // ![|50|left](फोटो) — alt पछि | राखेर आकार (%) र स्थिति (left/right/center) दिन मिल्छ
+      const parts = alt.split('|');
+      let w = 0, al = 'center';
+      parts.slice(1).forEach(tk => {
+        tk = tk.trim().toLowerCase();
+        if (/^\d{1,3}%?$/.test(tk)) w = Math.max(10, Math.min(100, parseInt(tk, 10)));
+        else if (tk === 'left' || tk === 'right' || tk === 'center') al = tk;
+      });
+      const st = [];
+      if (w) st.push('width:' + w + '%');
+      if (al === 'left') st.push('float:left;margin:4px 14px 8px 0');
+      else if (al === 'right') st.push('float:right;margin:4px 0 8px 14px');
+      else if (w) st.push('margin-left:auto;margin-right:auto');
+      return '<img src="' + src + '" alt="' + parts[0].trim() + '" loading="lazy" decoding="async"' + (st.length ? ' style="' + st.join(';') + '"' : '') + '>';
+    })
     .replace(/^# (.+)$/gm,'<h1>$1</h1>')
     .replace(/^## (.+)$/gm,'<h2>$1</h2>')
     .replace(/^### (.+)$/gm,'<h3>$1</h3>')
@@ -1894,7 +1909,14 @@ async function saveOfflineData() {
   for (const bookId of bookIds) {
     const jsonUrl = `data/chapters/${bookId}.json`;
     let found = false;
-    try { const r = await fetch(jsonUrl, { cache: 'no-cache' }); if (r.ok) { urls.add(jsonUrl); found = true; } } catch (e) {}
+    try {
+      const r = await fetch(jsonUrl, { cache: 'no-cache' });
+      if (r.ok) {
+        urls.add(jsonUrl); found = true;
+        // अध्याय भित्रका फोटो पनि offline मा राख्ने
+        try { const txt = await r.clone().text(); txt.replace(/\]\((images\/[^)\s"\\]+)\)/g, (m, u) => { urls.add(u); return m; }); } catch (e) {}
+      }
+    } catch (e) {}
     if (!found) {
       let i = 1;
       while (true) {

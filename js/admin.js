@@ -10,6 +10,8 @@
 
 App.isAdmin   = false;
 App.adminUser = null;
+App._mdImgs   = App._mdImgs  || {};   // सम्पादकमा राखेका फोटो: pending id -> {dataUrl,b64}
+App._mdImgUp  = App._mdImgUp || {};   // pending id -> GitHub मा गएको path
 
 const DATA_BOOKS    = 'data/books.json';
 const DATA_SUBJECTS = 'data/subjects.json';
@@ -25,6 +27,29 @@ function escapeHtml(s = '') {
 async function ghSave(fn, failMsg) {
   try { await fn(); return true; }
   catch (err) { toast('❌ ' + failMsg + ': ' + err.message); return false; }
+}
+
+/* ════════════════════════════════════
+   सम्पादकमा राखेका फोटो (pending:ID) — Commit गर्दा मात्र GitHub मा अपलोड हुन्छन्
+   ════════════════════════════════════ */
+async function resolvePendingImages(text) {
+  if (!text || text.indexOf('pending:') === -1) return text;
+  const ids = [...new Set([...text.matchAll(/pending:([A-Za-z0-9_-]+)/g)].map(m => m[1]))];
+  for (const id of ids) {
+    let path = App._mdImgUp[id];
+    if (!path) {
+      const prep = App._mdImgs[id];
+      if (!prep) throw new Error('एउटा फोटो तयार छैन (पेज reload भएको हुन सक्छ) — फोटो फेरि जोड्नुस्');
+      path = await GH.uploadImage(prep, 'images/content');
+      App._mdImgUp[id] = path;
+    }
+    text = text.split('pending:' + id).join(path);
+  }
+  return text;
+}
+/* पूर्वावलोकनमा pending फोटो ब्राउजरमै भएको प्रति (dataUrl) बाट देखाउने */
+function pvSubstitute(html) {
+  return html.replace(/pending:([A-Za-z0-9_-]+)/g, (m, id) => (App._mdImgUp[id] || (App._mdImgs[id] && App._mdImgs[id].dataUrl) || m));
 }
 
 /* ════════════════════════════════════
@@ -246,6 +271,7 @@ async function commitNotice({ isFeed, data, idx }) {
   toast('⏳ GitHub मा commit गर्दैछ…');
   const ok = await ghSave(async () => {
     const d = { ...data };
+    d.content = await resolvePendingImages(d.content);
     if (App._noticeImg) d.image = await GH.uploadImage(App._noticeImg);
     const src = isFeed ? App.feedPosts : (App.data.news || []);
     const list = src.map(cleanPost);
@@ -507,6 +533,7 @@ async function commitBook(v) {
   toast('⏳ GitHub मा commit गर्दैछ…');
   const ok = await ghSave(async () => {
     let cover = v.cover;
+    v = { ...v, description: await resolvePendingImages(v.description) };
     if (App._bookCoverImg) cover = await GH.uploadImage(App._bookCoverImg, 'images/covers');
     const bookData = { title: v.title, author: v.author, cover, description: v.description, font: v.font, pdf: v.pdf };
     const eIdx = App.adminBook.editingIdx;
@@ -667,6 +694,9 @@ async function adminChapterSave() {       // "👁 पूर्वावलो�
 window.adminChapterSave = adminChapterSave;
 
 async function commitChapter(bookId, item, i) {
+  toast('⏳ फोटो/अध्याय GitHub मा हाल्दैछ…');
+  try { item = { ...item, content: await resolvePendingImages(item.content) }; }
+  catch (err) { toast('❌ ' + err.message); return false; }
   const list = (App.chaptersCache[bookId] || []).map(c => ({ ...c }));
   if (i !== null && list[i]) list[i] = item; else list.push(item);
   toast('⏳ GitHub मा commit गर्दैछ…');
@@ -912,7 +942,7 @@ function pvRender() {
   const v = App._pv;
   if (!v) return;
   // pointer-events:none — पूर्वावलोकनका लिंक/बटन दबिँदा साइट नबदलियोस्; स्क्रोल भने चल्छ
-  document.getElementById('adminPreviewBody').innerHTML = `<div style="pointer-events:none">${v.mode === 'before' ? v.before : v.after}</div>`;
+  document.getElementById('adminPreviewBody').innerHTML = `<div style="pointer-events:none">${pvSubstitute(v.mode === 'before' ? v.before : v.after)}</div>`;
   document.getElementById('pvTabAfter').classList.toggle('on', v.mode === 'after');
   document.getElementById('pvTabBefore').classList.toggle('on', v.mode === 'before');
 }
