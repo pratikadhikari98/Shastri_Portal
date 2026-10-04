@@ -1,7 +1,7 @@
-// शास्त्री पोर्टल — Service Worker v19
+// शास्त्री पोर्टल — Service Worker v20
 // ⚡ Speed: app shell/फन्ट/फोटो = STALE-WHILE-REVALIDATE (cache बाट तुरुन्तै, पछाडि ताजा तान्ने)
 //    data/* = network-first तर ढिलो नेटवर्कमा २.५s पछि cache। कोड अपडेट गर्दा APP_CACHE को नम्बर बढाउनुस्।
-const APP_CACHE      = 'shastri-app-v22';     // App shell (auto)
+const APP_CACHE      = 'shastri-app-v23';     // App shell (auto)
 const OFFLINE_CACHE  = 'shastri-offline-v2';  // User-triggered "Save for offline" content
 
 const APP_ASSETS = [
@@ -9,6 +9,7 @@ const APP_ASSETS = [
   './index.html',
   './css/style.css',
   './fonts/Siddhanta.woff',
+  './fonts/AnandaDevanagariRound.woff',
   './js/main.js',
   './js/admin.js',
   './js/github-api.js',

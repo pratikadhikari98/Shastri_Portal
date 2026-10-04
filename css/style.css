@@ -1856,3 +1856,17 @@ html.lite .overlay { transition: none !important; }
 /* header/nav मा blur नभएकाले पछाडिको अक्षर नदेखियोस् — पारदर्शी रङलाई ठोस पृष्ठभूमिमाथि राखिन्छ */
 .site-header { background: linear-gradient(var(--header-bg), var(--header-bg)), var(--bg); }
 .bot-nav::before { background: linear-gradient(var(--header-bg), var(--header-bg)), var(--bg); }
+
+
+/* ═══════════════════════════════════
+   Ananda Devanagari Round — होमका वर्ष-कार्ड (प्रथम / द्वितीय / तृतीय / चतुर्थ वर्ष)
+   ═══════════════════════════════════ */
+@font-face {
+  font-family: 'AnandaRound';
+  src: url('../fonts/AnandaDevanagariRound.woff') format('woff');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+.an-leg { display: none; font-family: 'AnandaRound', var(--font-s), sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
+html.an-ready .an-leg { display: inline; }
+html.an-ready .an-uni { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.yc-title .an-leg { font-size: 1.22em; line-height: 1; }

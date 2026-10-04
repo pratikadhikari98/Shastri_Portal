@@ -926,5 +926,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script>
+  // Ananda फन्ट लोड भएपछि मात्र वर्षका शीर्षकमा देखाउने (नभए Unicode पाठ नै रहन्छ)
+  (function () {
+    try {
+      if (!document.fonts || !document.fonts.load) return;
+      document.fonts.load('32px AnandaRound', 'k|yd').then(function (f) {
+        if (f && f.length) document.documentElement.classList.add('an-ready');
+      });
+    } catch (e) {}
+  })();
+</script>
 </body>
 </html>

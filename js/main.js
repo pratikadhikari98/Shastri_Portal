@@ -754,6 +754,19 @@ function initHistoryNav() {
 /* ════════════════════════════════════
    HOME
    ════════════════════════════════════ */
+/* ════════════════════════════════════
+   वर्षको शीर्षकमा "Ananda Devanagari Round" फन्ट
+   यो पुरानो (Preeti ढाँचाको) फन्ट हो — Unicode अक्षर सिधै देखाउँदैन, त्यसैले यहाँ तयार शब्दहरूको मात्र
+   बराबरी (key) दिइएको छ। सूचीमा नभएको शब्द भए सामान्य फन्टमै देखिन्छ (केही बिग्रँदैन)।
+   फन्ट लोड हुनुअघि र लोड नभए Unicode पाठ देखिन्छ (html.an-ready आएपछि मात्र फन्ट देखिन्छ)।
+   ════════════════════════════════════ */
+const ANANDA_MAP = { 'प्रथम': 'k|yd', 'द्वितीय': 'låtLo', 'तृतीय': 't[tLo', 'चतुर्थ': "rt'y{", 'वर्ष': 'ji{' };
+function anandaHtml(text) {
+  const words = String(text == null ? '' : text).trim().split(/\s+/);
+  if (!words[0] || !words.every(w => ANANDA_MAP[w])) return text;
+  return `<span class="an-uni">${text}</span><span class="an-leg" aria-hidden="true">${words.map(w => ANANDA_MAP[w]).join(' ')}</span>`;
+}
+
 function renderHome() {
   if (!App.data) return;
   const grid = document.getElementById('yearsGrid');
@@ -767,7 +780,7 @@ function renderHome() {
       <div class="yc-shine"></div><div class="yc-glare"></div>
       <div class="yc-blob yc-blob-1"></div><div class="yc-blob yc-blob-2"></div>
       <div class="yc-body">
-        <div class="yc-title">${yr.title}</div>
+        <div class="yc-title">${anandaHtml(yr.title)}</div>
         <div class="yc-sub">${yr.subtitle}</div>
         <div class="yc-badges">
           <span class="yc-badge">📚 ${total}</span>
