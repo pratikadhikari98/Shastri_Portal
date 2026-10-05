@@ -1834,17 +1834,16 @@ html.lite .overlay { transition: none !important; }
 .content { --pad: 16px; }
 @media (min-width:500px) { .content { --pad: 20px; } }
 
-/* खुलेको अध्यायले पाना (content) को पूरा चौडाइ ढाक्छ — दायाँ-बायाँ पृष्ठभूमि देखिँदैन */
-.ch-list { overflow: visible; }
-.ch-list > .chapter-item:first-child { border-radius: var(--r-lg) var(--r-lg) 0 0; }
-.ch-list > .chapter-item:last-child  { border-radius: 0 0 var(--r-lg) var(--r-lg); }
-.ch-list > .chapter-item:only-child  { border-radius: var(--r-lg); }
-.ch-list > .chapter-item.open {
+/* अध्यायको सूची (बन्द/खुला दुवै) दायाँ-बायाँ किनारासम्म छुन्छ — side मा पृष्ठभूमि देखिँदैन */
+.ch-list {
+  overflow: visible; border-radius: 0; box-shadow: none;
   margin-left: calc(-1 * var(--pad)); margin-right: calc(-1 * var(--pad));
-  max-width: none; width: auto;
-  border-radius: 0; box-shadow: none;
-  border-top: 1px solid var(--divider);
+  border-top: 1px solid var(--divider); border-bottom: 1px solid var(--divider);
 }
+.ch-list > .chapter-item, .ch-list > .chapter-item:first-child, .ch-list > .chapter-item:last-child, .ch-list > .chapter-item:only-child {
+  border-radius: 0; max-width: none; width: auto;
+}
+.ch-list > .chapter-item.open { box-shadow: none; }
 .ch-list > .chapter-item.open .ch-head { padding-left: calc(14px + 2px); padding-right: 16px; }
 .ch-read-content { padding: 16px 16px 14px; }
 
