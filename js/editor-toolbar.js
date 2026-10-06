@@ -21,6 +21,14 @@ function _mdTa(id) { return document.getElementById(id); }
 
 /* Selected text लाई अगाडि-पछाडि केही राखेर wrap गर्ने (Bold, Italic, Highlight) */
 function mdWrap(id, before, after, placeholder = '') {
+  const R = window.RTE && RTE.get(id);
+  if (R && !R.codeMode) {            // लेख्ने (rich) मोड — कोड नदेखिई सिधै बोल्ड/हाइलाइट
+    if (before === '**') return R.bold();
+    if (before === '*') return R.italic();
+    if (before === '==') return R.mark('hl', null);
+    let m = before.match(/^==(.+):$/); if (m) return R.mark('hl', m[1]);
+    m = before.match(/^\{\{(.+):$/); if (m) return R.mark('fc', m[1]);
+  }
   const ta = _mdTa(id); if (!ta) return;
   const start = ta.selectionStart, end = ta.selectionEnd;
   const sel = ta.value.substring(start, end) || placeholder;
@@ -32,6 +40,13 @@ window.mdWrap = mdWrap;
 
 /* लाइनको सुरुमा prefix राख्ने (Heading, Quote, List item) */
 function mdInsertLine(id, prefix, placeholder = '') {
+  const R = window.RTE && RTE.get(id);
+  if (R && !R.codeMode) {
+    if (prefix === '# ') return R.block('h1');
+    if (prefix === '## ') return R.block('h2');
+    if (prefix === '> ') return R.block('blockquote');
+    if (prefix === '- ') return R.list();
+  }
   const ta = _mdTa(id); if (!ta) return;
   const start = ta.selectionStart, end = ta.selectionEnd;
   const sel = ta.value.substring(start, end) || placeholder;
@@ -45,6 +60,11 @@ window.mdInsertLine = mdInsertLine;
 
 /* Cursor भएको ठाउँमा सिधै block text insert गर्ने (HR, Table, Box) */
 function mdInsertBlock(id, text) {
+  const R = window.RTE && RTE.get(id);
+  if (R && !R.codeMode) {
+    if (/^\n---\n$/.test(text)) return R.hr();
+    return R.text(text.replace(/^\n|\n$/g, ''));
+  }
   const ta = _mdTa(id); if (!ta) return;
   const start = ta.selectionStart;
   ta.value = ta.value.substring(0, start) + text + ta.value.substring(ta.selectionEnd);
@@ -103,12 +123,16 @@ window.mdInsertBox = mdInsertBox;
 
 function mdApplyBoxType(type) {
   const id = _boxInsertCtx.textareaId;
+  const R = id && window.RTE && RTE.get(id);
+  if (R && !R.codeMode) { R.box(type); mdCloseBoxPicker(); return; }
   if (id) mdInsertBlock(id, `\n:::${type}\nयहाँ लेख्नुस्...\n:::\n`);
   mdCloseBoxPicker();
 }
 window.mdApplyBoxType = mdApplyBoxType;
 
 function mdInsertTable(id) {
+  const R = window.RTE && RTE.get(id);
+  if (R && !R.codeMode) return R.table();
   mdInsertBlock(id, `\n| कलम १ | कलम २ |\n|---|---|\n| मान १ | मान २ |\n`);
 }
 window.mdInsertTable = mdInsertTable;
@@ -116,6 +140,8 @@ window.mdInsertTable = mdInsertTable;
 async function mdInsertImage(id) {
   const url = await showTextPrompt('Image URL राख्नुस्', 'https://...');
   if (!url) return;
+  const R = window.RTE && RTE.get(id);
+  if (R && !R.codeMode) return R.image(url, '', url);
   mdInsertBlock(id, `![](${url})`);
 }
 window.mdInsertImage = mdInsertImage;
@@ -208,6 +234,13 @@ function mdImgConfirm() {
   _mdStore()[pid] = c.prepared;
   const opts = (c.size !== '100' ? '|' + c.size : '') + (c.align !== 'center' ? '|' + c.align : '');
   const md = `![${opts}](pending:${pid})`;
+  const R = window.RTE && RTE.get(c.id);
+  if (R && !R.codeMode) {                  // लेख्ने मोड — फोटो सिधै देखिन्छ
+    R.image(c.prepared.dataUrl, opts, 'pending:' + pid);
+    _mdImgCtx = null;
+    toast('✅ फोटो राखियो — पूर्वावलोकनमा हेर्न सकिन्छ');
+    return;
+  }
   const v = ta.value, s = Math.min(c.start, v.length), e = Math.min(c.end, v.length);
   const pre  = (s > 0 && v[s - 1] !== '\n') ? '\n' : '';
   const post = (v[e] !== undefined && v[e] !== '\n') ? '\n' : '\n';
@@ -219,6 +252,9 @@ function mdImgConfirm() {
   toast('✅ फोटो राखियो — पूर्वावलोकनमा हेर्न सकिन्छ');
 }
 window.mdImgConfirm = mdImgConfirm;
+
+/* RTE भित्र फोटो paste गर्दा (rich-editor.js ले बोलाउँछ) */
+window.mdPasteImage = (id, file) => { _mdImgCtx = { id, start: 0, end: 0 }; _mdImgStart(file); };
 
 /* कम्प्युटरमा clipboard बाट फोटो paste गर्दा पनि कर्सरकै ठाउँमा */
 document.addEventListener('paste', e => {
@@ -401,7 +437,7 @@ function mdOpenFullscreen(textareaId, title, btnEl) {
   const tb = document.getElementById('fsEditorToolbar');
   if (tb) tb.innerHTML = renderMdToolbar('fsEditorTa', { fullscreenBtn: false });
   page.classList.add('show');
-  setTimeout(() => fsTa.focus(), 320);
+  setTimeout(() => { const R = window.RTE && RTE.get('fsEditorTa'); if (R && !R.codeMode) R.focus(); else fsTa.focus(); }, 320);
 }
 window.mdOpenFullscreen = mdOpenFullscreen;
 
@@ -427,8 +463,16 @@ window.fontCssFor = fontCssFor;
 /* पूरा toolbar एउटै ठाउँमा render गर्ने — कुनै पनि textarea id लाई जोड्न मिल्ने
    opts.title = पूरा-स्क्रिन खोल्दा देखिने heading
    opts.fullscreenBtn = false भए ⛶ बटन नदेखाउने (पूरा-स्क्रिन भित्रैको toolbar मा दोहोरो नआउन) */
+function mdUndo(id) { const R = window.RTE && RTE.get(id); if (R && !R.codeMode) R.undo(); }
+function mdRedo(id) { const R = window.RTE && RTE.get(id); if (R && !R.codeMode) R.redo(); }
+function mdClearMarks(id) { const R = window.RTE && RTE.get(id); if (R && !R.codeMode) R.clearMarks(); else toast('⚠️ पहिले अक्षर select गर्नुस्'); }
+function mdToggleCode(id) { const R = window.RTE && RTE.get(id); if (R) R.toggleCode(); }
+window.mdUndo = mdUndo; window.mdRedo = mdRedo; window.mdClearMarks = mdClearMarks; window.mdToggleCode = mdToggleCode;
+
 function renderMdToolbar(textareaId, opts = {}) {
   MD_TA_IDS.add(textareaId);   // यो textarea मा फोटो paste गर्न पनि मिल्ने
+  // लेख्ने (rich) एडिटर — textarea DOM मा आइसकेपछि जोड्ने
+  queueMicrotask(() => { try { if (window.RTE) RTE.attach(textareaId); } catch (e) { console.error('RTE', e); } });
   const title = opts.title || 'सम्पादन';
   const showFs = opts.fullscreenBtn !== false;
   return `
@@ -437,6 +481,8 @@ function renderMdToolbar(textareaId, opts = {}) {
   </div>
   <div class="md-toolbar">
     ${showFs ? `<button type="button" class="tb-btn tb-btn-fs" onclick="mdOpenFullscreen('${textareaId}','${title}',this)" title="पूरा स्क्रिनमा लेख्नुस्">⛶ पूरा स्क्रिन</button>` : ''}
+    <button type="button" class="tb-btn" onclick="mdUndo('${textareaId}')" title="पछाडि (Undo)">↶</button>
+    <button type="button" class="tb-btn" onclick="mdRedo('${textareaId}')" title="अगाडि (Redo)">↷</button>
     <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','**','**','बोल्ड')" title="बोल्ड"><b>B</b></button>
     <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','*','*','छड्के')" title="छड्के (Italic)"><i>I</i></button>
     <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','==','==','हाइलाइट')" title="सामान्य हाइलाइट">🖍️ H</button>
@@ -451,6 +497,8 @@ function renderMdToolbar(textareaId, opts = {}) {
     <button type="button" class="tb-btn" onclick="mdInsertTable('${textareaId}')" title="तालिका">▦ तालिका</button>
     <button type="button" class="tb-btn tb-btn-photo" onclick="mdUploadImage('${textareaId}')" title="कर्सर भएको ठाउँमा फोटो अपलोड">📷 फोटो अपलोड</button>
     <button type="button" class="tb-btn" onclick="mdInsertImage('${textareaId}')" title="इन्टरनेटको फोटो (URL)">🔗 URL फोटो</button>
+    <button type="button" class="tb-btn" onclick="mdClearMarks('${textareaId}')" title="चुनिएको अक्षरको बोल्ड/रंग/हाइलाइट हटाउनुस्">🧽 सफा</button>
+    <button type="button" class="tb-btn tb-btn-code" onclick="mdToggleCode('${textareaId}')" title="markdown कोड हेर्नुस्/सम्पादन गर्नुस्">&lt;/&gt; कोड</button>
   </div>`;
 }
 window.renderMdToolbar = renderMdToolbar;

@@ -1380,6 +1380,7 @@ function resolveHlColor(word) {
    box र table भित्र पनि यही प्रयोग हुन्छ */
 function applyInline(str) {
   return str
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
     .replace(/==(?:([^=\n]{1,16}):)?([^=]+?)==/g, (m, colorWord, txt) => {
@@ -1462,6 +1463,7 @@ function renderMd(text) {
     .replace(/^## (.+)$/gm,'<h2>$1</h2>')
     .replace(/^### (.+)$/gm,'<h3>$1</h3>')
     .replace(/^---$/gm,'<hr>')
+    .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
     .replace(/==(?:([^=\n]{1,16}):)?([^=]+?)==/g, (m, colorWord, txt) => {
