@@ -108,6 +108,15 @@
             "description": "द्वितीय वर्षको संस्कृत साहित्य",
             "id": "san2_3",
             "cover": "images/year2/san3.jpg"
+          },
+          {
+            "id": "san2_1791274637333",
+            "title": "लेख",
+            "author": "",
+            "cover": "",
+            "description": "",
+            "font": "siddhanta",
+            "pdf": ""
           }
         ],
         "english": [
