@@ -483,22 +483,22 @@ function renderMdToolbar(textareaId, opts = {}) {
     ${showFs ? `<button type="button" class="tb-btn tb-btn-fs" onclick="mdOpenFullscreen('${textareaId}','${title}',this)" title="पूरा स्क्रिनमा लेख्नुस्">⛶ पूरा स्क्रिन</button>` : ''}
     <button type="button" class="tb-btn" onclick="mdUndo('${textareaId}')" title="पछाडि (Undo)">↶</button>
     <button type="button" class="tb-btn" onclick="mdRedo('${textareaId}')" title="अगाडि (Redo)">↷</button>
-    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','**','**','बोल्ड')" title="बोल्ड"><b>B</b></button>
-    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','*','*','छड्के')" title="छड्के (Italic)"><i>I</i></button>
-    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','==','==','हाइलाइट')" title="सामान्य हाइलाइट">🖍️ H</button>
-    <button type="button" class="tb-btn tb-btn-color" onclick="mdOpenColorPicker('${textareaId}','highlight',this)" title="रंगीन Highlight">🎨 रंगीन Highlight</button>
-    <button type="button" class="tb-btn tb-btn-color" onclick="mdOpenColorPicker('${textareaId}','text',this)" title="रंगीन अक्षर मात्र">🖊️ रंगीन अक्षर</button>
-    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','# ','शीर्षक')" title="ठूलो शीर्षक">H1</button>
-    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','## ','उप-शीर्षक')" title="उप-शीर्षक">H2</button>
+    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','**','**','बोल्ड')" title="बोल्ड" data-ta="${textareaId}" data-cmd="bold" aria-pressed="false"><b>B</b></button>
+    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','*','*','छड्के')" title="छड्के (Italic)" data-ta="${textareaId}" data-cmd="italic" aria-pressed="false"><i>I</i></button>
+    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','==','==','हाइलाइट')" title="सामान्य हाइलाइट" data-ta="${textareaId}" data-cmd="hl" aria-pressed="false">🖍️ H</button>
+    <button type="button" class="tb-btn tb-btn-color" onclick="mdOpenColorPicker('${textareaId}','highlight',this)" title="रंगीन Highlight" data-ta="${textareaId}" data-cmd="hlc" aria-pressed="false">🎨 रंगीन Highlight</button>
+    <button type="button" class="tb-btn tb-btn-color" onclick="mdOpenColorPicker('${textareaId}','text',this)" title="रंगीन अक्षर मात्र" data-ta="${textareaId}" data-cmd="fc" aria-pressed="false">🖊️ रंगीन अक्षर</button>
+    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','# ','शीर्षक')" title="ठूलो शीर्षक" data-ta="${textareaId}" data-cmd="h1" aria-pressed="false">H1</button>
+    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','## ','उप-शीर्षक')" title="उप-शीर्षक" data-ta="${textareaId}" data-cmd="h2" aria-pressed="false">H2</button>
     <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','> ','उद्धरण')" title="उद्धरण">❝</button>
-    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','- ','सूची वस्तु')" title="सूची">• सूची</button>
+    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','- ','सूची वस्तु')" title="सूची" data-ta="${textareaId}" data-cmd="ul" aria-pressed="false">• सूची</button>
     <button type="button" class="tb-btn" onclick="mdInsertBlock('${textareaId}','\\n---\\n')" title="भाग छुट्याउने रेखा">― रेखा</button>
     <button type="button" class="tb-btn tb-btn-box" onclick="mdInsertBox('${textareaId}',this)" title="सूचना/सुझाव बक्स">📦 बक्स</button>
     <button type="button" class="tb-btn" onclick="mdInsertTable('${textareaId}')" title="तालिका">▦ तालिका</button>
     <button type="button" class="tb-btn tb-btn-photo" onclick="mdUploadImage('${textareaId}')" title="कर्सर भएको ठाउँमा फोटो अपलोड">📷 फोटो अपलोड</button>
     <button type="button" class="tb-btn" onclick="mdInsertImage('${textareaId}')" title="इन्टरनेटको फोटो (URL)">🔗 URL फोटो</button>
     <button type="button" class="tb-btn" onclick="mdClearMarks('${textareaId}')" title="चुनिएको अक्षरको बोल्ड/रंग/हाइलाइट हटाउनुस्">🧽 सफा</button>
-    <button type="button" class="tb-btn tb-btn-code" onclick="mdToggleCode('${textareaId}')" title="markdown कोड हेर्नुस्/सम्पादन गर्नुस्">&lt;/&gt; कोड</button>
+    <button type="button" class="tb-btn tb-btn-code" onclick="mdToggleCode('${textareaId}')" title="markdown कोड हेर्नुस्/सम्पादन गर्नुस्" data-ta="${textareaId}" data-cmd="code" aria-pressed="false">&lt;/&gt; कोड</button>
   </div>`;
 }
 window.renderMdToolbar = renderMdToolbar;

@@ -230,6 +230,59 @@
     return lines.join('\n').replace(/\n+$/, '');
   }
 
+
+  /* ═════════ बटनको "चालु/बन्द" अवस्था — कर्सर/चुनिएको अक्षरमा के लागू छ देखाउने ═════════ */
+  function selectedTexts(range) {
+    const out = [];
+    const root = range.commonAncestorContainer;
+    if (root.nodeType === 3) { if (range.toString().trim()) out.push(root); return out; }
+    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (tw.nextNode()) {
+      const n = tw.currentNode;
+      if (!range.intersectsNode(n)) continue;
+      const r = document.createRange(); r.selectNodeContents(n);
+      if (n === range.startContainer) r.setStart(n, range.startOffset);
+      if (n === range.endContainer) r.setEnd(n, range.endOffset);
+      if (r.toString().trim()) out.push(n);
+    }
+    return out;
+  }
+  function computeState(inst) {
+    const sel = getSelection();
+    if (!sel.rangeCount || !inst.el.contains(sel.anchorNode)) return null;
+    const range = sel.getRangeAt(0);
+    const up = (n, q) => { const e = n && n.nodeType === 3 ? n.parentElement : n; const m = e && e.closest ? e.closest(q) : null; return m && inst.el.contains(m) ? m : null; };
+    const collapsed = range.collapsed;
+    const texts = collapsed ? [] : selectedTexts(range);
+    if (!collapsed && !texts.length) return null;
+    const find = q => collapsed ? up(range.startContainer, q) : (texts.every(n => up(n, q)) ? up(texts[0], q) : null);
+    let bold = !!find('b,strong'), italic = !!find('i,em');
+    if (collapsed) {      // कर्सर मात्र: अर्को अक्षर बोल्ड/छड्के हुन्छ कि हुँदैन — browser को "typing style" नै सही हो
+      const inHead = up(range.startContainer, 'h1,h2,h3');
+      try { if (!inHead) { bold = document.queryCommandState('bold'); italic = document.queryCommandState('italic'); } } catch (e) {}
+    }
+    const hlAny = find('.rte-hl');
+    return {
+      bold, italic,
+      hl: !!(hlAny && !hlAny.getAttribute('data-c')),
+      hlc: hlAny && hlAny.getAttribute('data-c') ? hlAny.getAttribute('data-c') : null,
+      fc: (find('.rte-fc') || null) && find('.rte-fc').getAttribute('data-c'),
+      h1: !!find('h1'), h2: !!find('h2'), ul: !!find('li')
+    };
+  }
+  function paintState(inst, st) {
+    if (!st) return;
+    document.querySelectorAll('[data-ta="' + inst.id + '"][data-cmd]').forEach(b => {
+      const k = b.getAttribute('data-cmd');
+      if (k === 'code') return;
+      const v = st[k];
+      const on = !!v;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      if (k === 'hlc' || k === 'fc') { const c = on ? colorOf(v) : null; if (c) b.style.setProperty('--dot', c); else b.style.removeProperty('--dot'); }
+    });
+  }
+
   /* ═════════ instance ═════════ */
   const protoValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
 
@@ -293,18 +346,19 @@
         if (r) { sel.removeAllRanges(); sel.addRange(r); } else placeCaret(el, true);
       },
       /* ── toolbar क्रियाहरू ── */
-      bold() { this.restore(); document.execCommand('bold'); this.flush(); },
-      italic() { this.restore(); document.execCommand('italic'); this.flush(); },
+      bold() { this.restore(); document.execCommand('bold'); this.flush(); this.updateState(); },
+      italic() { this.restore(); document.execCommand('italic'); this.flush(); this.updateState(); },
       undo() { if (this.dirty) this.flush(); if (this.hi > 0) this.goto(this.hi - 1); },
       redo() { if (this.hi < this.hist.length - 1) this.goto(this.hi + 1); },
       mark(kind, color) { this.restore(); applyMark(this, kind, color); },
       clearMarks() { this.restore(); clearMarks(this); },
-      block(tag) { this.restore(); setBlock(this, tag); },
-      list() { this.restore(); if (blockedHere(this)) return; document.execCommand('insertUnorderedList'); cleanStyles(el); this.flush(); },
+      block(tag) { this.restore(); setBlock(this, tag); this.updateState(); },
+      list() { this.restore(); if (blockedHere(this)) return; document.execCommand('insertUnorderedList'); cleanStyles(el); this.flush(); this.updateState(); },
       hr() { this.restore(); if (blockedHere(this)) return; insertBlockAtCaret(this, '<hr><div><br></div>'); this.commit(); },
       text(t) { this.restore(); document.execCommand('insertText', false, t); this.flush(); },
       html(h) { this.restore(); document.execCommand('insertHTML', false, h); this.flush(); },
-      commit() { cleanStyles(el); this.flush(); },
+      commit() { cleanStyles(el); this.flush(); this.updateState(); },
+      updateState() { paintState(this, computeState(this)); },
       box(type) { this.restore(); insertBox(this, type); },
       table() { this.restore(); if (blockedHere(this)) return; insertBlockAtCaret(this, tableHtml(['कलम १', 'कलम २'], [['मान १', 'मान २']]) + '<div><br></div>'); this.commit(); },
       image(src, alt, dataSrc) { this.restore(); insertBlockAtCaret(this, '<div>' + imgHtmlRaw(alt || '', dataSrc || src, src) + '</div>'); this.commit(); },
@@ -343,7 +397,10 @@
     el.addEventListener('click', e => onClick(inst, e));
     document.addEventListener('selectionchange', () => {
       const sel = getSelection();
-      if (sel && sel.rangeCount && el.contains(sel.anchorNode) && el.contains(sel.focusNode)) inst.range = sel.getRangeAt(0).cloneRange();
+      if (sel && sel.rangeCount && el.contains(sel.anchorNode) && el.contains(sel.focusNode)) {
+        inst.range = sel.getRangeAt(0).cloneRange();
+        if (!inst._raf) inst._raf = requestAnimationFrame(() => { inst._raf = 0; inst.updateState(); });
+      }
     });
     new MutationObserver(() => inst.syncFont()).observe(ta, { attributes: true, attributeFilter: ['style', 'data-font-key'] });
 

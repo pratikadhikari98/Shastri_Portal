@@ -1896,3 +1896,34 @@ html.an-ready .an-uni { position: absolute; width: 1px; height: 1px; overflow: h
 .rte ul { margin:4px 0 10px; padding-left:24px; white-space:normal; }
 textarea.rte-code { display:block; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.8rem; line-height:1.6; min-height:180px; }
 .tb-btn-code.on { background:var(--accent); color:#fff; border-color:transparent; }
+
+
+/* ═══════════════════════════════════
+   टुलबार बटनको चालु अवस्था (बोल्ड/हाइलाइट/शीर्षक... अहिले लागू छ भने देखिने)
+   ═══════════════════════════════════ */
+.tb-btn { position:relative; transition:background-color .12s, color .12s, transform .12s; }
+.tb-btn.on { background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; border-color:transparent; box-shadow:0 3px 10px var(--accent-glow); }
+.tb-btn.on b, .tb-btn.on i { color:#fff; }
+.tb-btn-color.on::after { content:''; position:absolute; right:3px; bottom:3px; width:9px; height:9px; border-radius:50%; background:var(--dot,#fff); border:1.5px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
+
+/* ═══════════════════════════════════
+   लेख्ने पाना — दुवै साइड छुने (तैरिने कार्ड होइन)
+   ═══════════════════════════════════ */
+#noticeFormModal, #bookFormModal, #chapterFormModal, #adminPreviewModal { padding:0; align-items:flex-end; }
+#noticeFormModal .modal-sheet, #bookFormModal .modal-sheet, #chapterFormModal .modal-sheet, #adminPreviewModal .modal-sheet {
+  width:100%; max-width:none; margin:0; max-height:94vh; max-height:94dvh;
+  border-radius:22px 22px 0 0; border-left:none; border-right:none; border-bottom:none;
+  padding:16px 0 calc(16px + env(safe-area-inset-bottom,0px)); transform:translateY(100%);
+}
+#noticeFormModal.open .modal-sheet, #bookFormModal.open .modal-sheet, #chapterFormModal.open .modal-sheet, #adminPreviewModal.open .modal-sheet { transform:none; }
+#noticeFormModal .m-title, #bookFormModal .m-title, #chapterFormModal .m-title, #adminPreviewModal .m-title,
+#noticeFormModal .m-btns, #bookFormModal .m-btns, #chapterFormModal .m-btns, #adminPreviewModal .m-btns,
+#adminPreviewModal .tabs-pill { margin-left:16px; margin-right:16px; }
+#adminPreviewBody { padding:0 16px; }
+#noticeFormModal .form-panel, #bookFormModal .form-panel, #chapterFormModal .form-panel {
+  border-radius:0; border-left:none; border-right:none; box-shadow:none; margin-left:0; margin-right:0;
+}
+#noticeFormModal .form-panel .f-group, #bookFormModal .form-panel .f-group, #chapterFormModal .form-panel .f-group { padding-left:16px; padding-right:16px; }
+.form-panel .rte { margin-left:-16px; margin-right:-16px; width:calc(100% + 32px); max-width:none; border-left:none; border-right:none; border-radius:0; box-shadow:none; padding:10px 16px; background:var(--input-bg); }
+.form-panel .rte:focus { border-color:var(--accent); box-shadow:none; }
+.form-panel textarea.rte-code { margin-left:-16px; margin-right:-16px; width:calc(100% + 32px); max-width:none; border-radius:0; padding:10px 16px; }
