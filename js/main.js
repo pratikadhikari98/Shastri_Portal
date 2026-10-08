@@ -1697,7 +1697,8 @@ function doPrintChapter() {
   const cols = parseInt(document.getElementById('printColsSelect').value || '1', 10);
   const fontFamily = ch.font && typeof fontCssFor === 'function' ? `font-family:${fontCssFor(ch.font)}` : '';
   const titleHtml = `<div class="print-title">${ch.title || ('अध्याय ' + (idx + 1))}</div>`;
-  const bodyHtml = renderMd(ch.content || '');
+  // हरेक भाग (--- रेखाले छुट्याएको) एउटै पानामा पुरा आओस् — बीचमा काटिएर अर्को पानामा नजाओस्
+  const bodyHtml = renderMd(ch.content || '').split('<hr>').map(sec => `<div class="print-sec">${sec}</div>`).join('<hr>');
 
   let styleTag = document.getElementById('printPageStyle');
   if (!styleTag) {

@@ -1699,8 +1699,15 @@ input[type=range].dm-slider {
   #printArea .print-title {
     font-family: var(--font-s); font-size: 1.5rem; font-weight: 800;
     margin-bottom: 14px; color: var(--accent);
+    text-align: center; /* शीर्षक बीचमा */
     column-span: all; /* धेरै column भए पनि शीर्षक पूरै चौडाइमा */
+    break-after: avoid; page-break-after: avoid;
   }
+  /* लाइन/भाग पानाको बीचमा नकाटियोस् — पूरै एउटै पानामा आओस् (पानाभन्दा ठूलो भए मात्र अर्कोमा जान्छ) */
+  #printArea .print-sec { break-inside: avoid; page-break-inside: avoid; orphans: 3; widows: 3; }
+  #printArea h1, #printArea h2, #printArea h3, #printArea h4, #printArea h5 { break-after: avoid; page-break-after: avoid; }
+  #printArea blockquote, #printArea li, #printArea .content-box, #printArea table, #printArea img { break-inside: avoid; page-break-inside: avoid; }
+  #printArea .print-body { orphans: 3; widows: 3; }
 }
 
 
