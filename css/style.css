@@ -1960,3 +1960,21 @@ div:has(> .dxtb) + .rte, div:has(> .dxtb) + textarea, div:has(> .dxtb) + textare
 .font-add-btn { width:100%; margin-top:8px; padding:10px 12px; border:1px dashed #337ab7; border-radius:8px; background:rgba(51,122,183,.08); color:#337ab7; font-family:var(--font,inherit); font-size:0.85rem; font-weight:600; cursor:pointer; }
 .font-add-btn:active { background:rgba(51,122,183,.18); }
 .dxtb .tb-btn-fontpick { gap:4px; color:var(--text-1,#333); }
+
+/* ═══════════════════════════════════════════════════
+   फारम पाना — रद्द / पूर्वावलोकन बटन माथि (स्थिर), भित्रको सामग्री मात्र स्क्रोल हुने
+   ═══════════════════════════════════════════════════ */
+#noticeFormModal .modal-sheet, #bookFormModal .modal-sheet, #chapterFormModal .modal-sheet, #adminPreviewModal .modal-sheet {
+  display:flex; flex-direction:column; overflow:hidden;
+  padding-top:12px;
+}
+#noticeFormModal .modal-sheet > *, #bookFormModal .modal-sheet > *, #chapterFormModal .modal-sheet > *, #adminPreviewModal .modal-sheet > * { order:3; flex:none; }
+#noticeFormModal .m-handle, #bookFormModal .m-handle, #chapterFormModal .m-handle, #adminPreviewModal .m-handle { order:0; }
+#noticeFormModal .m-title, #bookFormModal .m-title, #chapterFormModal .m-title, #adminPreviewModal .m-title { order:1; margin-bottom:8px; }
+#noticeFormModal .m-btns, #bookFormModal .m-btns, #chapterFormModal .m-btns, #adminPreviewModal .m-btns { order:2; margin-top:0; margin-bottom:10px; }
+#noticeFormModal .form-panel, #bookFormModal .form-panel, #chapterFormModal .form-panel,
+#adminPreviewModal #adminPreviewBody { order:4; flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+#adminPreviewModal .tabs-pill { order:3; }
+/* toolbar पनि माथि टाँसिने (लेख्दा सधैँ देखिने) */
+.form-panel div:has(> .dxtb) { display:contents; }
+.form-panel .dxtb { position:sticky; top:0; z-index:6; }
