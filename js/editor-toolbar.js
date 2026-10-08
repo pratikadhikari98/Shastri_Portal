@@ -530,6 +530,18 @@ const _DXI = {
   alignC:    '<line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="12" x2="7" y2="12"/><line x1="19" y1="18" x2="5" y2="18"/>',
   alignR:    '<line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="9" y2="12"/><line x1="21" y1="18" x2="7" y2="18"/>',
   alignJ:    '<line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="3" y2="12"/><line x1="21" y1="18" x2="3" y2="18"/>',
+  mark:      '<path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>',
+  palette:   '<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.83-.44-1.12-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6 17.46 2 12 2z"/>',
+  fcolor:    '<path d="M4 21h16"/><path d="m6 16 6-12 6 12"/><path d="M8.5 12h7"/>',
+  quote:     '<path d="M3 21c3 0 7-1 7-8V5c0-1.25-.76-2-2-2H4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h1c0 2-1 4-3 4z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.76-2-2-2h-4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h1c0 2-1 4-3 4z"/>',
+  list:      '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/>',
+  hr:        '<line x1="3" y1="12" x2="21" y2="12"/><path d="m8 7 4-4 4 4"/><path d="m8 17 4 4 4-4"/>',
+  box:       '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  table:     '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+  photo:     '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  link:      '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  eraser:    '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
+  full:      '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
 };
 const _dxIco = k => `<svg class="dxtb-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${_DXI[k]}</svg>`;
 
@@ -538,16 +550,19 @@ function renderMdToolbar(textareaId, opts = {}) {
   // लेख्ने (rich) एडिटर — textarea DOM मा आइसकेपछि जोड्ने
   queueMicrotask(() => { try { if (window.RTE) RTE.attach(textareaId); } catch (e) { console.error('RTE', e); } });
   const id = textareaId;
+  const title = opts.title || 'सम्पादन';
+  const showFs = opts.fullscreenBtn !== false;
   /* बटन थिच्दा editor को selection नहराओस् भनेर mousedown रोक्ने */
-  const btn = (icon, title, onclick, cmd) =>
-    `<button type="button" class="dxtb-btn" title="${title}" aria-label="${title}" onmousedown="event.preventDefault()" onclick="${onclick}"${cmd ? ` data-ta="${id}" data-cmd="${cmd}" aria-pressed="false"` : ''}>${_dxIco(icon)}</button>`;
+  const btn = (icon, ttl, onclick, cmd, cls) =>
+    `<button type="button" class="dxtb-btn${cls ? ' ' + cls : ''}" title="${ttl}" aria-label="${ttl}" onmousedown="event.preventDefault()" onclick="${onclick}"${cmd ? ` data-ta="${id}" data-cmd="${cmd}" aria-pressed="false"` : ''}>${_dxIco(icon)}</button>`;
   const sep = '<span class="dxtb-sep" role="separator"></span>';
   return `
   <div class="dxtb" role="toolbar" aria-label="Text editor toolbar">
-    ${btn('undo', 'Undo', `mdUndo('${id}')`)}
-    ${btn('redo', 'Redo', `mdRedo('${id}')`)}
+    ${showFs ? `<button type="button" class="dxtb-btn dxtb-text tb-btn-fs" title="पूरा स्क्रिनमा लेख्नुस्" onmousedown="event.preventDefault()" onclick="mdOpenFullscreen('${id}','${title}',this)">${_dxIco('full')}<span class="dxtb-lbl">पूरा स्क्रिन</span></button>${sep}` : ''}
+    ${btn('undo', 'पछाडि (Undo)', `mdUndo('${id}')`)}
+    ${btn('redo', 'अगाडि (Redo)', `mdRedo('${id}')`)}
     ${sep}
-    <select class="dxtb-select" title="Header" aria-label="Header" data-ta="${id}" data-cmd="hd" onchange="mdHeading('${id}', this.value)">
+    <select class="dxtb-select" title="शीर्षक (Header)" aria-label="Header" data-ta="${id}" data-cmd="hd" onchange="mdHeading('${id}', this.value)">
       <option value="0">Normal text</option>
       <option value="1">Heading 1</option>
       <option value="2">Heading 2</option>
@@ -556,17 +571,34 @@ function renderMdToolbar(textareaId, opts = {}) {
       <option value="5">Heading 5</option>
     </select>
     ${sep}
-    ${btn('bold', 'Bold', `mdFmt('${id}','bold')`, 'bold')}
-    ${btn('italic', 'Italic', `mdFmt('${id}','italic')`, 'italic')}
-    ${btn('strike', 'Strikethrough', `mdFmt('${id}','strike')`, 's')}
-    ${btn('underline', 'Underline', `mdFmt('${id}','underline')`, 'u')}
+    ${btn('bold', 'बोल्ड', `mdFmt('${id}','bold')`, 'bold')}
+    ${btn('italic', 'छड्के (Italic)', `mdFmt('${id}','italic')`, 'italic')}
+    ${btn('strike', 'काटिएको (Strikethrough)', `mdFmt('${id}','strike')`, 's')}
+    ${btn('underline', 'रेखाङ्कित (Underline)', `mdFmt('${id}','underline')`, 'u')}
     ${sep}
-    ${btn('alignL', 'Align left', `mdAlign('${id}','left')`, 'alL')}
-    ${btn('alignC', 'Align center', `mdAlign('${id}','center')`, 'alC')}
-    ${btn('alignR', 'Align right', `mdAlign('${id}','right')`, 'alR')}
-    ${btn('alignJ', 'Justify', `mdAlign('${id}','justify')`, 'alJ')}
+    ${btn('mark', 'सामान्य हाइलाइट', `mdWrap('${id}','==','==','हाइलाइट')`, 'hl')}
+    ${btn('palette', 'रंगीन Highlight', `mdOpenColorPicker('${id}','highlight',this)`, 'hlc', 'tb-btn-color')}
+    ${btn('fcolor', 'रंगीन अक्षर मात्र', `mdOpenColorPicker('${id}','text',this)`, 'fc', 'tb-btn-color')}
     ${sep}
-    <button type="button" class="dxtb-btn dxtb-text tb-btn-code" title="Show markup" onmousedown="event.preventDefault()" onclick="mdToggleCode('${id}')" data-ta="${id}" data-cmd="code" aria-pressed="false"><span class="dxtb-lbl">Show markup</span></button>
+    ${btn('alignL', 'बायाँ (Align left)', `mdAlign('${id}','left')`, 'alL')}
+    ${btn('alignC', 'बीचमा (Align center)', `mdAlign('${id}','center')`, 'alC')}
+    ${btn('alignR', 'दायाँ (Align right)', `mdAlign('${id}','right')`, 'alR')}
+    ${btn('alignJ', 'दुवैतिर बराबर (Justify)', `mdAlign('${id}','justify')`, 'alJ')}
+    ${sep}
+    ${btn('quote', 'उद्धरण', `mdInsertLine('${id}','> ','उद्धरण')`)}
+    ${btn('list', 'सूची', `mdInsertLine('${id}','- ','सूची वस्तु')`, 'ul')}
+    ${btn('hr', 'भाग छुट्याउने रेखा', `mdInsertBlock('${id}','\\n---\\n')`)}
+    ${sep}
+    ${btn('box', 'सूचना/सुझाव बक्स', `mdInsertBox('${id}',this)`, '', 'tb-btn-box')}
+    ${btn('table', 'तालिका', `mdInsertTable('${id}')`)}
+    ${btn('photo', 'कर्सर भएको ठाउँमा फोटो अपलोड', `mdUploadImage('${id}')`, '', 'tb-btn-photo')}
+    ${btn('link', 'इन्टरनेटको फोटो (URL)', `mdInsertImage('${id}')`)}
+    ${btn('eraser', 'चुनिएको अक्षरको बोल्ड/रंग/हाइलाइट हटाउनुस्', `mdClearMarks('${id}')`)}
+    ${sep}
+    <button type="button" class="dxtb-btn dxtb-text tb-btn-code" title="markdown कोड हेर्नुस्/सम्पादन गर्नुस्" onmousedown="event.preventDefault()" onclick="mdToggleCode('${id}')" data-ta="${id}" data-cmd="code" aria-pressed="false"><span class="dxtb-lbl">Show markup</span></button>
+  </div>
+  <div class="dxtb dxtb-chars" role="toolbar" aria-label="वैदिक अक्षर">
+    ${VEDIC_CHARS.map(ch => `<button type="button" class="dxtb-btn dxtb-char" onmousedown="event.preventDefault()" onclick="mdInsertChar('${id}','${ch}')" title="${ch} थप्नुस्">${ch}</button>`).join('')}
   </div>`;
 }
 window.renderMdToolbar = renderMdToolbar;
