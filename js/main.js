@@ -1430,6 +1430,8 @@ function renderMd(text) {
   if (!text) return '<span style="color:var(--text-4)">सामग्री छैन</span>';
 
   let escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // \* \= \{ \} \\ — चिन्हलाई ढाँचा नमानी अक्षरकै रूपमा देखाउने (लेख्ने एडिटरले यसरी सुरक्षित गर्छ)
+  escaped = escaped.replace(/\\([\\*={}:])/g, (m, c) => '&#' + c.charCodeAt(0) + ';');
 
   // Box/Table लाई paragraph-wrapping ले नबिगारोस् भनेर छुट्टै निकालेर placeholder राख्ने
   const blocks = [];

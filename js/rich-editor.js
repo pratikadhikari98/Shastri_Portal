@@ -39,8 +39,10 @@
     return `<img class="rte-img" data-alt="${escAttr(alt)}" data-src="${escAttr(src)}" src="${escAttr(shown)}"${st.length ? ' style="' + st.join(';') + '"' : ''}>`;
   }
 
+  const SENT = { '*': '\uE001', '=': '\uE002', '{': '\uE003', '}': '\uE004', '\\': '\uE005', ':': '\uE006' };
+  const UNSENT = { '\uE001': '*', '\uE002': '=', '\uE003': '{', '\uE004': '}', '\uE005': '\\', '\uE006': ':' };
   function inlineHtml(raw) {
-    let s = esc(raw);
+    let s = esc(raw).replace(/\\([\\*={}:])/g, (m, c) => SENT[c]);        // \* जस्ता सुरक्षित अक्षर
     s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, src) => imgHtml(alt, src));
     s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -55,7 +57,7 @@
         if (c) return `<span class="rte-fc" data-c="${escAttr(w.trim())}" style="color:${c};font-weight:600">${txt}</span>`;
         return w + ':' + txt;
       });
-    return s;
+    return s.replace(/[\uE001-\uE006]/g, ch => UNSENT[ch]);
   }
 
   const lineHtml = ln => '<div>' + (inlineHtml(ln) || '<br>') + '</div>';
@@ -131,11 +133,15 @@
   /* **  राम ** → ' **राम** ' (खाली ठाउँ चिन्हभन्दा बाहिर) */
   const mark = (open, close, t) => { const m = t.match(/^(\s*)([\s\S]*?)(\s*)$/); return m[2] ? m[1] + open + m[2] + close + m[3] : t; };
 
+  /* पाठ भित्रका * == {{ }} लाई ढाँचाको चिन्ह नमानियोस् भनेर \ लगाउने (साइटले \* लाई * देखाउँछ) */
+  const escMd = s => s.replace(/\\(?=[\\*={}:])/g, '\\\\').replace(/\*/g, '\\*').replace(/:{3,}/g, m => '\\:'.repeat(m.length))
+    .replace(/={2,}/g, m => '\\='.repeat(m.length)).replace(/\{{2,}/g, m => '\\{'.repeat(m.length)).replace(/\}{2,}/g, m => '\\}'.repeat(m.length));
+
   function inlineMd(nodes, allowNl, ctx) {
     ctx = ctx || { b: false, i: false };
     let s = '';
     for (const n of nodes) {
-      if (n.nodeType === 3) { s += n.nodeValue.replace(/[\u200b\ufeff]/g, '').replace(/\u00a0/g, ' ').replace(/\r?\n/g, ' '); continue; }
+      if (n.nodeType === 3) { s += escMd(n.nodeValue.replace(/[\u200b\ufeff]/g, '').replace(/\u00a0/g, ' ').replace(/\r\n?/g, '\n').replace(/\n/g, allowNl ? '\n' : ' ')); continue; }
       if (n.nodeType !== 1) continue;
       const tag = n.tagName;
       const kids = () => inlineMd(n.childNodes, allowNl, ctx);
@@ -168,8 +174,8 @@
 
   function lineOut(s) {
     s = s.replace(/\n+$/, '');
-    if (RE_SPECIAL_LINE.test(s)) s = '\u200b' + s;           // सामान्य लाइनलाई शीर्षक/सूची नठान्न
-    return s;
+    // सामान्य लाइनले शीर्षक/सूची/बक्स जस्तो सुरु हुन्छ भने (लाइन-ब्रेक पछि पनि) अदृश्य चिन्ह राखेर अक्षरकै रूपमा सुरक्षित गर्ने
+    return s.replace(/(^|\n)(?=(#{1,3} |> |- |---(?=\n|$)|:::|\|))/g, '$1\u200b');
   }
 
   function tableMd(table, lines) {
@@ -393,6 +399,8 @@
       else if (e.inputType === 'historyRedo') { e.preventDefault(); inst.redo(); }
     });
     el.addEventListener('paste', e => onPaste(inst, e));
+    el.addEventListener('copy', e => copyCut(inst, e, false));
+    el.addEventListener('cut', e => copyCut(inst, e, true));
     el.addEventListener('drop', e => e.preventDefault());
     el.addEventListener('click', e => onClick(inst, e));
     document.addEventListener('selectionchange', () => {
@@ -631,18 +639,111 @@
     }
   }
 
+  /* clipboard मा text/plain नभई HTML मात्र भए त्यसबाट पाठ निकाल्ने */
+  function htmlToPlain(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('script,style,head').forEach(x => x.remove());
+    const out = [];
+    const walk = n => {
+      if (n.nodeType === 3) { out.push(n.nodeValue.replace(/\s+/g, ' ')); return; }
+      if (n.nodeType !== 1) return;
+      if (n.tagName === 'BR') { out.push('\n'); return; }
+      const blk = /^(P|DIV|H[1-6]|LI|TR|BLOCKQUOTE|UL|OL|TABLE|SECTION|ARTICLE)$/.test(n.tagName);
+      if (blk && out.length && !/\n$/.test(out[out.length - 1])) out.push('\n');
+      n.childNodes.forEach(walk);
+      if (blk) out.push('\n');
+    };
+    walk(doc.body);
+    return out.join('').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  const isPlainLine = d => d && d.tagName === 'DIV' && !d.classList.contains('rte-box') && !d.classList.contains('rte-tablewrap') && ![...d.children].some(isBlockEl);
+
+  function pasteText(inst, raw, asMd) {
+    const text = String(raw).replace(/\r\n?/g, '\n').replace(/[\u2028\u2029]/g, '\n');
+    if (!text) return;
+    const sel = getSelection();
+    if (!sel.rangeCount || !inst.el.contains(sel.anchorNode)) { inst.focus(); }
+    let range = sel.getRangeAt(0);
+    if (!range.collapsed) { range.deleteContents(); range = sel.getRangeAt(0); }
+    const ctxEl = (range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer);
+    const inCell = ctxEl && ctxEl.closest && ctxEl.closest('li,td,th,h1,h2,h3,blockquote');
+    const multi = /\n/.test(text) || (asMd && /^(#{1,3} |> |- |:::|\|)/.test(text));
+
+    const putInline = html => {                                 // एउटै लाइन/सानो ठाउँ — कर्सरको ठाउँमा सिधै
+      const tpl = document.createElement('template'); tpl.innerHTML = html;
+      const last = tpl.content.lastChild;
+      range.insertNode(tpl.content);
+      if (last) { const r = document.createRange(); r.setStartAfter(last); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); }
+    };
+    const ih = asMd ? inlineHtml : esc;                            // asMd = हाम्रै एडिटरबाट copy गरेको (ढाँचासहित)
+    if (!multi) { putInline(ih(text)); }
+    else if (inCell) { putInline(ih(text.replace(/\s*\n+\s*/g, ' '))); }
+    else {
+      // लाइन कर्सरमा दुई टुक्रा: [अघि + पेस्टको पहिलो लाइन] ... [पेस्टको अन्तिम लाइन + पछि]
+      let line = range.startContainer; if (line.nodeType === 3) line = line.parentNode;
+      while (line && line !== inst.el && !(isPlainLine(line) && (line.parentNode === inst.el || line.parentNode.classList.contains('rte-box-body')))) line = line.parentNode;
+      const tpl = document.createElement('template');
+      tpl.innerHTML = (asMd ? mdToHtml(text) : text.split('\n').map(l => '<div>' + (esc(l) || '<br>') + '</div>').join('')).replace(/<div><br><\/div>$/, '');
+      const nodes = [...tpl.content.childNodes];
+      if (!line || line === inst.el) { inst.el.append(...nodes); }
+      else {
+        // खाली लाइनको <br> चिह्न हटाउने (नत्र पेस्टको अघि खाली लाइन बन्छ)
+        if (line.children.length === 1 && line.firstElementChild.tagName === 'BR' && !line.textContent) { line.innerHTML = ''; range = document.createRange(); range.setStart(line, 0); range.collapse(true); }
+        const tailR = document.createRange(); tailR.setStart(range.startContainer, range.startOffset); tailR.setEnd(line, line.childNodes.length);
+        const tail = tailR.extractContents();
+        const first = nodes[0];
+        if (isPlainLine(first)) {
+          const kids = [...first.childNodes];
+          if (!(kids.length === 1 && kids[0].nodeName === 'BR')) line.append(...kids);
+          nodes.shift();
+        }
+        const lastN = nodes[nodes.length - 1];
+        const marker = document.createTextNode('');
+        let caretHost;
+        if (!nodes.length) { line.append(marker); line.append(tail); caretHost = line; }
+        else if (isPlainLine(lastN)) {
+          [...lastN.childNodes].filter(c => c.nodeName === 'BR' && lastN.childNodes.length === 1).forEach(c => c.remove());
+          lastN.append(marker); lastN.append(tail); caretHost = lastN; line.after(...nodes);
+        } else {
+          const tailDiv = document.createElement('div'); tailDiv.append(marker); tailDiv.append(tail); nodes.push(tailDiv); caretHost = tailDiv; line.after(...nodes);
+        }
+        const idx = Array.prototype.indexOf.call(marker.parentNode.childNodes, marker);
+        const r = document.createRange(); r.setStart(marker.parentNode, idx); r.collapse(true);
+        marker.remove();
+        sel.removeAllRanges(); sel.addRange(r);
+        // खाली बाँकी रहेका लाइनमा <br> राख्ने
+        [line, caretHost].forEach(d => { if (d && d.nodeType === 1 && !d.textContent && !d.querySelector('img,br')) d.innerHTML = '<br>'; });
+      }
+    }
+    inst.el.normalize();
+    inst.commit();
+    const s2 = getSelection(); if (s2.rangeCount) { const n = s2.anchorNode && (s2.anchorNode.nodeType === 3 ? s2.anchorNode.parentElement : s2.anchorNode); if (n && n.scrollIntoView) n.scrollIntoView({ block: 'nearest' }); }
+  }
+
+  /* एडिटर भित्र copy/cut गर्दा ढाँचा (markdown) पनि सँगै राख्ने — फेरि पेस्ट गर्दा बोल्ड/हाइलाइट फर्किन्छ */
+  function copyCut(inst, e, cut) {
+    const sel = getSelection();
+    if (!sel.rangeCount || sel.isCollapsed || !inst.el.contains(sel.anchorNode) || !e.clipboardData) return;
+    const range = sel.getRangeAt(0);
+    const d = document.createElement('div'); d.appendChild(range.cloneContents());
+    e.clipboardData.setData('text/plain', sel.toString());
+    e.clipboardData.setData('application/x-rte-md', htmlToMd(d));
+    e.preventDefault();
+    if (cut) { range.deleteContents(); inst.el.normalize(); inst.commit(); }
+  }
+
   function onPaste(inst, e) {
     const cd = e.clipboardData; if (!cd) return;
     const f = [...(cd.files || [])].find(x => x.type.startsWith('image/'));
     if (f) { e.preventDefault(); if (typeof window.mdPasteImage === 'function') window.mdPasteImage(inst.id, f); return; }
+    const mdText = cd.getData('application/x-rte-md');          // हाम्रै एडिटरबाट copy (बोल्ड/हाइलाइट सहित)
+    let text = mdText || cd.getData('text/plain');
+    if (!text) { const h = cd.getData('text/html'); if (h) text = htmlToPlain(h); }
+    if (!text) return;                       // खाली भए browser को आफ्नै व्यवहार
     e.preventDefault();
-    const text = cd.getData('text/plain');
-    if (!text) return;
-    if (/\n/.test(text) || /^(#{1,3} |> |- |:::|\|)/.test(text)) {
-      const html = mdToHtml(text).replace(/<div><br><\/div>$/, '');
-      document.execCommand('insertHTML', false, html);
-    } else document.execCommand('insertHTML', false, inlineHtml(text));
-    cleanStyles(inst.el); inst.markDirty();
+    try { pasteText(inst, text, !!mdText); }
+    catch (err) { console.error('paste', err); document.execCommand('insertText', false, text); inst.commit(); }   // जे भए पनि पाठ हराउँदैन
   }
 
   async function onClick(inst, e) {
