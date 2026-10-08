@@ -369,7 +369,10 @@ const MD_FONTS = [
 /* फन्ट key बाट CSS font-family value निकाल्ने — content render गर्दा (renderMd सँगै) प्रयोग हुन्छ */
 function fontCssFor(key) {
   const f = MD_FONTS.find(x => x.key === key);
-  return f ? f.css : '';
+  if (f) return f.css;
+  // डाउनलोड गरी थपिएको फन्ट (cf_...) — registry लोड हुन अगावै पनि सही family नाम पाइन्छ
+  if (/^cf_[a-z0-9_]+$/.test(key || '')) return `'CF_${key}','Siddhanta','Noto Serif Devanagari',serif`;
+  return '';
 }
 window.fontCssFor = fontCssFor;
 
@@ -465,6 +468,159 @@ function mdToggleVedic(id, btnEl) {
 }
 window.mdToggleVedic = mdToggleVedic;
 
+
+/* ════════════════════════════════════════════════════════════
+   फन्ट छान्ने + आफ्नो डाउनलोड गरेको फन्ट थप्ने
+   - फन्ट फाइल (.ttf .otf .woff .woff2) छानेपछि तुरुन्तै प्रयोग हुन्छ र यो फोनमा सुरक्षित रहन्छ
+   - GitHub जोडिएको छ भने fonts/custom/ मा अपलोड + data/fonts.json मा दर्ता हुन्छ → सबै पाठकले देख्छन्
+   ════════════════════════════════════════════════════════════ */
+const _cfEsc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const _cfFmt = { ttf: 'truetype', otf: 'opentype', woff: 'woff', woff2: 'woff2' };
+
+function _cfDb() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('no idb'));
+    const rq = indexedDB.open('sp_custom_fonts', 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore('fonts', { keyPath: 'key' });
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function _cfSave(rec) { try { const db = await _cfDb(); db.transaction('fonts', 'readwrite').objectStore('fonts').put(rec); } catch (e) {} }
+async function _cfAll() {
+  try {
+    const db = await _cfDb();
+    return await new Promise(res => { const r = db.transaction('fonts').objectStore('fonts').getAll(); r.onsuccess = () => res(r.result || []); r.onerror = () => res([]); });
+  } catch (e) { return []; }
+}
+function _cfAddToList(key, label, extra) {
+  if (MD_FONTS.some(f => f.key === key)) return;
+  MD_FONTS.push(Object.assign({ key, label, css: `'CF_${key}','Siddhanta','Noto Serif Devanagari',serif`, custom: true }, extra || {}));
+}
+async function _cfRegisterBuffer(key, buf) {
+  const ff = new FontFace('CF_' + key, buf);
+  await ff.load();
+  document.fonts.add(ff);
+}
+function _cfRegisterUrl(key, file) {
+  let st = document.getElementById('cfFontStyles');
+  if (!st) { st = document.createElement('style'); st.id = 'cfFontStyles'; document.head.appendChild(st); }
+  const ext = (file.split('.').pop() || '').toLowerCase();
+  st.appendChild(document.createTextNode(`@font-face{font-family:'CF_${key}';src:url('${file}') format('${_cfFmt[ext] || 'truetype'}');font-display:swap}`));
+}
+/* सुरुमै: साझा registry (data/fonts.json) + यही फोनमा सुरक्षित फन्टहरू */
+async function mdLoadCustomFonts() {
+  try {
+    const r = await fetch('data/fonts.json?v=' + Date.now(), { cache: 'no-cache' });
+    if (r.ok) (await r.json()).forEach(f => { if (f && f.key && f.file) { _cfAddToList(f.key, f.label || f.key, { shared: true }); _cfRegisterUrl(f.key, f.file); } });
+  } catch (e) {}
+  for (const rec of await _cfAll()) {
+    if (MD_FONTS.some(f => f.key === rec.key)) continue;
+    try { await _cfRegisterBuffer(rec.key, rec.buf); _cfAddToList(rec.key, rec.label, { local: true }); } catch (e) {}
+  }
+}
+window.mdLoadCustomFonts = mdLoadCustomFonts;
+mdLoadCustomFonts();
+
+function _cfB64(buf) {
+  const u = new Uint8Array(buf); let bin = '';
+  for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+function _mdFontOutside(e) {
+  const pop = document.getElementById('fontPicker');
+  if (!pop) return;
+  if (!pop.contains(e.target) && !e.target.closest('.tb-btn-fontpick')) mdCloseFontPicker();
+}
+function mdCloseFontPicker() {
+  document.getElementById('fontPicker')?.classList.remove('show');
+  document.removeEventListener('click', _mdFontOutside, true);
+}
+window.mdCloseFontPicker = mdCloseFontPicker;
+
+function mdToggleFontPicker(id, btnEl) {
+  let pop = document.getElementById('fontPicker');
+  if (pop && pop.classList.contains('show')) { mdCloseFontPicker(); return; }
+  if (!pop) { pop = document.createElement('div'); pop.id = 'fontPicker'; pop.className = 'color-popover font-popover'; document.body.appendChild(pop); }
+  pop.dataset.ta = id;
+  const ta = _mdTa(id);
+  const cur = (ta && ta.dataset.fontKey) || 'siddhanta';
+  pop.innerHTML = '<div class="color-popover-title">Aa फन्ट छान्नुस्</div><div class="font-list">' +
+    MD_FONTS.map(f => `<button type="button" class="font-opt-btn ${f.key === cur ? 'active' : ''}" style="font-family:${f.css}" onmousedown="event.preventDefault()" onclick="mdApplyFont('${f.key}')">${_cfEsc(f.label)}${f.custom ? (f.shared ? ' ☁️' : ' 📱') : ''}</button>`).join('') +
+    '</div><button type="button" class="font-add-btn" onmousedown="event.preventDefault()" onclick="mdAddFont()">➕ आफ्नो फन्ट थप्नुस् (डाउनलोड गरेको)</button>';
+  const r = btnEl.getBoundingClientRect();
+  const popW = Math.min(270, window.innerWidth - 20);
+  pop.style.width = popW + 'px';
+  let left = Math.min(r.left, window.innerWidth - popW - 10); if (left < 10) left = 10;
+  let top = r.bottom + 6;
+  if (top + 380 > window.innerHeight) top = Math.max(10, r.top - 386);
+  pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  pop.classList.add('show');
+  setTimeout(() => document.addEventListener('click', _mdFontOutside, true), 0);
+}
+window.mdToggleFontPicker = mdToggleFontPicker;
+
+function mdApplyFont(fontKey) {
+  const pop = document.getElementById('fontPicker');
+  const ta = pop && _mdTa(pop.dataset.ta);
+  const f = MD_FONTS.find(x => x.key === fontKey);
+  if (ta && f) { ta.style.fontFamily = f.css; ta.dataset.fontKey = fontKey; }
+  mdCloseFontPicker();
+}
+window.mdApplyFont = mdApplyFont;
+
+function mdAddFont() {
+  const pop = document.getElementById('fontPicker');
+  const taId = pop && pop.dataset.ta;
+  let inp = document.getElementById('mdFontFile');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.id = 'mdFontFile'; inp.accept = '.ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2'; inp.style.display = 'none';
+    document.body.appendChild(inp);
+  }
+  inp.value = '';
+  inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) _mdFontAdded(f, taId); };
+  inp.click();
+}
+window.mdAddFont = mdAddFont;
+
+async function _mdFontAdded(file, taId) {
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (!_cfFmt[ext]) { toast('⚠️ .ttf, .otf, .woff वा .woff2 फन्ट फाइल मात्र राख्नुस्'); return; }
+  if (file.size > 12 * 1024 * 1024) { toast('⚠️ फन्ट १२MB भन्दा सानो हुनुपर्छ'); return; }
+  const base = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+  let label = typeof showTextPrompt === 'function' ? await showTextPrompt('फन्टको नाम', 'जस्तै: मेरो फन्ट', base) : base;
+  if (label === null || label === undefined) return;
+  label = String(label).trim() || base || 'फन्ट';
+  const key = 'cf_' + Date.now().toString(36);
+  let buf;
+  try {
+    buf = await file.arrayBuffer();
+    await _cfRegisterBuffer(key, buf);
+  } catch (e) { toast('⚠️ यो फन्ट फाइल खोल्न सकिएन'); return; }
+  _cfAddToList(key, label, { local: true });
+  _cfSave({ key, label, ext, buf });
+  const ta = taId && _mdTa(taId);
+  if (ta) { ta.style.fontFamily = fontCssFor(key); ta.dataset.fontKey = key; }
+  mdCloseFontPicker();
+  // साझा गर्न GitHub मा अपलोड (token भए)
+  if (!window.GH || !GH.token()) { toast('✅ फन्ट राखियो — GitHub जोडेपछि मात्र अरूले देख्छन् (अहिले यही फोनमा)'); return; }
+  try {
+    toast('⏳ फन्ट GitHub मा अपलोड गर्दैछ…');
+    const path = `fonts/custom/${key}.${ext}`;
+    await GH.enqueue(async () => {
+      const res = await GH.putRaw(path, _cfB64(buf), 'Add font ' + label);
+      if (!res.ok) throw new Error(await GH.errMsg(res));
+    });
+    const reg = (await GH.readJson('data/fonts.json')) || [];
+    reg.push({ key, label, file: path });
+    await GH.writeJson('data/fonts.json', reg, 'Register font ' + label);
+    const f = MD_FONTS.find(x => x.key === key); if (f) { f.shared = true; f.local = false; }
+    toast('✅ फन्ट थपियो — अब सबैले देख्छन् ☁️');
+  } catch (e) { toast('⚠️ फन्ट यही फोनमा मात्र चल्छ, GitHub मा गएन: ' + e.message); }
+}
+
 /* आइकनहरू — DevExtreme जस्तै सरल रेखा-आइकन */
 const _DXI = {
   undo:      '<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>',
@@ -514,6 +670,7 @@ function renderMdToolbar(textareaId, opts = {}) {
       <option value="4">Heading 4</option>
       <option value="5">Heading 5</option>
     </select>
+    <button type="button" class="dxtb-btn tb-btn-fontpick" title="फन्ट छान्नुस् / आफ्नो फन्ट थप्नुस्" aria-label="फन्ट" onmousedown="event.preventDefault()" onclick="mdToggleFontPicker('${id}',this)"><span style="font-size:1.05rem;font-weight:600;line-height:1">Aa</span><svg class="dxtb-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
     ${sep}
     ${btn('bold', 'बोल्ड', `mdFmt('${id}','bold')`, 'bold')}
     ${btn('italic', 'छड्के (Italic)', `mdFmt('${id}','italic')`, 'italic')}
