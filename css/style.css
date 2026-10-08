@@ -1978,3 +1978,9 @@ div:has(> .dxtb) + .rte, div:has(> .dxtb) + textarea, div:has(> .dxtb) + textare
 /* toolbar पनि माथि टाँसिने (लेख्दा सधैँ देखिने) */
 .form-panel div:has(> .dxtb) { display:contents; }
 .form-panel .dxtb { position:sticky; top:0; z-index:6; }
+
+/* विषयका नाम (ट्याब) — Ananda फन्ट */
+.subj-tab-lbl .an-leg { font-size: 1.2em; line-height: 1; }
+
+/* विषयका छोटो नाम (आइकन) — Ananda फन्ट */
+.subj-tab-ico .an-leg, .book-row-ico .an-leg, .bk-ico .an-leg, .s-ico2 .an-leg { font-size: 1.15em; line-height: 1; color: inherit; }
