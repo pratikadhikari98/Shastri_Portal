@@ -517,6 +517,25 @@
   <div class="color-popover-grid" id="colorPopoverGrid"></div>
 </div>
 
+<!-- Text Toolbar: पूरा-स्क्रिन लेख्ने Editor — छुट्टै full-page (overlay/history प्रयोग गर्दैन) -->
+<div id="fsEditorPage" class="fs-editor-page">
+  <div class="fs-editor-head">
+    <button class="fs-editor-back" onclick="mdCloseFullscreen()" aria-label="फर्कनुस्">←</button>
+    <span class="fs-editor-title" id="fsEditorTitle">सम्पादन</span>
+    <button class="fs-editor-font-btn" onclick="mdOpenFontPicker(this)" title="फन्ट छान्नुस्">Aa</button>
+    <button class="fs-editor-done" onclick="mdCloseFullscreen()">✓ भयो</button>
+  </div>
+  <div class="fs-editor-toolbar" id="fsEditorToolbar"></div>
+  <div class="fs-editor-body">
+    <textarea id="fsEditorTa" class="fs-editor-ta" placeholder="यहाँ लेख्नुस्..."></textarea>
+  </div>
+</div>
+
+<!-- फन्ट छान्ने inline popup -->
+<div id="fontPopover" class="color-popover">
+  <div class="color-popover-title">फन्ट छान्नुस्</div>
+  <div id="fontPopoverList" style="display:flex;flex-direction:column;gap:4px"></div>
+</div>
 
 
 <!-- सामान्य Confirm Modal (browser को confirm() को ठाउँमा) -->
