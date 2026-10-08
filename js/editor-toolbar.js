@@ -463,42 +463,110 @@ window.fontCssFor = fontCssFor;
 /* पूरा toolbar एउटै ठाउँमा render गर्ने — कुनै पनि textarea id लाई जोड्न मिल्ने
    opts.title = पूरा-स्क्रिन खोल्दा देखिने heading
    opts.fullscreenBtn = false भए ⛶ बटन नदेखाउने (पूरा-स्क्रिन भित्रैको toolbar मा दोहोरो नआउन) */
-function mdUndo(id) { const R = window.RTE && RTE.get(id); if (R && !R.codeMode) R.undo(); }
-function mdRedo(id) { const R = window.RTE && RTE.get(id); if (R && !R.codeMode) R.redo(); }
-function mdClearMarks(id) { const R = window.RTE && RTE.get(id); if (R && !R.codeMode) R.clearMarks(); else toast('⚠️ पहिले अक्षर select गर्नुस्'); }
-function mdToggleCode(id) { const R = window.RTE && RTE.get(id); if (R) R.toggleCode(); }
+
+/* ════════════════════════════════════════════════════════════
+   नयाँ Toolbar — DevExtreme HtmlEditor "Toolbar Customization" जस्तै
+   Undo · Redo | Heading (Normal text, 1–5) | Bold · Italic · Strike · Underline |
+   Align Left · Center · Right · Justify | Show markup
+   ════════════════════════════════════════════════════════════ */
+function _rte(id) { return window.RTE && RTE.get(id); }
+
+/* code (markup) मोडमा textarea मै काम गर्ने — सामान्य मोडमा RTE ले गर्छ */
+function _mdLineRange(ta) {
+  const v = ta.value, s = ta.selectionStart;
+  const ls = v.lastIndexOf('\n', s - 1) + 1;
+  let le = v.indexOf('\n', s); if (le < 0) le = v.length;
+  return { v, ls, le };
+}
+function mdFmt(id, kind) {
+  const R = _rte(id);
+  if (R && !R.codeMode) {
+    if (kind === 'bold') return R.bold();
+    if (kind === 'italic') return R.italic();
+    if (kind === 'strike') return R.strike();
+    if (kind === 'underline') return R.underline();
+  }
+  if (kind === 'bold') return mdWrap(id, '**', '**', 'बोल्ड');
+  if (kind === 'italic') return mdWrap(id, '*', '*', 'छड्के');
+  if (kind === 'strike') return mdWrap(id, '~~', '~~', 'काटिएको');
+  if (kind === 'underline') return mdWrap(id, '__', '__', 'रेखाङ्कित');
+}
+function mdHeading(id, level) {
+  level = +level || 0;
+  const R = _rte(id);
+  if (R && !R.codeMode) return R.heading(level);
+  const ta = _mdTa(id); if (!ta) return;
+  const { v, ls, le } = _mdLineRange(ta);
+  let line = v.slice(ls, le).replace(/^#{1,5} /, '');
+  line = (level ? '#'.repeat(level) + ' ' : '') + line;
+  ta.value = v.slice(0, ls) + line + v.slice(le);
+  ta.focus(); ta.setSelectionRange(ls + line.length, ls + line.length);
+}
+function mdAlign(id, al) {
+  const R = _rte(id);
+  if (R && !R.codeMode) return R.align(al);
+  const ta = _mdTa(id); if (!ta) return;
+  const { v, ls, le } = _mdLineRange(ta);
+  const line = v.slice(ls, le).replace(/^((?:#{1,5} |> |- )?)(?:\{:(?:left|center|right|justify)\})?/, (m, pre) => pre + (al === 'left' ? '' : '{:' + al + '}'));
+  ta.value = v.slice(0, ls) + line + v.slice(le);
+  ta.focus(); ta.setSelectionRange(ls + line.length, ls + line.length);
+}
+function mdUndo(id) { const R = _rte(id); if (R && !R.codeMode) R.undo(); else { const ta = _mdTa(id); if (ta) { ta.focus(); document.execCommand('undo'); } } }
+function mdRedo(id) { const R = _rte(id); if (R && !R.codeMode) R.redo(); else { const ta = _mdTa(id); if (ta) { ta.focus(); document.execCommand('redo'); } } }
+function mdClearMarks(id) { const R = _rte(id); if (R && !R.codeMode) R.clearMarks(); else toast('⚠️ पहिले अक्षर select गर्नुस्'); }
+function mdToggleCode(id) { const R = _rte(id); if (R) R.toggleCode(); }
+window.mdFmt = mdFmt; window.mdHeading = mdHeading; window.mdAlign = mdAlign;
 window.mdUndo = mdUndo; window.mdRedo = mdRedo; window.mdClearMarks = mdClearMarks; window.mdToggleCode = mdToggleCode;
+
+/* आइकनहरू — DevExtreme जस्तै सरल रेखा-आइकन */
+const _DXI = {
+  undo:      '<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>',
+  redo:      '<path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>',
+  bold:      '<path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/>',
+  italic:    '<line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/>',
+  strike:    '<path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" y1="12" x2="20" y2="12"/>',
+  underline: '<path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" y1="20" x2="20" y2="20"/>',
+  alignL:    '<line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/>',
+  alignC:    '<line x1="21" y1="6" x2="3" y2="6"/><line x1="17" y1="12" x2="7" y2="12"/><line x1="19" y1="18" x2="5" y2="18"/>',
+  alignR:    '<line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="9" y2="12"/><line x1="21" y1="18" x2="7" y2="18"/>',
+  alignJ:    '<line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="3" y2="12"/><line x1="21" y1="18" x2="3" y2="18"/>',
+};
+const _dxIco = k => `<svg class="dxtb-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${_DXI[k]}</svg>`;
 
 function renderMdToolbar(textareaId, opts = {}) {
   MD_TA_IDS.add(textareaId);   // यो textarea मा फोटो paste गर्न पनि मिल्ने
   // लेख्ने (rich) एडिटर — textarea DOM मा आइसकेपछि जोड्ने
   queueMicrotask(() => { try { if (window.RTE) RTE.attach(textareaId); } catch (e) { console.error('RTE', e); } });
-  const title = opts.title || 'सम्पादन';
-  const showFs = opts.fullscreenBtn !== false;
+  const id = textareaId;
+  /* बटन थिच्दा editor को selection नहराओस् भनेर mousedown रोक्ने */
+  const btn = (icon, title, onclick, cmd) =>
+    `<button type="button" class="dxtb-btn" title="${title}" aria-label="${title}" onmousedown="event.preventDefault()" onclick="${onclick}"${cmd ? ` data-ta="${id}" data-cmd="${cmd}" aria-pressed="false"` : ''}>${_dxIco(icon)}</button>`;
+  const sep = '<span class="dxtb-sep" role="separator"></span>';
   return `
-  <div class="md-toolbar md-vedic-row">
-    ${VEDIC_CHARS.map(ch => `<button type="button" class="tb-btn tb-btn-char" onclick="mdInsertChar('${textareaId}','${ch}')" title="${ch} थप्नुस्">${ch}</button>`).join('')}
-  </div>
-  <div class="md-toolbar">
-    ${showFs ? `<button type="button" class="tb-btn tb-btn-fs" onclick="mdOpenFullscreen('${textareaId}','${title}',this)" title="पूरा स्क्रिनमा लेख्नुस्">⛶ पूरा स्क्रिन</button>` : ''}
-    <button type="button" class="tb-btn" onclick="mdUndo('${textareaId}')" title="पछाडि (Undo)">↶</button>
-    <button type="button" class="tb-btn" onclick="mdRedo('${textareaId}')" title="अगाडि (Redo)">↷</button>
-    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','**','**','बोल्ड')" title="बोल्ड" data-ta="${textareaId}" data-cmd="bold" aria-pressed="false"><b>B</b></button>
-    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','*','*','छड्के')" title="छड्के (Italic)" data-ta="${textareaId}" data-cmd="italic" aria-pressed="false"><i>I</i></button>
-    <button type="button" class="tb-btn" onclick="mdWrap('${textareaId}','==','==','हाइलाइट')" title="सामान्य हाइलाइट" data-ta="${textareaId}" data-cmd="hl" aria-pressed="false">🖍️ H</button>
-    <button type="button" class="tb-btn tb-btn-color" onclick="mdOpenColorPicker('${textareaId}','highlight',this)" title="रंगीन Highlight" data-ta="${textareaId}" data-cmd="hlc" aria-pressed="false">🎨 रंगीन Highlight</button>
-    <button type="button" class="tb-btn tb-btn-color" onclick="mdOpenColorPicker('${textareaId}','text',this)" title="रंगीन अक्षर मात्र" data-ta="${textareaId}" data-cmd="fc" aria-pressed="false">🖊️ रंगीन अक्षर</button>
-    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','# ','शीर्षक')" title="ठूलो शीर्षक" data-ta="${textareaId}" data-cmd="h1" aria-pressed="false">H1</button>
-    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','## ','उप-शीर्षक')" title="उप-शीर्षक" data-ta="${textareaId}" data-cmd="h2" aria-pressed="false">H2</button>
-    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','> ','उद्धरण')" title="उद्धरण">❝</button>
-    <button type="button" class="tb-btn" onclick="mdInsertLine('${textareaId}','- ','सूची वस्तु')" title="सूची" data-ta="${textareaId}" data-cmd="ul" aria-pressed="false">• सूची</button>
-    <button type="button" class="tb-btn" onclick="mdInsertBlock('${textareaId}','\\n---\\n')" title="भाग छुट्याउने रेखा">― रेखा</button>
-    <button type="button" class="tb-btn tb-btn-box" onclick="mdInsertBox('${textareaId}',this)" title="सूचना/सुझाव बक्स">📦 बक्स</button>
-    <button type="button" class="tb-btn" onclick="mdInsertTable('${textareaId}')" title="तालिका">▦ तालिका</button>
-    <button type="button" class="tb-btn tb-btn-photo" onclick="mdUploadImage('${textareaId}')" title="कर्सर भएको ठाउँमा फोटो अपलोड">📷 फोटो अपलोड</button>
-    <button type="button" class="tb-btn" onclick="mdInsertImage('${textareaId}')" title="इन्टरनेटको फोटो (URL)">🔗 URL फोटो</button>
-    <button type="button" class="tb-btn" onclick="mdClearMarks('${textareaId}')" title="चुनिएको अक्षरको बोल्ड/रंग/हाइलाइट हटाउनुस्">🧽 सफा</button>
-    <button type="button" class="tb-btn tb-btn-code" onclick="mdToggleCode('${textareaId}')" title="markdown कोड हेर्नुस्/सम्पादन गर्नुस्" data-ta="${textareaId}" data-cmd="code" aria-pressed="false">&lt;/&gt; कोड</button>
+  <div class="dxtb" role="toolbar" aria-label="Text editor toolbar">
+    ${btn('undo', 'Undo', `mdUndo('${id}')`)}
+    ${btn('redo', 'Redo', `mdRedo('${id}')`)}
+    ${sep}
+    <select class="dxtb-select" title="Header" aria-label="Header" data-ta="${id}" data-cmd="hd" onchange="mdHeading('${id}', this.value)">
+      <option value="0">Normal text</option>
+      <option value="1">Heading 1</option>
+      <option value="2">Heading 2</option>
+      <option value="3">Heading 3</option>
+      <option value="4">Heading 4</option>
+      <option value="5">Heading 5</option>
+    </select>
+    ${sep}
+    ${btn('bold', 'Bold', `mdFmt('${id}','bold')`, 'bold')}
+    ${btn('italic', 'Italic', `mdFmt('${id}','italic')`, 'italic')}
+    ${btn('strike', 'Strikethrough', `mdFmt('${id}','strike')`, 's')}
+    ${btn('underline', 'Underline', `mdFmt('${id}','underline')`, 'u')}
+    ${sep}
+    ${btn('alignL', 'Align left', `mdAlign('${id}','left')`, 'alL')}
+    ${btn('alignC', 'Align center', `mdAlign('${id}','center')`, 'alC')}
+    ${btn('alignR', 'Align right', `mdAlign('${id}','right')`, 'alR')}
+    ${btn('alignJ', 'Justify', `mdAlign('${id}','justify')`, 'alJ')}
+    ${sep}
+    <button type="button" class="dxtb-btn dxtb-text tb-btn-code" title="Show markup" onmousedown="event.preventDefault()" onclick="mdToggleCode('${id}')" data-ta="${id}" data-cmd="code" aria-pressed="false"><span class="dxtb-lbl">Show markup</span></button>
   </div>`;
 }
 window.renderMdToolbar = renderMdToolbar;

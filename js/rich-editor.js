@@ -12,8 +12,8 @@
   const INSTS = new Map();                 // textarea id -> instance
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const escAttr = s => String(s).replace(/"/g, '&quot;');
-  const BLOCK_TAGS = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'HR', 'TABLE', 'THEAD', 'TBODY', 'TR']);
-  const RE_SPECIAL_LINE = /^(#{1,3} |> |- |---$|:::|\|)/;
+  const BLOCK_TAGS = new Set(['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'BLOCKQUOTE', 'UL', 'OL', 'LI', 'HR', 'TABLE', 'THEAD', 'TBODY', 'TR']);
+  const RE_SPECIAL_LINE = /^(#{1,5} |> |- |---$|:::|\|)/;
 
   const store = () => { App._mdImgs = App._mdImgs || {}; App._mdImgUp = App._mdImgUp || {}; return App; };
   const boxMeta = t => (typeof BOX_TYPES !== 'undefined' && (BOX_TYPES[String(t).toLowerCase()] || BOX_TYPES.note)) || { icon: '📝', color: '#4CAF50', label: 'याद राख्नुहोस्' };
@@ -39,14 +39,16 @@
     return `<img class="rte-img" data-alt="${escAttr(alt)}" data-src="${escAttr(src)}" src="${escAttr(shown)}"${st.length ? ' style="' + st.join(';') + '"' : ''}>`;
   }
 
-  const SENT = { '*': '\uE001', '=': '\uE002', '{': '\uE003', '}': '\uE004', '\\': '\uE005', ':': '\uE006' };
-  const UNSENT = { '\uE001': '*', '\uE002': '=', '\uE003': '{', '\uE004': '}', '\uE005': '\\', '\uE006': ':' };
+  const SENT = { '*': '\uE001', '=': '\uE002', '{': '\uE003', '}': '\uE004', '\\': '\uE005', ':': '\uE006', '_': '\uE007', '~': '\uE008' };
+  const UNSENT = { '\uE001': '*', '\uE002': '=', '\uE003': '{', '\uE004': '}', '\uE005': '\\', '\uE006': ':', '\uE007': '_', '\uE008': '~' };
   function inlineHtml(raw) {
-    let s = esc(raw).replace(/\\([\\*={}:])/g, (m, c) => SENT[c]);        // \* जस्ता सुरक्षित अक्षर
+    let s = esc(raw).replace(/\\([\\*={}:_~])/g, (m, c) => SENT[c]);        // \* जस्ता सुरक्षित अक्षर
     s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, src) => imgHtml(alt, src));
     s = s.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/__([^_\s](?:[^_]*?[^_\s])?)__/g, '<u>$1</u>')
+      .replace(/~~(.+?)~~/g, '<s>$1</s>')
       .replace(/==(?:([^=\n]{1,16}):)?([^=]+?)==/g, (m, w, txt) => {
         const c = colorOf(w);
         if (c) return `<span class="highlight rte-hl" data-c="${escAttr(w.trim())}" style="background:${c}33;color:${c};box-shadow:inset 0 -2px 0 ${c}">${txt}</span>`;
@@ -57,10 +59,16 @@
         if (c) return `<span class="rte-fc" data-c="${escAttr(w.trim())}" style="color:${c};font-weight:600">${txt}</span>`;
         return w + ':' + txt;
       });
-    return s.replace(/[\uE001-\uE006]/g, ch => UNSENT[ch]);
+    return s.replace(/[\uE001-\uE008]/g, ch => UNSENT[ch]);
   }
 
-  const lineHtml = ln => '<div>' + (inlineHtml(ln) || '<br>') + '</div>';
+  /* ── पङ्क्ति मिलान (align): लाइनको सुरुमा {:center} {:right} {:justify} ── */
+  const AL_RE = /^\{:(left|center|right|justify)\}/;
+  const alignOf = s => { const m = String(s).match(AL_RE); return m ? { al: m[1], t: s.slice(m[0].length) } : { al: '', t: s }; };
+  const alAttr = al => (al && al !== 'left') ? ` data-al="${al}" style="text-align:${al}"` : '';
+  const alPrefix = n => { const a = n.getAttribute && n.getAttribute('data-al'); return a && a !== 'left' ? `{:${a}}` : ''; };
+
+  const lineHtml = ln => { const a = alignOf(ln); return '<div' + alAttr(a.al) + '>' + (inlineHtml(a.t) || '<br>') + '</div>'; };
 
   function boxHtml(type, label, innerLines) {
     const meta = boxMeta(type);
@@ -103,9 +111,9 @@
           out.push(tableHtml(headers, rows)); i = j; continue;
         }
       }
-      if ((m = ln.match(/^(#{1,3}) (.+)$/))) { out.push(`<h${m[1].length}>${inlineHtml(m[2])}</h${m[1].length}>`); i++; continue; }
+      if ((m = ln.match(/^(#{1,5}) (.+)$/))) { const a = alignOf(m[2]); out.push(`<h${m[1].length}${alAttr(a.al)}>${inlineHtml(a.t)}</h${m[1].length}>`); i++; continue; }
       if (/^---$/.test(ln)) { out.push('<hr>'); i++; continue; }
-      if ((m = ln.match(/^> (.+)$/))) { out.push(`<blockquote>${inlineHtml(m[1])}</blockquote>`); i++; continue; }
+      if ((m = ln.match(/^> (.+)$/))) { const a = alignOf(m[1]); out.push(`<blockquote${alAttr(a.al)}>${inlineHtml(a.t)}</blockquote>`); i++; continue; }
       if (/^- (.+)$/.test(ln)) {
         const items = [];
         let j = i;
@@ -116,7 +124,7 @@
           if (k > j && k < lines.length && /^- (.+)$/.test(lines[k])) { j = k; continue; }
           break;
         }
-        out.push('<ul>' + items.map(t => `<li>${inlineHtml(t)}</li>`).join('') + '</ul>');
+        out.push('<ul>' + items.map(t => { const a = alignOf(t); return `<li${alAttr(a.al)}>${inlineHtml(a.t)}</li>`; }).join('') + '</ul>');
         i = j; continue;
       }
       out.push(lineHtml(ln)); i++;
@@ -134,11 +142,11 @@
   const mark = (open, close, t) => { const m = t.match(/^(\s*)([\s\S]*?)(\s*)$/); return m[2] ? m[1] + open + m[2] + close + m[3] : t; };
 
   /* पाठ भित्रका * == {{ }} लाई ढाँचाको चिन्ह नमानियोस् भनेर \ लगाउने (साइटले \* लाई * देखाउँछ) */
-  const escMd = s => s.replace(/\\(?=[\\*={}:])/g, '\\\\').replace(/\*/g, '\\*').replace(/:{3,}/g, m => '\\:'.repeat(m.length))
+  const escMd = s => s.replace(/\\(?=[\\*={}:_~])/g, '\\\\').replace(/\*/g, '\\*').replace(/_{2,}/g, m => '\\_'.repeat(m.length)).replace(/~{2,}/g, m => '\\~'.repeat(m.length)).replace(/:{3,}/g, m => '\\:'.repeat(m.length))
     .replace(/={2,}/g, m => '\\='.repeat(m.length)).replace(/\{{2,}/g, m => '\\{'.repeat(m.length)).replace(/\}{2,}/g, m => '\\}'.repeat(m.length));
 
   function inlineMd(nodes, allowNl, ctx) {
-    ctx = ctx || { b: false, i: false };
+    ctx = ctx || { b: false, i: false, u: false, s: false };
     let s = '';
     for (const n of nodes) {
       if (n.nodeType === 3) { s += escMd(n.nodeValue.replace(/[\u200b\ufeff]/g, '').replace(/\u00a0/g, ' ').replace(/\r\n?/g, '\n').replace(/\n/g, allowNl ? '\n' : ' ')); continue; }
@@ -159,6 +167,14 @@
         if (ctx.i) { s += kids(); continue; }
         ctx.i = true; const t = kids(); ctx.i = false; s += mark('*', '*', t); continue;
       }
+      if (tag === 'U') {
+        if (ctx.u) { s += kids(); continue; }
+        ctx.u = true; const t = kids(); ctx.u = false; s += mark('__', '__', t); continue;
+      }
+      if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL') {
+        if (ctx.s) { s += kids(); continue; }
+        ctx.s = true; const t = kids(); ctx.s = false; s += mark('~~', '~~', t); continue;
+      }
       if (n.classList.contains('rte-hl')) {
         const t = kids(); const c = n.getAttribute('data-c');
         s += mark('==' + (c ? c + ':' : ''), '==', t); continue;
@@ -175,7 +191,7 @@
   function lineOut(s) {
     s = s.replace(/\n+$/, '');
     // सामान्य लाइनले शीर्षक/सूची/बक्स जस्तो सुरु हुन्छ भने (लाइन-ब्रेक पछि पनि) अदृश्य चिन्ह राखेर अक्षरकै रूपमा सुरक्षित गर्ने
-    return s.replace(/(^|\n)(?=(#{1,3} |> |- |---(?=\n|$)|:::|\|))/g, '$1\u200b');
+    return s.replace(/(^|\n)(?=(#{1,5} |> |- |---(?=\n|$)|:::|\|))/g, '$1\u200b');
   }
 
   function tableMd(table, lines) {
@@ -208,15 +224,21 @@
     if (n.classList.contains('rte-tablewrap')) { const t = n.querySelector('table'); if (t) tableMd(t, lines); return; }
     if (tag === 'TABLE') { tableMd(n, lines); return; }
     if (tag === 'HR') { lines.push('---'); return; }
-    if (/^H[1-3]$/.test(tag)) { const t = inlineMd(n.childNodes, false).trim(); lines.push(t ? '#'.repeat(+tag[1]) + ' ' + t : ''); return; }
-    if (tag === 'BLOCKQUOTE') { const t = inlineMd(n.childNodes, false).trim(); lines.push(t ? '> ' + t : ''); return; }
+    if (/^H[1-5]$/.test(tag)) { const t = inlineMd(n.childNodes, false).trim(); lines.push(t ? '#'.repeat(+tag[1]) + ' ' + alPrefix(n) + t : ''); return; }
+    if (tag === 'BLOCKQUOTE') { const t = inlineMd(n.childNodes, false).trim(); lines.push(t ? '> ' + alPrefix(n) + t : ''); return; }
     if (tag === 'UL' || tag === 'OL') {
-      n.querySelectorAll(':scope > li').forEach(li => { const t = inlineMd(li.childNodes, false).trim(); if (t) lines.push('- ' + t); });
+      n.querySelectorAll(':scope > li').forEach(li => { const t = inlineMd(li.childNodes, false).trim(); if (t) lines.push('- ' + alPrefix(li) + t); });
       return;
     }
-    if (tag === 'LI') { const t = inlineMd(n.childNodes, false).trim(); if (t) lines.push('- ' + t); return; }
+    if (tag === 'LI') { const t = inlineMd(n.childNodes, false).trim(); if (t) lines.push('- ' + alPrefix(n) + t); return; }
     // सामान्य लाइन (DIV/P) — भित्र अर्को block भए पुनः खोल्ने
     if ([...n.children].some(isBlockEl)) { childrenMd(n, lines); return; }
+    const pre = alPrefix(n);
+    if (pre) {
+      const raw = inlineMd(n.childNodes, true).replace(/\n+$/, '');
+      lines.push(raw.split('\n').map(l => l.trim() ? pre + l : l).join('\n'));
+      return;
+    }
     lines.push(lineOut(inlineMd(n.childNodes, true)));
   }
 
@@ -264,16 +286,23 @@
     const find = q => collapsed ? up(range.startContainer, q) : (texts.every(n => up(n, q)) ? up(texts[0], q) : null);
     let bold = !!find('b,strong'), italic = !!find('i,em');
     if (collapsed) {      // कर्सर मात्र: अर्को अक्षर बोल्ड/छड्के हुन्छ कि हुँदैन — browser को "typing style" नै सही हो
-      const inHead = up(range.startContainer, 'h1,h2,h3');
+      const inHead = up(range.startContainer, 'h1,h2,h3,h4,h5');
       try { if (!inHead) { bold = document.queryCommandState('bold'); italic = document.queryCommandState('italic'); } } catch (e) {}
     }
+    let uu = !!find('u'), ss = !!find('s,strike,del');
+    if (collapsed) { try { uu = document.queryCommandState('underline'); ss = document.queryCommandState('strikeThrough'); } catch (e) {} }
+    const blk = closestBlock(inst, collapsed ? range.startContainer : (texts[0] || range.startContainer));
+    const al = (blk && blk.getAttribute('data-al')) || 'left';
+    const hb = find('h1,h2,h3,h4,h5');
     const hlAny = find('.rte-hl');
     return {
       bold, italic,
       hl: !!(hlAny && !hlAny.getAttribute('data-c')),
       hlc: hlAny && hlAny.getAttribute('data-c') ? hlAny.getAttribute('data-c') : null,
       fc: (find('.rte-fc') || null) && find('.rte-fc').getAttribute('data-c'),
-      h1: !!find('h1'), h2: !!find('h2'), ul: !!find('li')
+      h1: !!find('h1'), h2: !!find('h2'), ul: !!find('li'),
+      u: uu, s: ss, hd: hb ? +hb.tagName[1] : 0,
+      alL: al === 'left', alC: al === 'center', alR: al === 'right', alJ: al === 'justify'
     };
   }
   function paintState(inst, st) {
@@ -281,6 +310,7 @@
     document.querySelectorAll('[data-ta="' + inst.id + '"][data-cmd]').forEach(b => {
       const k = b.getAttribute('data-cmd');
       if (k === 'code') return;
+      if (b.tagName === 'SELECT') { b.value = String(st[k] || 0); return; }
       const v = st[k];
       const on = !!v;
       b.classList.toggle('on', on);
@@ -354,6 +384,10 @@
       /* ── toolbar क्रियाहरू ── */
       bold() { this.restore(); document.execCommand('bold'); this.flush(); this.updateState(); },
       italic() { this.restore(); document.execCommand('italic'); this.flush(); this.updateState(); },
+      strike() { this.restore(); document.execCommand('strikeThrough'); cleanStyles(el); this.flush(); this.updateState(); },
+      underline() { this.restore(); document.execCommand('underline'); cleanStyles(el); this.flush(); this.updateState(); },
+      heading(n) { this.restore(); setBlock(this, n ? 'h' + n : 'div', '', true); this.updateState(); },
+      align(al) { this.restore(); if (blockedHere(this)) return; alignBlocks(this, al); cleanStyles(el); this.flush(); this.updateState(); },
       undo() { if (this.dirty) this.flush(); if (this.hi > 0) this.goto(this.hi - 1); },
       redo() { if (this.hi < this.hist.length - 1) this.goto(this.hi + 1); },
       mark(kind, color) { this.restore(); applyMark(this, kind, color); },
@@ -379,7 +413,11 @@
           ta.style.display = 'none'; ta.classList.remove('rte-code'); el.style.display = '';
           this.focus(false);
         }
-        document.querySelectorAll('.tb-btn-code').forEach(b => b.classList.toggle('on', this.codeMode));
+        document.querySelectorAll('.tb-btn-code').forEach(b => {
+          b.classList.toggle('on', this.codeMode);
+          b.setAttribute('aria-pressed', this.codeMode ? 'true' : 'false');
+          const lb = b.querySelector('.dxtb-lbl'); if (lb) lb.textContent = this.codeMode ? 'Hide markup' : 'Show markup';
+        });
         return this.codeMode;
       }
     };
@@ -440,17 +478,21 @@
     // browser ले थपेका बेकारका style हटाउने (हाम्रा rte-hl/rte-fc/img/बक्स बाहेक)।
     // नोट: node सार्ने/हटाउने काम गर्दैनौं (selection बिग्रन्छ) — attribute मात्र हटाउँछौं।
     root.querySelectorAll('font').forEach(f => { f.removeAttribute('face'); f.removeAttribute('size'); f.removeAttribute('color'); });
-    root.querySelectorAll('span, h1,h2,h3,blockquote,ul,ol,li,div,p,b,i,strong,em').forEach(x => {
+    root.querySelectorAll('span, h1,h2,h3,h4,h5,blockquote,ul,ol,li,div,p,b,i,u,s,strike,strong,em').forEach(x => {
       if (x.classList.contains('rte-hl') || x.classList.contains('rte-fc') || x.classList.contains('rte-box') ||
           x.classList.contains('rte-box-head') || x.closest('.rte-box-head')) return;
-      if (x.hasAttribute('style')) x.removeAttribute('style');
+      if (x.hasAttribute('style')) {
+        const al = x.getAttribute('data-al');
+        if (al && al !== 'left') x.setAttribute('style', 'text-align:' + al); else x.removeAttribute('style');
+      }
+      if (x.hasAttribute('align')) x.removeAttribute('align');
     });
   }
 
-  const lineBlocksSel = ':scope > div:not(.rte-box):not(.rte-tablewrap), :scope > h1, :scope > h2, :scope > h3, :scope > blockquote, :scope > ul > li, .rte-box-body > div, td, th';
+  const lineBlocksSel = ':scope > div:not(.rte-box):not(.rte-tablewrap), :scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > blockquote, :scope > ul > li, .rte-box-body > div, td, th';
   const closestBlock = (inst, node) => {
     let n = node && node.nodeType === 3 ? node.parentElement : node;
-    while (n && n !== inst.el) { if (/^(H1|H2|H3|BLOCKQUOTE|LI|TD|TH)$/.test(n.tagName) || (n.tagName === 'DIV' && n.parentElement && (n.parentElement === inst.el || n.parentElement.classList.contains('rte-box-body')))) return n; n = n.parentElement; }
+    while (n && n !== inst.el) { if (/^(H1|H2|H3|H4|H5|BLOCKQUOTE|LI|TD|TH)$/.test(n.tagName) || (n.tagName === 'DIV' && n.parentElement && (n.parentElement === inst.el || n.parentElement.classList.contains('rte-box-body')))) return n; n = n.parentElement; }
     return null;
   };
   function blockedHere(inst) {
@@ -534,19 +576,35 @@
     inst.commit();
   }
 
-  function setBlock(inst, tag, placeholder) {
+  function setBlock(inst, tag, placeholder, force) {
     if (blockedHere(inst)) return;
     const sel = getSelection(); const blk = closestBlock(inst, sel.anchorNode);
     const cur = blk ? blk.tagName.toLowerCase() : 'div';
-    const target = cur === tag ? 'div' : tag;
+    const target = (!force && cur === tag) ? 'div' : tag;
+    const keepAl = blk && blk.getAttribute('data-al');
     const wasEmpty = blk && !blk.textContent.replace(/[\u200b\s]/g, '');
     document.execCommand('formatBlock', false, target);
+    if (keepAl) { const b3 = closestBlock(inst, getSelection().anchorNode); if (b3 && !b3.getAttribute('data-al')) { b3.setAttribute('data-al', keepAl); b3.style.textAlign = keepAl; } }
     cleanStyles(inst.el);
     if (target !== 'div' && wasEmpty) {
       document.execCommand('insertText', false, placeholder || (tag === 'blockquote' ? 'उद्धरण' : 'शीर्षक'));
       const s2 = getSelection(); if (s2.rangeCount) { const b2 = closestBlock(inst, s2.anchorNode); if (b2) { const r = document.createRange(); r.selectNodeContents(b2); s2.removeAllRanges(); s2.addRange(r); } }
     }
     inst.flush();
+  }
+
+  /* पङ्क्ति मिलान — चुनिएका सबै लाइन/शीर्षक/बुँदामा */
+  function alignBlocks(inst, al) {
+    const sel = getSelection(); if (!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    const blocks = new Set();
+    inst.el.querySelectorAll(':scope > div:not(.rte-box):not(.rte-tablewrap), :scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > h5, :scope > blockquote, :scope > ul > li')
+      .forEach(b => { if (range.intersectsNode(b)) blocks.add(b); });
+    if (!blocks.size) { const b = closestBlock(inst, range.startContainer); if (b) blocks.add(b); }
+    blocks.forEach(b => {
+      if (al === 'left') { b.removeAttribute('data-al'); b.removeAttribute('style'); }
+      else { b.setAttribute('data-al', al); b.style.textAlign = al; }
+    });
   }
 
   /* ── selection लाई DOM-path को रूपमा सुरक्षित गर्ने (हाम्रो Undo का लागि) ── */
@@ -614,12 +672,12 @@
     const n = sel.anchorNode && (sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode);
     if (e.key === 'Enter' && !e.shiftKey && n && n.closest) {
       if (n.closest('td,th')) { e.preventDefault(); return; }                      // तालिकाको कक्षमा नयाँ लाइन छैन
-      const hb = n.closest('h1,h2,h3,blockquote');
+      const hb = n.closest('h1,h2,h3,h4,h5,blockquote');
       if (hb && inst.el.contains(hb)) {                                              // शीर्षक पछि सामान्य लाइन आओस्
         e.preventDefault();
         document.execCommand('insertParagraph');
         const b = closestBlock(inst, getSelection().anchorNode);
-        if (b && /^(H1|H2|H3|BLOCKQUOTE)$/.test(b.tagName)) document.execCommand('formatBlock', false, 'div');
+        if (b && /^(H1|H2|H3|H4|H5|BLOCKQUOTE)$/.test(b.tagName)) document.execCommand('formatBlock', false, 'div');
         cleanStyles(inst.el); inst.markDirty();
       }
     }
@@ -667,8 +725,8 @@
     let range = sel.getRangeAt(0);
     if (!range.collapsed) { range.deleteContents(); range = sel.getRangeAt(0); }
     const ctxEl = (range.startContainer.nodeType === 3 ? range.startContainer.parentElement : range.startContainer);
-    const inCell = ctxEl && ctxEl.closest && ctxEl.closest('li,td,th,h1,h2,h3,blockquote');
-    const multi = /\n/.test(text) || (asMd && /^(#{1,3} |> |- |:::|\|)/.test(text));
+    const inCell = ctxEl && ctxEl.closest && ctxEl.closest('li,td,th,h1,h2,h3,h4,h5,blockquote');
+    const multi = /\n/.test(text) || (asMd && /^(#{1,5} |> |- |:::|\|)/.test(text));
 
     const putInline = html => {                                 // एउटै लाइन/सानो ठाउँ — कर्सरको ठाउँमा सिधै
       const tpl = document.createElement('template'); tpl.innerHTML = html;

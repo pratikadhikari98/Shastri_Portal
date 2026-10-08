@@ -1383,6 +1383,8 @@ function applyInline(str) {
     .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/__([^_\s](?:[^_]*?[^_\s])?)__/g,'<u>$1</u>')
+    .replace(/~~(.+?)~~/g,'<s>$1</s>')
     .replace(/==(?:([^=\n]{1,16}):)?([^=]+?)==/g, (m, colorWord, txt) => {
       const c = resolveHlColor(colorWord);
       if (c) return `<span class="highlight" style="background:${c}33;color:${c};box-shadow:inset 0 -2px 0 ${c}">${txt}</span>`;
@@ -1431,7 +1433,7 @@ function renderMd(text) {
 
   let escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   // \* \= \{ \} \\ — चिन्हलाई ढाँचा नमानी अक्षरकै रूपमा देखाउने (लेख्ने एडिटरले यसरी सुरक्षित गर्छ)
-  escaped = escaped.replace(/\\([\\*={}:])/g, (m, c) => '&#' + c.charCodeAt(0) + ';');
+  escaped = escaped.replace(/\\([\\*={}:_~])/g, (m, c) => '&#' + c.charCodeAt(0) + ';');
 
   // Box/Table लाई paragraph-wrapping ले नबिगारोस् भनेर छुट्टै निकालेर placeholder राख्ने
   const blocks = [];
@@ -1461,13 +1463,13 @@ function renderMd(text) {
       else if (w) st.push('margin-left:auto;margin-right:auto');
       return '<img src="' + src + '" alt="' + parts[0].trim() + '" loading="lazy" decoding="async"' + (st.length ? ' style="' + st.join(';') + '"' : '') + '>';
     })
-    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
-    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^(#{1,5}) (?:\{:(left|center|right|justify)\})?(.+)$/gm, (m, h, al, t) => `<h${h.length}${al && al !== 'left' ? ` style="text-align:${al}"` : ''}>${t}</h${h.length}>`)
     .replace(/^---$/gm,'<hr>')
     .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/__([^_\s](?:[^_]*?[^_\s])?)__/g,'<u>$1</u>')
+    .replace(/~~(.+?)~~/g,'<s>$1</s>')
     .replace(/==(?:([^=\n]{1,16}):)?([^=]+?)==/g, (m, colorWord, txt) => {
       const c = resolveHlColor(colorWord);
       if (c) return `<span class="highlight" style="background:${c}33;color:${c};box-shadow:inset 0 -2px 0 ${c}">${txt}</span>`;
@@ -1479,11 +1481,12 @@ function renderMd(text) {
       if (c) return `<span style="color:${c};font-weight:600">${txt}</span>`;
       return colorWord + ':' + txt;
     })
-    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>')
-    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/^(?:>|&gt;) (?:\{:(left|center|right|justify)\})?(.+)$/gm, (m, al, t) => `<blockquote${al && al !== 'left' ? ` style="text-align:${al}"` : ''}>${t}</blockquote>`)
+    .replace(/^- (?:\{:(left|center|right|justify)\})?(.+)$/gm, (m, al, t) => `<li${al && al !== 'left' ? ` style="text-align:${al}"` : ''}>${t}</li>`)
+    .replace(/^\{:(left|center|right|justify)\}(.*)(?:\n|$)/gm, (m, al, t) => `<div style="text-align:${al}">${t}</div>`)
     // बुँदाहरू (- ...) बीच खाली लाइन वा खाली ठाउँ भए पनि एउटै सूचीमा जोड्ने र वरपरका अनावश्यक लाइन-ब्रेक हटाउने
     // (पहिले हरेक बुँदा छुट्टै <ul> बन्थ्यो र बीचमा </p><p>, <br> थपिएर ठूलो ग्याप आउँथ्यो)
-    .replace(/<li>[^\n]*?<\/li>(?:\s*<li>[^\n]*?<\/li>)*\s*/g, m => '<ul>' + m.replace(/<\/li>\s+<li>/g, '</li><li>').replace(/\s+$/, '') + '</ul>')
+    .replace(/<li[^>]*>[^\n]*?<\/li>(?:\s*<li[^>]*>[^\n]*?<\/li>)*\s*/g, m => '<ul>' + m.replace(/<\/li>\s+<li/g, '</li><li').replace(/\s+$/, '') + '</ul>')
     .replace(/\n\n/g,'</p><p>')
     .replace(/\n/g,'<br>');
 

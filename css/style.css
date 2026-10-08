@@ -1288,6 +1288,10 @@ input[type=range].dm-slider {
 .ch-read-content h1 { font-size:1.4rem; font-weight:800; color:var(--accent); margin:12px 0 8px; font-family:var(--font-s); }
 .ch-read-content h2 { font-size:1.15rem; font-weight:700; color:var(--text-1); margin:10px 0 6px; border-left:3px solid var(--accent); padding-left:10px; }
 .ch-read-content h3 { font-size:1rem; font-weight:700; color:var(--text-2); margin:8px 0 4px; }
+.ch-read-content h4 { font-size:0.95rem; font-weight:700; color:var(--text-2); margin:8px 0 4px; }
+.ch-read-content h5 { font-size:0.88rem; font-weight:700; color:var(--text-3,var(--text-2)); margin:6px 0 4px; }
+.ch-read-content u { text-decoration:underline; text-underline-offset:3px; }
+.ch-read-content s { text-decoration:line-through; opacity:.8; }
 .ch-read-content p  { margin-bottom:10px; }
 .ch-read-content strong { color:var(--text-1); font-weight:700; }
 .ch-read-content em { font-style:italic; color:var(--text-2); }
@@ -1883,7 +1887,7 @@ html.an-ready .an-uni { position: absolute; width: 1px; height: 1px; overflow: h
 .rte:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-glow); }
 .rte.rte-fs { max-height:none; min-height:100%; border:none; border-radius:0; background:transparent; padding:18px 16px 60px; box-shadow:none; }
 .rte div { min-height:1.4em; }
-.rte h1, .rte h2, .rte h3 { white-space:pre-wrap; }
+.rte h1, .rte h2, .rte h3, .rte h4, .rte h5 { white-space:pre-wrap; }
 .rte img { max-width:100%; height:auto; border-radius:12px; margin:8px auto; display:block; }
 .rte img[style*="float"] { display:inline; }
 .rte .rte-box-head { cursor:pointer; -webkit-user-select:none; user-select:none; }
@@ -1927,3 +1931,26 @@ textarea.rte-code { display:block; font-family:ui-monospace,Menlo,Consolas,monos
 .form-panel .rte { margin-left:-16px; margin-right:-16px; width:calc(100% + 32px); max-width:none; border-left:none; border-right:none; border-radius:0; box-shadow:none; padding:10px 16px; background:var(--input-bg); }
 .form-panel .rte:focus { border-color:var(--accent); box-shadow:none; }
 .form-panel textarea.rte-code { margin-left:-16px; margin-right:-16px; width:calc(100% + 32px); max-width:none; border-radius:0; padding:10px 16px; }
+
+/* ═══════════════════════════════════════════════════
+   नयाँ Toolbar (DevExtreme HtmlEditor शैली)
+   ═══════════════════════════════════════════════════ */
+.dxtb { display:flex; align-items:center; gap:2px; flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  padding:6px 8px; margin:0 0 8px; background:var(--surface,#fff); border:1px solid var(--border,#ddd); border-radius:8px; box-sizing:border-box; }
+.dxtb::-webkit-scrollbar { display:none; }
+.dxtb-btn { flex:none; display:inline-flex; align-items:center; justify-content:center; min-width:36px; height:36px; padding:0 8px; border:none; border-radius:4px;
+  background:transparent; color:var(--text-2,#555); font-family:var(--font,inherit); font-size:0.88rem; cursor:pointer; white-space:nowrap; -webkit-tap-highlight-color:transparent;
+  transition:background-color .12s, color .12s; }
+.dxtb-btn:hover { background:rgba(191,191,191,.18); }
+.dxtb-btn:active { background:rgba(191,191,191,.4); }
+.dxtb-btn.on { background:rgba(191,191,191,.4); color:var(--text-1,#222); }
+.dxtb-ico { display:block; }
+.dxtb-text { color:#337ab7; font-weight:500; padding:0 12px; }
+.dxtb-text.on, .dxtb .tb-btn-code.on { background:rgba(51,122,183,.14); color:#337ab7; border:none; }
+.dxtb-sep { flex:none; width:1px; height:22px; margin:0 6px; background:var(--border,#ddd); }
+.dxtb-select { flex:none; height:36px; min-width:132px; padding:0 30px 0 10px; border:1px solid var(--border,#ddd); border-radius:4px; background-color:var(--surface,#fff);
+  color:var(--text-1,#333); font-family:var(--font,inherit); font-size:0.88rem; cursor:pointer; -webkit-appearance:none; appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat; background-position:right 10px center; }
+.dxtb-select:focus { outline:none; border-color:#337ab7; }
+.fs-editor-toolbar .dxtb { margin:0; border-radius:0; border-left:none; border-right:none; border-top:none; }
