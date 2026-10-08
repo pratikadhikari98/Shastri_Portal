@@ -858,67 +858,6 @@ function anandaHtml(text) {
   return `<span class="an-uni">${text}</span><span class="an-leg" aria-hidden="true">${words.map(w => ANANDA_MAP[w]).join(' ')}</span>`;
 }
 
-/* ── सामान्य Unicode नेपाली → Ananda (Preeti ढाँचा) बदल्ने — विषयका नामहरूका लागि ──
-   जुन शब्द सुरक्षित रूपमा बदल्न सकिँदैन (अङ्ग्रेजी, दुर्लभ संयुक्ताक्षर आदि) त्यो सामान्य फन्टमै देखिन्छ। */
-const AN_FULL = { 'क':'s','ख':'v','ग':'u','घ':'3','ङ':'ª','च':'r','छ':'5','ज':'h','झ':'´','ञ':'`','ट':'6','ठ':'7','ड':'8','ढ':'9','ण':'0f','त':'t','थ':'y','द':'b','ध':'w','न':'g','प':'k','फ':'km','ब':'a','भ':'e','म':'d','य':'o','र':'/','ल':'n','व':'j','श':'z','ष':'if','स':';','ह':'x' };
-const AN_HALF = { 'क':'S','ख':'V','ग':'U','च':'R','ज':'H','त':'T','थ':'Y','ध':'W','न':'G','प':'K','ब':'A','भ':'E','म':'D','ल':'N','व':'J','श':'Z','ष':'i','स':':','ह':'X' };
-const AN_LIG  = { 'क्ष':['If','I'], 'त्र':['q',null], 'ज्ञ':['1',null], 'श्र':['>',null], 'द्य':['B',null], 'द्व':['å',null], 'द्ध':['4',null], 'द्द':['2',null], 'त्त':['Q',null] };
-const AN_VOW  = { 'अ':'c','आ':'cf','इ':'O','ई':'O{','उ':'p','ऊ':'pm','ऋ':'C','ए':'P','ऐ':'P]','ओ':'cf]','औ':'cf}' };
-const AN_MATRA = { 'ा':'f','ी':'L','ु':"'",'ू':'"','ृ':'[','े':']','ै':'}','ो':'f]','ौ':'f}' };
-const AN_DIGIT = { '०':')','१':'!','२':'@','३':'#','४':'$','५':'%','६':'^','७':'&','८':'*','९':'(' };
-function anandaWord(w) {
-  const ch = [...w]; let out = '', i = 0;
-  const isCons = c => AN_FULL[c] !== undefined;
-  while (i < ch.length) {
-    const c = ch[i];
-    if (AN_VOW[c]) { out += AN_VOW[c]; i++; continue; }
-    if (AN_DIGIT[c]) { out += AN_DIGIT[c]; i++; continue; }
-    if (c === '।') { out += '.'; i++; continue; }
-    if (c === 'ं') { out += '+'; i++; continue; }
-    if (c === 'ँ') { out += 'F'; i++; continue; }
-    if (c === 'ः') { out += 'M'; i++; continue; }
-    if (!isCons(c)) return null;
-    // एउटा संयुक्ताक्षर (cluster) जम्मा गर्ने
-    const cons = [c]; i++;
-    while (ch[i] === '्' && isCons(ch[i + 1])) { cons.push(ch[i + 1]); i += 2; }
-    if (ch[i] === '्') return null;            // अन्त्यको हलन्त — असमर्थित
-    let reph = false;
-    if (cons[0] === 'र' && cons.length > 1) { reph = true; cons.shift(); }
-    // इकाईहरू बनाउने (ligature पहिले, अन्त्यमा रेफ/रकार)
-    const units = [];
-    for (let k = 0; k < cons.length; k++) {
-      const two = cons[k] + '्' + (cons[k + 1] || '');
-      if (cons[k + 1] && AN_LIG[two]) { units.push({ full: AN_LIG[two][0], half: AN_LIG[two][1] }); k++; continue; }
-      if (k === cons.length - 1 && cons[k] === 'र' && units.length) { units[units.length - 1].rakar = true; continue; }
-      units.push({ full: AN_FULL[cons[k]], half: AN_HALF[cons[k]] || null });
-    }
-    let body = '';
-    units.forEach((u, idx) => {
-      if (idx < units.length - 1 && !u.rakar) { if (!u.half) body = null; else if (body !== null) body += u.half; }
-      else if (body !== null) body += u.full + (u.rakar ? '|' : '');
-      if (idx < units.length - 1 && u.rakar && body !== null) { /* रकारपछि अर्को अक्षर — असमर्थित */ body = null; }
-    });
-    if (body === null) return null;
-    // मात्रा
-    let pre = '', post = '';
-    if (ch[i] === 'ि') { pre = 'l'; i++; }
-    else if (AN_MATRA[ch[i]]) { post = AN_MATRA[ch[i]]; i++; }
-    // ि पछि चन्द्र/अनुस्वार आदि अर्को लूपमा आउँछ
-    out += pre + body + post + (reph ? '{' : '');
-  }
-  return out;
-}
-function anandaText(text) {
-  const t = String(text == null ? '' : text);
-  if (!/[\u0900-\u097F]/.test(t)) return t;
-  return t.split(/(\s+)/).map(part => {
-    if (!part.trim() || !/[\u0900-\u097F]/.test(part)) return part;
-    const leg = anandaWord(part);
-    return leg ? `<span class="an-uni">${part}</span><span class="an-leg" aria-hidden="true">${leg}</span>` : part;
-  }).join('');
-}
-window.anandaText = anandaText;
-
 function renderHome() {
   if (!App.data) return;
   const grid = document.getElementById('yearsGrid');
@@ -1105,8 +1044,8 @@ function renderYearPage(yearId) {
         const [gc1,gc2]=s.g.split(',');
         return `
         <button class="subj-tab ${key===firstKey?'active':''}" data-key="${key}" onclick="setYearSubjectTab(${yr.id},'${key}')">
-          <span class="subj-tab-ico" style="background:linear-gradient(135deg,${gc1},${gc2})">${anandaText(s.short)}</span>
-          <span class="subj-tab-lbl">${anandaText(s.label)}</span>
+          <span class="subj-tab-ico" style="background:linear-gradient(135deg,${gc1},${gc2})">${s.short}</span>
+          <span class="subj-tab-lbl">${s.label}</span>
         </button>`;
       }).join('')}
     </div>
@@ -1156,9 +1095,9 @@ function bookCardHtml(b, yearId, key) {
          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
        >
        <!-- fallback letter देखिने photo लोड नभए मात्र -->
-       <span class="book-row-ico" style="display:none">${anandaText(s.short)}</span>`
+       <span class="book-row-ico" style="display:none">${s.short}</span>`
     : `<!-- no cover → gradient + letter-avatar -->
-       <span class="book-row-ico">${anandaText(s.short)}</span>`;
+       <span class="book-row-ico">${s.short}</span>`;
 
   return `
   <a class="book-row" onclick="go('subject',{subjectId:'${b.id}',yearId:${yearId}});return false;" href="#">
@@ -1196,7 +1135,7 @@ function renderSubjectPage(subjectId, yearId) {
         : ''}
       <!-- letter-avatar देखिने कभर फोटो नभएमा मात्र -->
       <span class="subj-hero-emoji" id="hero-emoji-${book.id}"
-            style="${book.cover ? 'display:none' : 'display:flex'}">${anandaText(s.short)}</span>
+            style="${book.cover ? 'display:none' : 'display:flex'}">${s.short}</span>
       <div class="subj-hero-overlay" style="z-index:2">
         <!-- कभर फोटोमा पहिल्यै शीर्षक लेखिएको हुनसक्ने भएकोले, फोटो भएमा दोहोरो नआउन यो text लुकाइन्छ -->
         ${book.cover ? '<div></div>' : `<div><div class="sh-title">${book.title}</div><div class="sh-meta">${s.label} · ${yr.title}</div></div>`}
@@ -1712,7 +1651,7 @@ function renderDrop(res,q) {
     const s=SUBJ[key]||{short:'क',g:'#EEE,#CCC'};
     const[c1,c2]=s.g.split(',');
     return `<div class="s-row" onclick="openBookWithBreadcrumb('${b.id}',${yr.id});document.getElementById('sDrop').classList.remove('open')">
-      <div class="s-ico2" style="background:linear-gradient(135deg,${c1},${c2})">${anandaText(s.short)}</div>
+      <div class="s-ico2" style="background:linear-gradient(135deg,${c1},${c2})">${s.short}</div>
       <div><div class="s-name">${b.title}</div><div class="s-sub">${yr.title} · ${b.author}</div></div>
     </div>`;
   }).join('');
