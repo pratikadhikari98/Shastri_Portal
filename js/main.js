@@ -778,7 +778,6 @@ function initSwipeBack() {
   const chapterOpen = () => !!document.querySelector('.chapter-item.open');
   const canBack = () => {
     if (document.querySelector('.overlay.open')) return false;
-    if (document.getElementById('fsEditorPage')?.classList.contains('show')) return false;
     if (document.getElementById('mdImgSheet')) return false;
     if (document.getElementById('dotsMenu')?.classList.contains('open')) return false;
     if (document.getElementById('sDrop')?.classList.contains('open')) return false;

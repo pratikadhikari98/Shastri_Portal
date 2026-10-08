@@ -366,93 +366,6 @@ const MD_FONTS = [
   { key: 'fredoka',    label: 'Fredoka (English)',   css: "'Fredoka','Noto Serif Devanagari',sans-serif" },
 ];
 
-function _mdFontOutsideClick(e) {
-  const pop = document.getElementById('fontPopover');
-  if (!pop) return;
-  if (!pop.contains(e.target) && !e.target.closest('.fs-editor-font-btn')) {
-    mdCloseFontPicker();
-  }
-}
-
-function mdCloseFontPicker() {
-  document.getElementById('fontPopover')?.classList.remove('show');
-  document.removeEventListener('click', _mdFontOutsideClick, true);
-}
-window.mdCloseFontPicker = mdCloseFontPicker;
-
-function mdOpenFontPicker(btnEl) {
-  const pop = document.getElementById('fontPopover');
-  const ta = document.getElementById('fsEditorTa');
-  if (!pop || !ta) return;
-  const current = ta.dataset.fontKey || 'siddhanta';
-  const list = document.getElementById('fontPopoverList');
-  if (list) {
-    list.innerHTML = MD_FONTS.map(f => `
-      <button type="button" class="font-opt-btn ${f.key === current ? 'active' : ''}" style="font-family:${f.css}" onclick="mdApplyFont('${f.key}')">${f.label}</button>`).join('');
-  }
-  if (btnEl) {
-    const r = btnEl.getBoundingClientRect();
-    const popW = Math.min(240, window.innerWidth - 20);
-    let left = r.right - popW;
-    if (left < 10) left = 10;
-    let top = r.bottom + 8;
-    if (top + 260 > window.innerHeight) top = Math.max(10, r.top - 270);
-    pop.style.left = left + 'px';
-    pop.style.top = top + 'px';
-  }
-  pop.classList.add('show');
-  setTimeout(() => document.addEventListener('click', _mdFontOutsideClick, true), 0);
-}
-window.mdOpenFontPicker = mdOpenFontPicker;
-
-function mdApplyFont(fontKey) {
-  const ta = document.getElementById('fsEditorTa');
-  const f = MD_FONTS.find(x => x.key === fontKey);
-  if (ta && f) {
-    ta.style.fontFamily = f.css;
-    ta.dataset.fontKey = fontKey;
-  }
-  mdCloseFontPicker();
-}
-window.mdApplyFont = mdApplyFont;
-
-/* ════════════════════════════════════
-   पूरा-स्क्रिन लेख्ने Mode — छुट्टै full-page (history/overlay प्रयोग गर्दैन)
-   ════════════════════════════════════ */
-let _fsEditorSourceId = null;
-
-function mdOpenFullscreen(textareaId, title, btnEl) {
-  const src = _mdTa(textareaId);
-  const page = document.getElementById('fsEditorPage');
-  if (!src || !page) return;
-  _fsEditorSourceId = textareaId;
-  document.querySelectorAll('.overlay.open').forEach(el => el.classList.add('blur-paused'));
-  const titleEl = document.getElementById('fsEditorTitle');
-  if (titleEl) titleEl.textContent = title || 'सम्पादन';
-  const fsTa = _mdTa('fsEditorTa');
-  fsTa.value = src.value;
-  const existingFontKey = src.dataset.fontKey || 'siddhanta';
-  fsTa.dataset.fontKey = existingFontKey;
-  fsTa.style.fontFamily = fontCssFor(existingFontKey);
-  const tb = document.getElementById('fsEditorToolbar');
-  if (tb) tb.innerHTML = renderMdToolbar('fsEditorTa', { fullscreenBtn: false });
-  page.classList.add('show');
-  setTimeout(() => { const R = window.RTE && RTE.get('fsEditorTa'); if (R && !R.codeMode) R.focus(); else fsTa.focus(); }, 320);
-}
-window.mdOpenFullscreen = mdOpenFullscreen;
-
-function mdCloseFullscreen() {
-  const src = _mdTa(_fsEditorSourceId);
-  const fsTa = _mdTa('fsEditorTa');
-  if (src && fsTa) {
-    src.value = fsTa.value; // सम्पादन गरेको content मूल textarea मा फर्काउने
-    src.dataset.fontKey = fsTa.dataset.fontKey || 'siddhanta'; // छानिएको फन्ट पनि सँगै फर्काउने (save गर्दा चाहिन्छ)
-  }
-  document.getElementById('fsEditorPage')?.classList.remove('show');
-  document.querySelectorAll('.overlay.blur-paused').forEach(el => el.classList.remove('blur-paused'));
-}
-window.mdCloseFullscreen = mdCloseFullscreen;
-
 /* फन्ट key बाट CSS font-family value निकाल्ने — content render गर्दा (renderMd सँगै) प्रयोग हुन्छ */
 function fontCssFor(key) {
   const f = MD_FONTS.find(x => x.key === key);
@@ -461,8 +374,7 @@ function fontCssFor(key) {
 window.fontCssFor = fontCssFor;
 
 /* पूरा toolbar एउटै ठाउँमा render गर्ने — कुनै पनि textarea id लाई जोड्न मिल्ने
-   opts.title = पूरा-स्क्रिन खोल्दा देखिने heading
-   opts.fullscreenBtn = false भए ⛶ बटन नदेखाउने (पूरा-स्क्रिन भित्रैको toolbar मा दोहोरो नआउन) */
+*/
 
 /* ════════════════════════════════════════════════════════════
    नयाँ Toolbar — DevExtreme HtmlEditor "Toolbar Customization" जस्तै
@@ -518,6 +430,41 @@ function mdToggleCode(id) { const R = _rte(id); if (R) R.toggleCode(); }
 window.mdFmt = mdFmt; window.mdHeading = mdHeading; window.mdAlign = mdAlign;
 window.mdUndo = mdUndo; window.mdRedo = mdRedo; window.mdClearMarks = mdClearMarks; window.mdToggleCode = mdToggleCode;
 
+
+/* वैदिक अक्षर — एउटै ▾ बटन; थिच्दा सबै अक्षर देखिन्छन्, त्यसपछि मात्र छानेर हाल्न मिल्छ */
+function _mdVedicOutside(e) {
+  const pop = document.getElementById('vedicPopover');
+  if (!pop) return;
+  if (!pop.contains(e.target) && !e.target.closest('.tb-btn-vedic')) mdCloseVedic();
+}
+function mdCloseVedic() {
+  document.getElementById('vedicPopover')?.classList.remove('show');
+  document.removeEventListener('click', _mdVedicOutside, true);
+}
+window.mdCloseVedic = mdCloseVedic;
+function mdToggleVedic(id, btnEl) {
+  let pop = document.getElementById('vedicPopover');
+  if (pop && pop.classList.contains('show')) { mdCloseVedic(); return; }
+  if (!pop) {
+    pop = document.createElement('div');
+    pop.id = 'vedicPopover'; pop.className = 'color-popover vedic-popover';
+    document.body.appendChild(pop);
+  }
+  pop.dataset.ta = id;
+  pop.innerHTML = '<div class="color-popover-title">ॐ वैदिक/संस्कृत अक्षर</div><div class="vedic-grid">' +
+    VEDIC_CHARS.map(ch => `<button type="button" class="vedic-ch" onmousedown="event.preventDefault()" onclick="mdInsertChar(document.getElementById('vedicPopover').dataset.ta,'${ch}')">${ch}</button>`).join('') + '</div>';
+  const r = btnEl.getBoundingClientRect();
+  const popW = Math.min(300, window.innerWidth - 20);
+  pop.style.width = popW + 'px';
+  let left = Math.min(r.left, window.innerWidth - popW - 10); if (left < 10) left = 10;
+  let top = r.bottom + 6;
+  if (top + 260 > window.innerHeight) top = Math.max(10, r.top - 266);
+  pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  pop.classList.add('show');
+  setTimeout(() => document.addEventListener('click', _mdVedicOutside, true), 0);
+}
+window.mdToggleVedic = mdToggleVedic;
+
 /* आइकनहरू — DevExtreme जस्तै सरल रेखा-आइकन */
 const _DXI = {
   undo:      '<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>',
@@ -550,15 +497,12 @@ function renderMdToolbar(textareaId, opts = {}) {
   // लेख्ने (rich) एडिटर — textarea DOM मा आइसकेपछि जोड्ने
   queueMicrotask(() => { try { if (window.RTE) RTE.attach(textareaId); } catch (e) { console.error('RTE', e); } });
   const id = textareaId;
-  const title = opts.title || 'सम्पादन';
-  const showFs = opts.fullscreenBtn !== false;
   /* बटन थिच्दा editor को selection नहराओस् भनेर mousedown रोक्ने */
   const btn = (icon, ttl, onclick, cmd, cls) =>
     `<button type="button" class="dxtb-btn${cls ? ' ' + cls : ''}" title="${ttl}" aria-label="${ttl}" onmousedown="event.preventDefault()" onclick="${onclick}"${cmd ? ` data-ta="${id}" data-cmd="${cmd}" aria-pressed="false"` : ''}>${_dxIco(icon)}</button>`;
   const sep = '<span class="dxtb-sep" role="separator"></span>';
   return `
   <div class="dxtb" role="toolbar" aria-label="Text editor toolbar">
-    ${showFs ? `<button type="button" class="dxtb-btn dxtb-text tb-btn-fs" title="पूरा स्क्रिनमा लेख्नुस्" onmousedown="event.preventDefault()" onclick="mdOpenFullscreen('${id}','${title}',this)">${_dxIco('full')}<span class="dxtb-lbl">पूरा स्क्रिन</span></button>${sep}` : ''}
     ${btn('undo', 'पछाडि (Undo)', `mdUndo('${id}')`)}
     ${btn('redo', 'अगाडि (Redo)', `mdRedo('${id}')`)}
     ${sep}
@@ -595,10 +539,9 @@ function renderMdToolbar(textareaId, opts = {}) {
     ${btn('link', 'इन्टरनेटको फोटो (URL)', `mdInsertImage('${id}')`)}
     ${btn('eraser', 'चुनिएको अक्षरको बोल्ड/रंग/हाइलाइट हटाउनुस्', `mdClearMarks('${id}')`)}
     ${sep}
+    <button type="button" class="dxtb-btn tb-btn-vedic" title="वैदिक/संस्कृत विशेष अक्षर" aria-label="वैदिक अक्षर" onmousedown="event.preventDefault()" onclick="mdToggleVedic('${id}',this)"><span style="font-size:1.15rem;line-height:1">ॐ</span><svg class="dxtb-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
+    ${sep}
     <button type="button" class="dxtb-btn dxtb-text tb-btn-code" title="markdown कोड हेर्नुस्/सम्पादन गर्नुस्" onmousedown="event.preventDefault()" onclick="mdToggleCode('${id}')" data-ta="${id}" data-cmd="code" aria-pressed="false"><span class="dxtb-lbl">Show markup</span></button>
-  </div>
-  <div class="dxtb dxtb-chars" role="toolbar" aria-label="वैदिक अक्षर">
-    ${VEDIC_CHARS.map(ch => `<button type="button" class="dxtb-btn dxtb-char" onmousedown="event.preventDefault()" onclick="mdInsertChar('${id}','${ch}')" title="${ch} थप्नुस्">${ch}</button>`).join('')}
   </div>`;
 }
 window.renderMdToolbar = renderMdToolbar;

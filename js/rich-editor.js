@@ -329,8 +329,7 @@
     try { document.execCommand('defaultParagraphSeparator', false, 'div'); } catch (e) {}
 
     const el = document.createElement('div');
-    el.className = 'rte ch-read-content ' + (ta.className || '').replace(/f-textarea|fs-editor-ta/g, '').trim();
-    if (ta.classList.contains('fs-editor-ta')) el.classList.add('rte-fs');
+    el.className = 'rte ch-read-content ' + (ta.className || '').replace(/f-textarea/g, '').trim();
     el.id = id + '__rte';
     el.contentEditable = 'true';
     el.setAttribute('role', 'textbox');
