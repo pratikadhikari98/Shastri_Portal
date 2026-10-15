@@ -575,7 +575,7 @@ window.refreshBookViews = refreshBookViews;
     सबै नयाँ .json फाइलमा सर्छन् र त्यही प्राथमिकता पाउँछ)
    ════════════════════════════════════ */
 async function saveChapters(bookId, list, msg) {
-  const payload = list.map(c => ({ title: c.title || '', content: c.content || '', font: c.font || 'siddhanta' }));
+  const payload = list.map(c => ({ title: c.title || '', content: c.content || '', font: c.font || 'eczar' }));
   const ok = await ghSave(() => GH.writeJson(chapterPath(bookId), payload, msg || 'Update chapters: ' + bookId), 'अध्याय सुरक्षित गर्न सकिएन');
   if (ok) { delete App._drafts.chapters[bookId]; renderDirtyBar(); }
   return ok;
@@ -646,7 +646,7 @@ function adminChapterAddNew() {
   App.adminChapter.editingIdx = null;
   document.getElementById('chapterFormTitle').value   = '';
   document.getElementById('chapterFormContent').value = '';
-  document.getElementById('chapterFormContent').dataset.fontKey = 'siddhanta';
+  document.getElementById('chapterFormContent').dataset.fontKey = 'eczar';
   document.getElementById('chapterFormHeading').textContent = '➕ नयाँ अध्याय';
   openOv('chapterFormModal');
 }
@@ -660,7 +660,7 @@ function adminChapterEdit(idx) {
   App.adminChapter.editingIdx = idx;
   document.getElementById('chapterFormTitle').value   = c.title || '';
   document.getElementById('chapterFormContent').value = c.content || '';
-  document.getElementById('chapterFormContent').dataset.fontKey = c.font || 'siddhanta';
+  document.getElementById('chapterFormContent').dataset.fontKey = c.font || 'eczar';
   document.getElementById('chapterFormHeading').textContent = '✏️ अध्याय सम्पादन';
   openOv('chapterFormModal');
 }
@@ -680,7 +680,7 @@ async function adminChapterSave() {       // "👁 पूर्वावलो�
   const title = document.getElementById('chapterFormTitle').value.trim();
   const contentEl = document.getElementById('chapterFormContent');
   if (!title) { toast('⚠️ शीर्षक आवश्यक छ'); return; }
-  const item = { title, content: contentEl.value, font: contentEl.dataset.fontKey || 'siddhanta' };
+  const item = { title, content: contentEl.value, font: contentEl.dataset.fontKey || 'eczar' };
   const cur = App.chaptersCache[bookId] || [];
   const i = App.adminChapter.editingIdx;
   const isEdit = (i !== null && i !== undefined && cur[i]);
