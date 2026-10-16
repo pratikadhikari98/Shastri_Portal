@@ -1898,7 +1898,7 @@ html.lite .overlay { transition: none !important; }
 .an-leg { display: none; font-family: 'AnandaRound', var(--font-s), sans-serif; font-weight: 400; font-synthesis: none; letter-spacing: 0.01em; }
 html.an-ready .an-leg { display: inline; }
 html.an-ready .an-uni { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.yc-title .an-leg { font-size: 1.5em; line-height: 1; font-weight: 800; font-synthesis: weight; -webkit-text-stroke: 0.035em currentColor; }
+.yc-title .an-leg { font-size: 1.5em; line-height: 1; font-weight: 700; font-synthesis: weight; }
 
 
 /* ═══════════════════════════════════
