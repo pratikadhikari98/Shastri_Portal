@@ -1284,6 +1284,10 @@ input[type=range].dm-slider {
   word-break:break-word;
   hyphens:auto;
 }
+/* Hindi / Devanagari chapters (Eczar, Martel fallback) */
+.ch-read-content[lang="hi"] { font-weight:500; line-height:1.7; }
+.ch-read-content[lang="hi"] h1,.ch-read-content[lang="hi"] h2,.ch-read-content[lang="hi"] h3,
+.ch-read-content[lang="hi"] h4,.ch-read-content[lang="hi"] h5 { font-family:'Eczar','Martel','Noto Serif Devanagari',serif; }
 /* Rich typography for rendered chapters */
 .ch-read-content h1 { font-size:1.4rem; font-weight:800; color:var(--accent); margin:12px 0 8px; font-family:var(--font-s); }
 .ch-read-content h2 { font-size:1.15rem; font-weight:700; color:var(--text-1); margin:10px 0 6px; border-left:3px solid var(--accent); padding-left:10px; }
