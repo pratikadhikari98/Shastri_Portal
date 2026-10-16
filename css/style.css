@@ -2067,3 +2067,19 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 
 /* भाग खुलेको अध्यायको पङ्क्ति (🔖 🖨️ ✏️ 🗑️ सहित) माथि टाँसिन्छ — भागहरू मात्र स्क्रोल हुन्छन् */
 .ch-jm-row.exp { position: sticky; top: 0; z-index: 2; background: linear-gradient(var(--divider), var(--divider)), var(--bg); box-shadow: 0 3px 8px var(--shadow); }
+
+/* बिषयको नाम (नेपाली, अङ्ग्रेजी, संस्कृत… ट्याब र वर्ष-कार्डका चिप) — neumorphic */
+.subj-tab {
+  border-radius: 14px; border-color: var(--divider);
+  background: linear-gradient(135deg, var(--bg), var(--surface-high));
+  box-shadow: 1px 1px 2px var(--shadow), 3px 3px 7px -1px var(--shadow), 7px 7px 14px -4px var(--shadow),
+              -2px -2px 6px var(--surface-high), -5px -5px 10px -4px var(--surface-high);
+}
+.subj-tab:active, .subj-tab.active {
+  background: var(--bg); color: var(--accent); border-color: var(--divider); transform: none;
+  box-shadow: inset 2px 2px 6px var(--shadow-lg), inset -2px -2px 5px var(--surface-high);
+}
+.yc-badge {
+  padding: 3px 9px; box-shadow: 2px 2px 5px rgba(0,0,0,0.16), -2px -2px 5px rgba(255,255,255,0.55),
+                               inset 0 1px 0 rgba(255,255,255,0.35);
+}
