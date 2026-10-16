@@ -1285,8 +1285,10 @@ input[type=range].dm-slider {
   hyphens:auto;
 }
 /* ── Chapter jump bar: neumorphic buttons + zipper slider (style: "N E U M O R P H I S M" by Ryan Parag, MIT) ── */
-.ch-jump { padding:14px 16px 6px; border-top:1px solid var(--divider); display:flex; flex-direction:column; gap:14px; align-items:center; }
-.ch-jump-row { display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap; }
+.ch-jump { position:sticky; top:var(--hdr-h,56px); z-index:150; display:flex; align-items:center; gap:8px; padding:8px 12px;
+  background:var(--bg); border-bottom:1px solid var(--divider); box-shadow:0 4px 12px var(--shadow); }
+.ch-jump .neu-btn { width:36px; height:36px; font-size:0.9rem; flex-shrink:0; }
+.ch-jump .ch-zip { flex:1; min-width:60px; max-width:none; }
 .neu-btn {
   --neu-r:14px; border:1px solid var(--divider); padding:0; margin:0; width:46px; height:46px; border-radius:var(--neu-r);
   display:inline-flex; align-items:center; justify-content:center; font-size:1.05rem; color:var(--text-2); cursor:pointer; position:relative;
@@ -1312,8 +1314,8 @@ input[type=range].dm-slider {
   background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:2px 3px 8px var(--accent-glow), 1px 1px 3px var(--shadow-lg); }
 .ch-zip:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
 
-.ch-jump-menu { width:100%; max-width:420px; max-height:240px; overflow-y:auto; border-radius:14px; padding:6px; background:var(--bg);
-  box-shadow:inset 2px 2px 6px var(--shadow), inset -2px -2px 6px var(--surface-high); }
+.ch-jump-menu { position:absolute; left:8px; right:8px; top:calc(100% + 6px); z-index:5; max-height:260px; box-shadow:0 10px 28px var(--shadow-lg); overflow-y:auto; border-radius:14px; padding:6px; background:var(--bg);
+  border:1px solid var(--divider); }
 .ch-jump-item { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 10px; border-radius:10px; color:var(--text-1); font:inherit; font-size:0.84rem; cursor:pointer; }
 .ch-jump-item:hover, .ch-jump-item:active { background:var(--divider); }
 .ch-jump-empty { font-size:0.78rem; color:var(--text-3); padding:8px 10px; }
@@ -2016,3 +2018,6 @@ div:has(> .dxtb) + .rte, div:has(> .dxtb) + textarea, div:has(> .dxtb) + textare
 /* toolbar पनि माथि टाँसिने (लेख्दा सधैँ देखिने) */
 .form-panel div:has(> .dxtb) { display:contents; }
 .form-panel .dxtb { position:sticky; top:0; z-index:6; }
+
+/* sticky jump bar: overflow-x:hidden would make the item a scroll container and break sticky */
+.chapter-item { overflow-x:clip; }

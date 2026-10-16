@@ -1274,19 +1274,17 @@ function renderChapterListHtml(bookId) {
         <span class="ch-chevron">›</span>
       </div>
       <div class="ch-read-body">
-        <div class="ch-read-content" lang="hi" ondblclick="toggleCh('${bookId}',${i})" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content||'')}</div>
         <div class="ch-jump" id="chj-${bookId}-${i}" onclick="event.stopPropagation()">
+          <button class="neu-btn neu-btn--round" title="अघिल्लो अध्याय" ${i===0?'disabled':''} onclick="chJump('${bookId}',${i},'prev')">⏮</button>
+          <button class="neu-btn" title="अध्यायको सुरुमा" onclick="chJump('${bookId}',${i},'top')">▲</button>
           <input type="range" class="ch-zip" min="0" max="100" step="0.1" value="0" aria-label="अध्यायको कुनै पनि भागमा जानुहोस्"
             oninput="chZipTo('${bookId}',${i},this.value)" onpointerdown="this.dataset.d=1" onpointerup="this.dataset.d=''" onpointercancel="this.dataset.d=''">
-          <div class="ch-jump-row">
-            <button class="neu-btn neu-btn--round" title="अघिल्लो अध्याय" ${i===0?'disabled':''} onclick="chJump('${bookId}',${i},'prev')">⏮</button>
-            <button class="neu-btn" title="अध्यायको सुरुमा" onclick="chJump('${bookId}',${i},'top')">▲</button>
-            <button class="neu-btn neu-btn--round" title="भाग / शीर्षक सूची" onclick="chJump('${bookId}',${i},'menu')">☰</button>
-            <button class="neu-btn" title="अध्यायको अन्त्यमा" onclick="chJump('${bookId}',${i},'end')">▼</button>
-            <button class="neu-btn neu-btn--round" title="अर्को अध्याय" ${i>=chs.length-1?'disabled':''} onclick="chJump('${bookId}',${i},'next')">⏭</button>
-          </div>
+          <button class="neu-btn neu-btn--round" title="भाग / शीर्षक सूची" onclick="chJump('${bookId}',${i},'menu')">☰</button>
+          <button class="neu-btn" title="अध्यायको अन्त्यमा" onclick="chJump('${bookId}',${i},'end')">▼</button>
+          <button class="neu-btn neu-btn--round" title="अर्को अध्याय" ${i>=chs.length-1?'disabled':''} onclick="chJump('${bookId}',${i},'next')">⏭</button>
           <div class="ch-jump-menu" hidden></div>
         </div>
+        <div class="ch-read-content" lang="hi" ondblclick="toggleCh('${bookId}',${i})" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content||'')}</div>
         <div class="ch-read-foot">
           <span class="ch-rd-lbl">अध्याय ${toN(i+1)} / ${toN(chs.length)} <span class="ch-rd-pct" id="chPct-${bookId}-${i}"></span></span>
           ${i<chs.length-1?`<button class="ch-rd-btn" onclick="event.stopPropagation();nextCh('${bookId}',${i})">अर्को →</button>`:'<span class="ch-rd-lbl" style="color:var(--accent);font-weight:700">✓ सकियो</span>'}
@@ -1343,13 +1341,19 @@ function prevCh(bookId, idx) {
 window.prevCh = prevCh;
 
 /* अध्यायभित्र जुनसुकै भागमा जाने (zipper slider + बटन) */
-const CH_JUMP_OFFSET = 70;
+function _chOff() {
+  const h = document.querySelector('.site-header');
+  const hh = h ? h.offsetHeight : 56;
+  document.documentElement.style.setProperty('--hdr-h', hh + 'px');
+  const bar = document.querySelector('.chapter-item.open .ch-jump');
+  return hh + (bar ? bar.offsetHeight : 0) + 8;
+}
 function _chContent(bookId, idx) { return document.querySelector(`#chi-${bookId}-${idx} .ch-read-content`); }
 function _chScrollTo(y, smooth) { window.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' }); }
 function chZipTo(bookId, idx, val) {
   const c = _chContent(bookId, idx); if (!c) return;
-  const top = c.getBoundingClientRect().top + window.scrollY - CH_JUMP_OFFSET;
-  const max = Math.max(0, c.offsetHeight - window.innerHeight + CH_JUMP_OFFSET);
+  const top = c.getBoundingClientRect().top + window.scrollY - _chOff();
+  const max = Math.max(0, c.offsetHeight - window.innerHeight + _chOff());
   _chScrollTo(top + (parseFloat(val) / 100) * max, false);
 }
 window.chZipTo = chZipTo;
@@ -1358,7 +1362,7 @@ function chJump(bookId, idx, what) {
   if (what === 'next') return nextCh(bookId, idx);
   const c = _chContent(bookId, idx); if (!c) return;
   const r = c.getBoundingClientRect();
-  if (what === 'top') return _chScrollTo(r.top + window.scrollY - CH_JUMP_OFFSET, true);
+  if (what === 'top') return _chScrollTo(r.top + window.scrollY - _chOff(), true);
   if (what === 'end') return _chScrollTo(r.bottom + window.scrollY - window.innerHeight + 40, true);
   if (what === 'menu') {
     const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (!menu) return;
@@ -1375,7 +1379,7 @@ window.chJump = chJump;
 function chGoHead(bookId, idx, k) {
   const c = _chContent(bookId, idx); if (!c) return;
   const h = c.querySelectorAll('h1,h2,h3,h4,h5')[k]; if (!h) return;
-  _chScrollTo(h.getBoundingClientRect().top + window.scrollY - CH_JUMP_OFFSET, true);
+  _chScrollTo(h.getBoundingClientRect().top + window.scrollY - _chOff(), true);
   const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (menu) menu.hidden = true;
 }
 window.chGoHead = chGoHead;
@@ -1400,8 +1404,8 @@ function initChapterProgress() {
     bar.classList.add('show');
     const zip = openItem.querySelector('.ch-zip');
     if (zip && !zip.dataset.d) {
-      const mx = rect.height - window.innerHeight + CH_JUMP_OFFSET;
-      zip.value = mx > 0 ? Math.max(0, Math.min(1, (CH_JUMP_OFFSET - rect.top) / mx)) * 100 : 0;
+      const mx = rect.height - window.innerHeight + _chOff();
+      zip.value = mx > 0 ? Math.max(0, Math.min(1, (_chOff() - rect.top) / mx)) * 100 : 0;
     }
     const pctEl = openItem.querySelector('.ch-rd-pct');
     if (pctEl) pctEl.textContent = '· ' + Math.round(progress * 100) + '% पढियो';
