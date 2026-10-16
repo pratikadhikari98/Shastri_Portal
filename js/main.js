@@ -1143,11 +1143,6 @@ function renderSubjectPage(subjectId, yearId) {
       </div>
     </div>
 
-    <div class="tabs-pill">
-      <button class="tab-btn on"  onclick="setTab(this,'tab-ch')">अध्यायहरू</button>
-      <button class="tab-btn"     onclick="setTab(this,'tab-ov')">विवरण</button>
-    </div>
-
     <div id="tab-ch" class="tab-pane on">
       <div id="chList"><div class="spin-wrap"><div class="spinner"></div></div></div>
     </div>
