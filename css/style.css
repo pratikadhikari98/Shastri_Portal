@@ -1284,6 +1284,40 @@ input[type=range].dm-slider {
   word-break:break-word;
   hyphens:auto;
 }
+/* ── Chapter jump bar: neumorphic buttons + zipper slider (style: "N E U M O R P H I S M" by Ryan Parag, MIT) ── */
+.ch-jump { padding:14px 16px 6px; border-top:1px solid var(--divider); display:flex; flex-direction:column; gap:14px; align-items:center; }
+.ch-jump-row { display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap; }
+.neu-btn {
+  --neu-r:14px; border:1px solid var(--divider); padding:0; margin:0; width:46px; height:46px; border-radius:var(--neu-r);
+  display:inline-flex; align-items:center; justify-content:center; font-size:1.05rem; color:var(--text-2); cursor:pointer; position:relative;
+  background:linear-gradient(135deg,var(--bg),var(--surface-high));
+  box-shadow:1px 1px 2px 0 var(--shadow), 2px 2px 4px -1px var(--shadow), 5px 5px 12px -3px var(--shadow), 10px 10px 20px -5px var(--shadow);
+  transition:all 0.2s ease-out; -webkit-tap-highlight-color:transparent;
+}
+.neu-btn--round { --neu-r:50%; }
+.neu-btn::before { content:''; position:absolute; inset:0; border-radius:var(--neu-r); pointer-events:none;
+  box-shadow:-1px -1px 2px 0 var(--surface-high), -3px -3px 8px -2px var(--surface-high); transition:all 0.2s ease-out; }
+.neu-btn:active { box-shadow:inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 28px var(--shadow); }
+.neu-btn:active::before { box-shadow:none; }
+.neu-btn:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.neu-btn[disabled] { opacity:0.4; cursor:default; pointer-events:none; }
+
+/* zipper slider */
+.ch-zip { -webkit-appearance:none; appearance:none; width:100%; max-width:420px; height:14px; border-radius:99px; outline:0; cursor:pointer;
+  background:repeating-linear-gradient(90deg,var(--text-4) 0 2px,transparent 2px 8px), var(--bg);
+  box-shadow:inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
+.ch-zip::-webkit-slider-thumb { -webkit-appearance:none; width:34px; height:26px; border-radius:8px; border:1px solid var(--divider);
+  background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:2px 3px 8px var(--accent-glow), 1px 1px 3px var(--shadow-lg); }
+.ch-zip::-moz-range-thumb { width:34px; height:26px; border-radius:8px; border:1px solid var(--divider);
+  background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:2px 3px 8px var(--accent-glow), 1px 1px 3px var(--shadow-lg); }
+.ch-zip:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+
+.ch-jump-menu { width:100%; max-width:420px; max-height:240px; overflow-y:auto; border-radius:14px; padding:6px; background:var(--bg);
+  box-shadow:inset 2px 2px 6px var(--shadow), inset -2px -2px 6px var(--surface-high); }
+.ch-jump-item { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 10px; border-radius:10px; color:var(--text-1); font:inherit; font-size:0.84rem; cursor:pointer; }
+.ch-jump-item:hover, .ch-jump-item:active { background:var(--divider); }
+.ch-jump-empty { font-size:0.78rem; color:var(--text-3); padding:8px 10px; }
+
 /* Hindi / Devanagari chapters (Eczar, Martel fallback) */
 .ch-read-content[lang="hi"] { font-weight:500; line-height:1.7; }
 .ch-read-content[lang="hi"] h1,.ch-read-content[lang="hi"] h2,.ch-read-content[lang="hi"] h3,
