@@ -11,7 +11,7 @@ const App = {
   subjectId: null,
   _booting: true, // boot/restore सकिने बित्तिकै false हुन्छ — यो हुँदासम्म nav indicator कुनै animation बिना सिधै सही ठाउँमा बस्छ
   theme: localStorage.getItem('sp_theme') || 'light',
-  fontSize: +(localStorage.getItem('sp_fontsize') || 15),
+  fontSize: 14,   // १४px मा लक
   lang: localStorage.getItem('sp_lang') || 'ne',
   notes: JSON.parse(localStorage.getItem('sp_notes') || '[]'),
   bookmarks: JSON.parse(localStorage.getItem('sp_bookmarks') || '[]'),
@@ -250,6 +250,8 @@ function applyTheme(t, save=true) {
 }
 
 function applyFontSize(sz, save=true) {
+  sz = 14;   // अक्षर आकार १४px मा लक — बढाउन/घटाउन मिल्दैन
+  save = false;
   App.fontSize = sz;
   document.documentElement.style.fontSize = sz + 'px';
   if (save) localStorage.setItem('sp_fontsize', sz);
