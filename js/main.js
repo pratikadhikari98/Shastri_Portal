@@ -1276,11 +1276,11 @@ function renderChapterListHtml(bookId) {
       <div class="ch-read-body">
         <div class="ch-jump" id="chj-${bookId}-${i}" onclick="event.stopPropagation()">
           <button class="neu-btn neu-btn--round" title="अघिल्लो अध्याय" ${i===0?'disabled':''} onclick="chJump('${bookId}',${i},'prev')">⏮</button>
-          <button class="neu-btn" title="अध्यायको सुरुमा" onclick="chJump('${bookId}',${i},'top')">▲</button>
+          <button class="neu-btn" title="अघिल्लो प्रश्न / भाग" onclick="chJump('${bookId}',${i},'top')">▲</button>
           <input type="range" class="ch-zip" min="0" max="100" step="0.1" value="0" aria-label="अध्यायको कुनै पनि भागमा जानुहोस्"
             oninput="chZipTo('${bookId}',${i},this.value)" onpointerdown="this.dataset.d=1" onpointerup="this.dataset.d=''" onpointercancel="this.dataset.d=''">
           <button class="neu-btn neu-btn--round" title="भाग / शीर्षक सूची" onclick="chJump('${bookId}',${i},'menu')">☰</button>
-          <button class="neu-btn" title="अध्यायको अन्त्यमा" onclick="chJump('${bookId}',${i},'end')">▼</button>
+          <button class="neu-btn" title="अर्को प्रश्न / भाग" onclick="chJump('${bookId}',${i},'end')">▼</button>
           <button class="neu-btn neu-btn--round" title="अर्को अध्याय" ${i>=chs.length-1?'disabled':''} onclick="chJump('${bookId}',${i},'next')">⏭</button>
           <div class="ch-jump-menu" hidden></div>
         </div>
@@ -1362,8 +1362,17 @@ function chJump(bookId, idx, what) {
   if (what === 'next') return nextCh(bookId, idx);
   const c = _chContent(bookId, idx); if (!c) return;
   const r = c.getBoundingClientRect();
-  if (what === 'top') return _chScrollTo(r.top + window.scrollY - _chOff(), true);
-  if (what === 'end') return _chScrollTo(r.bottom + window.scrollY - window.innerHeight + 40, true);
+  if (what === 'top' || what === 'end') {
+    /* '---' (<hr>) ले छुट्ट्याएको हरेक प्रश्न/भागको सुरु: ▼ अर्को भागमा, ▲ अघिल्लो भागमा */
+    const off = _chOff(), y0 = window.scrollY, cur = y0 + off;
+    const starts = [r.top + y0, ...[...c.querySelectorAll('hr')].map(h => h.getBoundingClientRect().bottom + y0)];
+    if (what === 'end') {
+      const nx = starts.find(y => y > cur + 6);
+      return _chScrollTo(nx !== undefined ? nx - off : r.bottom + y0 - window.innerHeight + 40, true);
+    }
+    const pv = [...starts].reverse().find(y => y < cur - 6);
+    return _chScrollTo((pv !== undefined ? pv : starts[0]) - off, true);
+  }
   if (what === 'menu') {
     const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (!menu) return;
     if (!menu.hidden) { menu.hidden = true; return; }
