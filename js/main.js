@@ -2141,6 +2141,22 @@ function deleteOfflineData() {
 }
 window.deleteOfflineData = deleteOfflineData;
 
+/* अनलाइन हुँदा सबै अध्यायहरू पृष्ठभूमिमा आफैं सेभ (offline मा देखिनका लागि; Data Saver खुल्लै भए छोड्ने) */
+async function prefetchChaptersForOffline() {
+  try {
+    if (!navigator.onLine || !App.data || !navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+    if (navigator.connection && navigator.connection.saveData) return;
+    const ids = [];
+    App.data.years.forEach(yr => Object.values(yr.subjects).forEach(bs => bs.forEach(b => ids.push(b.id))));
+    for (const id of ids) {
+      try { const r = await fetch(`data/chapters/${id}.json`); if (r.ok) await r.text(); } catch (e) {}
+    }
+  } catch (e) {}
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.ready.then(() => setTimeout(prefetchChaptersForOffline, 6000));
+}
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
     const d = e.data || {};

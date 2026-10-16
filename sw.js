@@ -1,8 +1,9 @@
 // शास्त्री पोर्टल — Service Worker v25
 // ⚡ Speed: app shell/फन्ट/फोटो = STALE-WHILE-REVALIDATE (cache बाट तुरुन्तै, पछाडि ताजा तान्ने)
 //    data/* = network-first तर ढिलो नेटवर्कमा २.५s पछि cache। कोड अपडेट गर्दा APP_CACHE को नम्बर बढाउनुस्।
-const APP_CACHE      = 'shastri-app-v43';     // App shell (auto)
+const APP_CACHE      = 'shastri-app-v44';     // App shell (auto)
 const OFFLINE_CACHE  = 'shastri-offline-v2';  // User-triggered "Save for offline" content
+const DATA_CACHE     = 'shastri-data-v1';     // data/* (अध्याय आदि) — app version बदलिँदा पनि मेटिँदैन
 
 const APP_ASSETS = [
   './',
@@ -39,7 +40,7 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== APP_CACHE && k !== OFFLINE_CACHE).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== APP_CACHE && k !== OFFLINE_CACHE && k !== DATA_CACHE).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -54,8 +55,12 @@ self.addEventListener('fetch', e => {
   // पृष्ठ खोल्ने (navigate) request: network पहिले (redirect ब्राउजरले आफैं सम्हाल्छ); offline भए cache गरिएको './'
   if (e.request.mode === 'navigate') {
     e.respondWith((async () => {
-      try { return await fetch(e.request); }
-      catch (err) {
+      try {
+        return await Promise.race([
+          fetch(e.request),
+          new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 4000)),
+        ]);
+      } catch (err) {
         const c = (await caches.match('./')) || (await caches.match('./index.html'));
         return c ? clean(c) : Response.error();
       }
@@ -69,7 +74,7 @@ self.addEventListener('fetch', e => {
     e.respondWith((async () => {
       const cacheMatch = () => caches.match(e.request).then(r => r || caches.match(e.request, { cacheName: OFFLINE_CACHE }));
       const net = fetch(e.request).then(res => {
-        if (res && res.ok) { const c = res.clone(); caches.open(APP_CACHE).then(ca => ca.put(e.request, c)); }
+        if (res && res.ok) { const c = res.clone(); caches.open(DATA_CACHE).then(ca => ca.put(e.request, c)); }
         return res;
       });
       const cached = await cacheMatch();
