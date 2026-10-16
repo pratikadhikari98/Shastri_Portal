@@ -2058,3 +2058,6 @@ div:has(> .dxtb) + .rte, div:has(> .dxtb) + textarea, div:has(> .dxtb) + textare
 .ch-jm-row.cur .ch-jump-item { font-weight: 700; color: var(--accent); }
 .ch-jm-act { background: none; border: none; font-size: 0.95rem; padding: 6px 5px; cursor: pointer; flex-shrink: 0; box-shadow: none !important; }
 .ch-jm-parts { margin: 0 0 6px 14px; padding-left: 6px; border-left: 2px solid var(--divider); }
+
+/* तलको नेभिगेसन बार लुकेकाले त्यसका लागि छाडिएको खाली ठाउँ (body padding-bottom: 90px) घटाइयो */
+body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
