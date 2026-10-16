@@ -1282,10 +1282,6 @@ function renderChapterListHtml(bookId) {
           <div class="ch-jump-menu" hidden></div>
         </div>
         <div class="ch-read-content" lang="hi" ondblclick="toggleCh('${bookId}',${i})" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content||'')}</div>
-        <div class="ch-read-foot">
-          <span class="ch-rd-lbl">अध्याय ${toN(i+1)} / ${toN(chs.length)} <span class="ch-rd-pct" id="chPct-${bookId}-${i}"></span></span>
-          ${i<chs.length-1?`<button class="ch-rd-btn" onclick="event.stopPropagation();nextCh('${bookId}',${i})">अर्को →</button>`:'<span class="ch-rd-lbl" style="color:var(--accent);font-weight:700">✓ सकियो</span>'}
-        </div>
       </div>
     </div>`;}).join('')}</div>`;
 }
