@@ -2083,3 +2083,35 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   padding: 3px 9px; box-shadow: 2px 2px 5px rgba(0,0,0,0.16), -2px -2px 5px rgba(255,255,255,0.55),
                                inset 0 1px 0 rgba(255,255,255,0.35);
 }
+
+/* ═══ Neumorphic — नरम (सेतो चम्किने छाया हटाएर, थिमको रङ्गबाट बनेको छाया) ═══ */
+html, body {
+  --neu-dark:  color-mix(in srgb, var(--bg) 80%, #000 20%);
+  --neu-light: color-mix(in srgb, var(--bg) 62%, #fff 38%);
+  --neu-raised:  5px 5px 11px var(--neu-dark), -5px -5px 11px var(--neu-light);
+  --neu-raised-s: 3px 3px 7px var(--neu-dark), -3px -3px 7px var(--neu-light);
+  --neu-pressed: inset 3px 3px 7px var(--neu-dark), inset -3px -3px 7px var(--neu-light);
+}
+.neu-btn, .hdr-btn, .back-btn, .btn-s, .nav-ico, .prof-edit-btn, .tb-btn:not(.on):not(.tb-btn-photo), .subj-tab {
+  background: var(--bg); border: none; box-shadow: var(--neu-raised-s);
+}
+.neu-btn::before { display: none; }
+.hdr-btn, .back-btn, .btn-s, .prof-edit-btn { box-shadow: var(--neu-raised-s); }
+.neu-btn:active, .hdr-btn:active, .back-btn:active, .btn-s:active, .nav-ico:active, .prof-edit-btn:active,
+.tb-btn:not(.on):active, .subj-tab:active, .subj-tab.active {
+  box-shadow: var(--neu-pressed); background: var(--bg);
+}
+.subj-tab.active { color: var(--accent); }
+.btn-p, .ch-rd-btn { box-shadow: var(--neu-raised-s); }
+.btn-p:active, .ch-rd-btn:active { box-shadow: var(--neu-pressed); }
+
+/* अध्यायको बटन-पट्टी: चम्किलो छाया हटाएर सपाट */
+.ch-jump { background: var(--bg); box-shadow: 0 3px 8px var(--neu-dark); border-bottom: none; }
+.ch-zip { background: repeating-linear-gradient(90deg, var(--text-4) 0 2px, transparent 2px 8px), var(--bg);
+          box-shadow: var(--neu-pressed); }
+.ch-jump-menu { background: var(--bg); box-shadow: var(--neu-raised); border: none; }
+.ch-jm-row.cur, .ch-jm-row.exp { background: var(--bg); box-shadow: var(--neu-pressed); }
+.ch-jm-row.exp { box-shadow: var(--neu-pressed), 0 3px 6px var(--neu-dark); }
+
+/* वर्ष-कार्डका विषय चिप (रंगीन कार्डमाथि) — हल्का */
+.yc-badge { box-shadow: 2px 2px 4px rgba(0,0,0,0.12), -2px -2px 4px rgba(255,255,255,0.35); }
