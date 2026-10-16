@@ -1388,32 +1388,72 @@ function chJump(bookId, idx, what) {
   if (what === 'menu') {
     const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (!menu) return;
     if (!menu.hidden) { menu.hidden = true; return; }
-    const chs = App.chaptersCache[bookId] || [];
-    const hs = [...c.querySelectorAll('h1,h2,h3,h4,h5')];
-    let html = '<div class="ch-jump-lbl">अध्यायहरू</div>' + chs.map((ch, k) =>
-      `<button class="ch-jump-item ch-jump-c${k === idx ? ' cur' : ''}" onclick="chGoChapter('${bookId}',${idx},${k})"></button>`).join('');
-    if (hs.length) html += '<div class="ch-jump-lbl">यस अध्यायका भाग</div>' + hs.map((h, k) =>
-      `<button class="ch-jump-item ch-jump-h" style="padding-left:${10 + (parseInt(h.tagName[1]) - 1) * 10}px" onclick="chGoHead('${bookId}',${idx},${k})"></button>`).join('');
-    menu.innerHTML = html;
-    menu.querySelectorAll('.ch-jump-c').forEach((b, k) => { b.textContent = toN(k + 1) + '. ' + ((chs[k] && chs[k].title) || '').trim().slice(0, 80); });
-    menu.querySelectorAll('.ch-jump-h').forEach((b, k) => { b.textContent = hs[k].textContent.trim().slice(0, 80) || ('भाग ' + (k + 1)); });
-    menu.hidden = false;
+    chShowMenu(bookId, idx, -1);
   }
 }
 window.chJump = chJump;
-function chGoChapter(bookId, idx, k) {
-  const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (menu) menu.hidden = true;
-  if (k === idx) return;
-  const it = document.getElementById(`chi-${bookId}-${k}`); if (!it) return;
+function _chHeads(bookId, k) {
+  const c = _chContent(bookId, k);
+  return c ? [...c.querySelectorAll('h1,h2,h3,h4,h5')] : [];
+}
+/* ☰ मेनु: अध्यायहरू (हरेकमा 🔖 🖨️ ✏️ 🗑️); अध्यायमा छुँदा मात्र त्यसका भाग खुल्छन् */
+function chShowMenu(bookId, idx, expK) {
+  const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (!menu) return;
+  const chs = App.chaptersCache[bookId] || [];
+  const adm = !!App.isAdmin;
+  let html = '<div class="ch-jump-lbl">अध्यायहरू</div>';
+  chs.forEach((ch, k) => {
+    const bm = App.chapterBookmarks.includes(bookId + '::' + k);
+    html += `<div class="ch-jm-row${k === idx ? ' cur' : ''}">
+      <button class="ch-jump-item ch-jump-c" onclick="chMenuTap('${bookId}',${idx},${k})"></button>
+      <button class="ch-jm-act" title="Bookmark" onclick="chMenuBm('${bookId}',${k},this)">${bm ? '🔖' : '🏷️'}</button>
+      <button class="ch-jm-act" title="Print" onclick="openPrintOptions('${bookId}',${k})">🖨️</button>
+      ${adm ? `<button class="ch-jm-act" title="Edit" onclick="adminInlineChapterEdit('${bookId}',${k})">✏️</button>
+      <button class="ch-jm-act" title="Delete" onclick="adminInlineChapterDelete('${bookId}',${k})">🗑️</button>` : ''}
+    </div>`;
+    if (k === expK) {
+      const hs = _chHeads(bookId, k);
+      html += '<div class="ch-jm-parts">' + (hs.length
+        ? hs.map((h, n) => `<button class="ch-jump-item ch-jump-h" style="padding-left:${10 + (parseInt(h.tagName[1]) - 1) * 10}px" onclick="chGoHead('${bookId}',${idx},${n})"></button>`).join('')
+        : '<div class="ch-jump-empty">यो अध्यायमा भाग (शीर्षक) छैन।</div>') + '</div>';
+    }
+  });
+  menu.innerHTML = html;
+  menu.dataset.exp = expK;
+  menu.querySelectorAll('.ch-jump-c').forEach((b, k) => { b.textContent = toN(k + 1) + '. ' + ((chs[k] && chs[k].title) || ('अध्याय ' + (k + 1))).trim().slice(0, 80); });
+  if (expK >= 0) {
+    const hs = _chHeads(bookId, expK);
+    menu.querySelectorAll('.ch-jump-h').forEach((b, n) => { b.textContent = hs[n].textContent.trim().slice(0, 80) || ('भाग ' + (n + 1)); });
+  }
+  menu.hidden = false;
+}
+function _chSwitch(bookId, k) {
+  const it = document.getElementById(`chi-${bookId}-${k}`); if (!it) return false;
   document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
   it.classList.add('open');
   history.pushState({ chOpen: { bookId, idx: k } }, '');
   saveLastLocation();
   requestAnimationFrame(() => {
-    _chScrollTo(it.getBoundingClientRect().top + window.scrollY - (document.querySelector('.site-header') ? document.querySelector('.site-header').offsetHeight : 56) - 8, false);
+    const h = document.querySelector('.site-header');
+    _chScrollTo(it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8, false);
     window._updateChProgress && window._updateChProgress();
   });
+  return true;
 }
+function chMenuTap(bookId, idx, k) {
+  if (k === idx) {
+    const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`);
+    chShowMenu(bookId, idx, menu && menu.dataset.exp === String(k) ? -1 : k);
+  } else if (_chSwitch(bookId, k)) {
+    chShowMenu(bookId, k, k);   // नयाँ अध्यायमा गएर त्यसका भाग खोल्ने
+  }
+}
+function chMenuBm(bookId, k, btn) {
+  toggleChapterBm(bookId, k);
+  btn.textContent = App.chapterBookmarks.includes(bookId + '::' + k) ? '🔖' : '🏷️';
+}
+window.chShowMenu = chShowMenu; window.chMenuTap = chMenuTap; window.chMenuBm = chMenuBm;
+function chGoChapter(bookId, idx, k) { chMenuTap(bookId, idx, k); }
 window.chGoChapter = chGoChapter;
 function chGoHead(bookId, idx, k) {
   const c = _chContent(bookId, idx); if (!c) return;

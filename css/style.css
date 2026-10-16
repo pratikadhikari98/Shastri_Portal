@@ -2049,3 +2049,12 @@ div:has(> .dxtb) + .rte, div:has(> .dxtb) + textarea, div:has(> .dxtb) + textare
 #chList .chapter-item:not(.open) { display: none; }
 .ch-jump-lbl { font-size: 0.7rem; font-weight: 700; color: var(--text-3); padding: 8px 10px 4px; }
 .ch-jump-item.cur { background: var(--divider); font-weight: 700; color: var(--accent); }
+
+/* अध्यायको हेडर पङ्क्ति हटाइएको — 🔖 🖨️ ✏️ 🗑️ अब ☰ मेनुमा (बटनहरू DOM मै छन्, लुकाइएको मात्र) */
+#chList .ch-head { display: none; }
+.ch-jm-row { display: flex; align-items: center; gap: 0; border-radius: 10px; }
+.ch-jm-row.cur { background: var(--divider); }
+.ch-jm-row .ch-jump-item { flex: 1; min-width: 0; width: auto; background: none !important; }
+.ch-jm-row.cur .ch-jump-item { font-weight: 700; color: var(--accent); }
+.ch-jm-act { background: none; border: none; font-size: 0.95rem; padding: 6px 5px; cursor: pointer; flex-shrink: 0; box-shadow: none !important; }
+.ch-jm-parts { margin: 0 0 6px 14px; padding-left: 6px; border-left: 2px solid var(--divider); }
