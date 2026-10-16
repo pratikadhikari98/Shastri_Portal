@@ -2064,3 +2064,6 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 
 /* ☰ मेनु (अध्याय/भाग) स्क्रोल गर्दा पछाडिको अध्याय स्क्रोल नहुने */
 .ch-jump-menu { overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+
+/* भाग खुलेको अध्यायको पङ्क्ति (🔖 🖨️ ✏️ 🗑️ सहित) माथि टाँसिन्छ — भागहरू मात्र स्क्रोल हुन्छन् */
+.ch-jm-row.exp { position: sticky; top: 0; z-index: 2; background: linear-gradient(var(--divider), var(--divider)), var(--bg); box-shadow: 0 3px 8px var(--shadow); }

@@ -1404,7 +1404,7 @@ function chShowMenu(bookId, idx, expK) {
   let html = '<div class="ch-jump-lbl">अध्यायहरू</div>';
   chs.forEach((ch, k) => {
     const bm = App.chapterBookmarks.includes(bookId + '::' + k);
-    html += `<div class="ch-jm-row${k === idx ? ' cur' : ''}">
+    html += `<div class="ch-jm-row${k === idx ? ' cur' : ''}${k === expK ? ' exp' : ''}">
       <button class="ch-jump-item ch-jump-c" onclick="chMenuTap('${bookId}',${idx},${k})"></button>
       <button class="ch-jm-act" title="Bookmark" onclick="chMenuBm('${bookId}',${k},this)">${bm ? '🔖' : '🏷️'}</button>
       <button class="ch-jm-act" title="Print" onclick="openPrintOptions('${bookId}',${k})">🖨️</button>
