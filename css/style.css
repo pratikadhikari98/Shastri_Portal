@@ -2041,3 +2041,6 @@ div:has(> .dxtb) + .rte, div:has(> .dxtb) + textarea, div:has(> .dxtb) + textare
 .btn-p:active, .ch-rd-btn:active {
   box-shadow: inset 2px 2px 8px rgba(0,0,0,0.28), inset -1px -1px 4px rgba(255,255,255,0.25);
 }
+
+/* तलको नेभिगेसन बार हटाइएको (HTML/JS यथावत्, मात्र लुकाइएको — फर्काउन यो नियम हटाउनुस्) */
+.bot-nav { display: none !important; }
