@@ -1,12 +1,11 @@
 // शास्त्री पोर्टल — Service Worker v25
 // ⚡ Speed: app shell/फन्ट/फोटो = STALE-WHILE-REVALIDATE (cache बाट तुरुन्तै, पछाडि ताजा तान्ने)
 //    data/* = network-first तर ढिलो नेटवर्कमा २.५s पछि cache। कोड अपडेट गर्दा APP_CACHE को नम्बर बढाउनुस्।
-const APP_CACHE      = 'shastri-app-v38';     // App shell (auto)
+const APP_CACHE      = 'shastri-app-v39';     // App shell (auto)
 const OFFLINE_CACHE  = 'shastri-offline-v2';  // User-triggered "Save for offline" content
 
 const APP_ASSETS = [
   './',
-  './index.html',
   './css/style.css',
   './fonts/Siddhanta.woff',
   './fonts/AnandaDevanagariRound.woff',
@@ -23,6 +22,13 @@ const APP_ASSETS = [
   './data/contributors.js',
   './manifest.json',
 ];
+
+
+// Redirect भएको (redirected) response लाई navigation मा सिधै दिँदा Chrome ले ERR_FAILED देखाउँछ — सफा प्रतिलिपि बनाएर दिने
+function clean(res) {
+  if (!res || !res.redirected) return res;
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers });
+}
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -44,6 +50,18 @@ self.addEventListener('fetch', e => {
   if (new URL(e.request.url).hostname === 'api.github.com') return;
   const url = e.request.url;
   const isData = url.includes('/data/');
+
+  // पृष्ठ खोल्ने (navigate) request: network पहिले (redirect ब्राउजरले आफैं सम्हाल्छ); offline भए cache गरिएको './'
+  if (e.request.mode === 'navigate') {
+    e.respondWith((async () => {
+      try { return await fetch(e.request); }
+      catch (err) {
+        const c = (await caches.match('./')) || (await caches.match('./index.html'));
+        return c ? clean(c) : Response.error();
+      }
+    })());
+    return;
+  }
 
   // ⚡ डाटा (किताब/सूचना/अध्याय): network-first, तर ढिलो नेटवर्कमा २.५ सेकेन्डपछि cache दिने
   //    (ताजा डाटा आउनासाथ cache अपडेट हुन्छ)
@@ -69,11 +87,11 @@ self.addEventListener('fetch', e => {
       if (res && res.ok && (res.type === 'basic' || res.type === 'cors')) { const c = res.clone(); caches.open(APP_CACHE).then(ca => ca.put(e.request, c)); }
       return res;
     });
-    if (cached) { refresh.catch(() => {}); return cached; }
+    if (cached) { refresh.catch(() => {}); return clean(cached); }
     try { return await refresh; }
     catch (err) {
       const off = await caches.match(e.request, { cacheName: OFFLINE_CACHE });
-      return off || (e.request.mode === 'navigate' ? caches.match('./index.html') : Response.error());
+      return off || Response.error();
     }
   })());
 });
