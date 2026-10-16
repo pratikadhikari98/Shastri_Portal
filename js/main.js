@@ -1232,7 +1232,7 @@ async function loadAndRenderChapters(bookId) {
 
 /* अध्यायको list HTML render गर्ने — cache बाटै,
    ताकि admin ले अध्याय थप्ने/सम्पादन गरेपछि तुरुन्तै (फेरि नतानिकनै) देखियोस् */
-function renderChapterListHtml(bookId) {
+function _renderChapterListHtmlRaw(bookId) {
   const el = document.getElementById('chList');
   if (!el) return;
   const chs = App.chaptersCache[bookId] || [];
@@ -1285,12 +1285,31 @@ function renderChapterListHtml(bookId) {
       </div>
     </div>`;}).join('')}</div>`;
 }
+function renderChapterListHtml(bookId) {
+  const prev = document.querySelector('.chapter-item.open');
+  let idx = null;
+  if (prev && prev.id.startsWith(`chi-${bookId}-`)) idx = parseInt(prev.id.slice(prev.id.lastIndexOf('-') + 1), 10);
+  _renderChapterListHtmlRaw(bookId);
+  const chs = App.chaptersCache[bookId] || [];
+  if (!chs.length) return;
+  if (idx === null || isNaN(idx) || idx >= chs.length) {
+    idx = 0;
+    try {
+      const loc = JSON.parse(localStorage.getItem('sp_last_loc') || 'null');
+      if (loc && loc.subjectId === bookId && typeof loc.chapterIdx === 'number' && loc.chapterIdx >= 0 && loc.chapterIdx < chs.length) idx = loc.chapterIdx;
+    } catch (e) {}
+  }
+  const it = document.getElementById(`chi-${bookId}-${idx}`);
+  if (it) it.classList.add('open');
+  setTimeout(() => window._updateChProgress && window._updateChProgress(), 60);
+}
 window.renderChapterListHtml = renderChapterListHtml;
 
 function toggleCh(bookId, idx, fromHistory=false) {
   const item = document.getElementById(`chi-${bookId}-${idx}`);
   if (!item) return;
   const wasOpen = item.classList.contains('open');
+  if (wasOpen) return;   // एउटा अध्याय सधैं खुला रहन्छ — अरू अध्यायमा ☰ बाट जाने
   // Close all first
   document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
   if (!wasOpen) {
@@ -1369,15 +1388,33 @@ function chJump(bookId, idx, what) {
   if (what === 'menu') {
     const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (!menu) return;
     if (!menu.hidden) { menu.hidden = true; return; }
+    const chs = App.chaptersCache[bookId] || [];
     const hs = [...c.querySelectorAll('h1,h2,h3,h4,h5')];
-    menu.innerHTML = hs.length
-      ? hs.map((h,k)=>`<button class="ch-jump-item" style="padding-left:${10+(parseInt(h.tagName[1])-1)*10}px" onclick="chGoHead('${bookId}',${idx},${k})"></button>`).join('')
-      : '<div class="ch-jump-empty">यो अध्यायमा शीर्षक छैन — माथिको slider प्रयोग गर्नुहोस्।</div>';
-    menu.querySelectorAll('.ch-jump-item').forEach((b,k)=>{ b.textContent = hs[k].textContent.trim().slice(0,80) || ('भाग ' + (k+1)); });
+    let html = '<div class="ch-jump-lbl">अध्यायहरू</div>' + chs.map((ch, k) =>
+      `<button class="ch-jump-item ch-jump-c${k === idx ? ' cur' : ''}" onclick="chGoChapter('${bookId}',${idx},${k})"></button>`).join('');
+    if (hs.length) html += '<div class="ch-jump-lbl">यस अध्यायका भाग</div>' + hs.map((h, k) =>
+      `<button class="ch-jump-item ch-jump-h" style="padding-left:${10 + (parseInt(h.tagName[1]) - 1) * 10}px" onclick="chGoHead('${bookId}',${idx},${k})"></button>`).join('');
+    menu.innerHTML = html;
+    menu.querySelectorAll('.ch-jump-c').forEach((b, k) => { b.textContent = toN(k + 1) + '. ' + ((chs[k] && chs[k].title) || '').trim().slice(0, 80); });
+    menu.querySelectorAll('.ch-jump-h').forEach((b, k) => { b.textContent = hs[k].textContent.trim().slice(0, 80) || ('भाग ' + (k + 1)); });
     menu.hidden = false;
   }
 }
 window.chJump = chJump;
+function chGoChapter(bookId, idx, k) {
+  const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (menu) menu.hidden = true;
+  if (k === idx) return;
+  const it = document.getElementById(`chi-${bookId}-${k}`); if (!it) return;
+  document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
+  it.classList.add('open');
+  history.pushState({ chOpen: { bookId, idx: k } }, '');
+  saveLastLocation();
+  requestAnimationFrame(() => {
+    _chScrollTo(it.getBoundingClientRect().top + window.scrollY - (document.querySelector('.site-header') ? document.querySelector('.site-header').offsetHeight : 56) - 8, false);
+    window._updateChProgress && window._updateChProgress();
+  });
+}
+window.chGoChapter = chGoChapter;
 function chGoHead(bookId, idx, k) {
   const c = _chContent(bookId, idx); if (!c) return;
   const h = c.querySelectorAll('h1,h2,h3,h4,h5')[k]; if (!h) return;

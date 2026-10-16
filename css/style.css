@@ -2044,3 +2044,8 @@ div:has(> .dxtb) + .rte, div:has(> .dxtb) + textarea, div:has(> .dxtb) + textare
 
 /* तलको नेभिगेसन बार हटाइएको (HTML/JS यथावत्, मात्र लुकाइएको — फर्काउन यो नियम हटाउनुस्) */
 .bot-nav { display: none !important; }
+
+/* एकपटकमा एउटै अध्याय देखिन्छ — अरू अध्यायमा जान्छ्न् ☰ बाट */
+#chList .chapter-item:not(.open) { display: none; }
+.ch-jump-lbl { font-size: 0.7rem; font-weight: 700; color: var(--text-3); padding: 8px 10px 4px; }
+.ch-jump-item.cur { background: var(--divider); font-weight: 700; color: var(--accent); }
