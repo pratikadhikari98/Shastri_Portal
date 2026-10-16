@@ -2061,3 +2061,6 @@ div:has(> .dxtb) + .rte, div:has(> .dxtb) + textarea, div:has(> .dxtb) + textare
 
 /* तलको नेभिगेसन बार लुकेकाले त्यसका लागि छाडिएको खाली ठाउँ (body padding-bottom: 90px) घटाइयो */
 body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+
+/* ☰ मेनु (अध्याय/भाग) स्क्रोल गर्दा पछाडिको अध्याय स्क्रोल नहुने */
+.ch-jump-menu { overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }

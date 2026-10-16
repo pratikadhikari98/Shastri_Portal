@@ -1426,6 +1426,11 @@ function chShowMenu(bookId, idx, expK) {
     menu.querySelectorAll('.ch-jump-h').forEach((b, n) => { b.textContent = hs[n].textContent.trim().slice(0, 80) || ('भाग ' + (n + 1)); });
   }
   menu.hidden = false;
+  if (!menu._lock) {   // मेनु स्क्रोल गर्दा पछाडिको अध्याय नसर्ने
+    menu._lock = true;
+    menu.addEventListener('touchmove', ev => { if (menu.scrollHeight <= menu.clientHeight + 1) ev.preventDefault(); }, { passive: false });
+    menu.addEventListener('wheel', ev => { if (menu.scrollHeight <= menu.clientHeight + 1) ev.preventDefault(); }, { passive: false });
+  }
 }
 function _chSwitch(bookId, k) {
   const it = document.getElementById(`chi-${bookId}-${k}`); if (!it) return false;
