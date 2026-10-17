@@ -2263,3 +2263,49 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .subj-tabs { padding: 3px 10px; margin-bottom: 10px; }
 .subj-tab, .subj-tab.active, .subj-tab:hover, .subj-tab:active { flex: 0 0 52px; width: 52px; height: 44px; }
 .subj-tab-ico, .subj-tab:not(.active) .subj-tab-ico { width: 38px; height: 38px; border-radius: 12px; font-size: 13px; }
+
+
+/* ═══ तैरिने नेभिगेसन बटन ═══ */
+.nav-fab { position: fixed; z-index: 260; --fm: 14px; -webkit-tap-highlight-color: transparent; }
+.nav-fab[data-corner="br"] { right: var(--fm); bottom: calc(var(--fm) + env(safe-area-inset-bottom, 0px)); }
+.nav-fab[data-corner="bl"] { left: var(--fm);  bottom: calc(var(--fm) + env(safe-area-inset-bottom, 0px)); }
+.nav-fab[data-corner="tr"] { right: var(--fm); top: calc(var(--hdr-h, 62px) + 10px); }
+.nav-fab[data-corner="tl"] { left: var(--fm);  top: calc(var(--hdr-h, 62px) + 10px); }
+.nav-fab.snapping { transition: left 0.3s var(--ease-spring), top 0.3s var(--ease-spring); }
+.nav-fab-btn {
+  width: 54px; height: 54px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.35); padding: 0; margin: 0; position: relative;
+  display: flex; align-items: center; justify-content: center; cursor: grab; color: #fff; touch-action: none; user-select: none; -webkit-user-select: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 20px -4px var(--accent-glow, rgba(0,0,0,0.35)), 0 2px 6px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.45);
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.2s;
+}
+.nav-fab-btn:active { transform: scale(0.92); }
+.nav-fab.dragging .nav-fab-btn { cursor: grabbing; transform: scale(1.12); box-shadow: 0 14px 28px -6px var(--accent-glow, rgba(0,0,0,0.4)), 0 4px 10px rgba(0,0,0,0.25); }
+.nav-fab-i { position: absolute; display: flex; transition: transform 0.3s var(--ease-spring), opacity 0.2s; }
+.nav-fab-i-close { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+.nav-fab.open .nav-fab-i-menu { opacity: 0; transform: rotate(90deg) scale(0.6); }
+.nav-fab.open .nav-fab-i-close { opacity: 1; transform: none; }
+.nav-fab-menu { position: absolute; display: flex; flex-direction: column; gap: 10px; }
+.nav-fab[data-corner^="b"] .nav-fab-menu { bottom: calc(100% + 12px); }
+.nav-fab[data-corner^="t"] .nav-fab-menu { top: calc(100% + 12px); }
+.nav-fab[data-corner$="r"] .nav-fab-menu { right: 0; align-items: flex-end; }
+.nav-fab[data-corner$="l"] .nav-fab-menu { left: 0; align-items: flex-start; }
+.nav-fab-menu[hidden] { display: none; }
+.nav-fab-item {
+  display: flex; align-items: center; gap: 10px; padding: 7px 16px 7px 7px; border: 1px solid var(--divider); border-radius: 16px; cursor: pointer;
+  color: var(--text-1); font: inherit; font-size: 0.86rem; font-weight: 700; white-space: nowrap;
+  background: linear-gradient(135deg, var(--bg), var(--surface-high));
+  box-shadow: 1px 1px 2px 0 var(--shadow), 3px 3px 8px -1px var(--shadow), 8px 8px 16px -5px var(--shadow);
+  animation: navFabIn 0.32s var(--ease-spring) backwards;
+}
+.nav-fab[data-corner^="t"] .nav-fab-item { animation-name: navFabInDown; }
+.nav-fab-item:nth-child(1) { animation-delay: 0.20s; } .nav-fab-item:nth-child(2) { animation-delay: 0.16s; }
+.nav-fab-item:nth-child(3) { animation-delay: 0.12s; } .nav-fab-item:nth-child(4) { animation-delay: 0.08s; } .nav-fab-item:nth-child(5) { animation-delay: 0.04s; }
+.nav-fab[data-corner^="t"] .nav-fab-item:nth-child(1) { animation-delay: 0.04s; } .nav-fab[data-corner^="t"] .nav-fab-item:nth-child(2) { animation-delay: 0.08s; }
+.nav-fab[data-corner^="t"] .nav-fab-item:nth-child(3) { animation-delay: 0.12s; } .nav-fab[data-corner^="t"] .nav-fab-item:nth-child(4) { animation-delay: 0.16s; } .nav-fab[data-corner^="t"] .nav-fab-item:nth-child(5) { animation-delay: 0.20s; }
+.nav-fab-item:active { transform: scale(0.95); }
+.nav-fab-ico { width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center; justify-content: center; color: var(--accent);
+  background: var(--bg); box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--surface-high); }
+@keyframes navFabIn { from { opacity: 0; transform: translateY(14px) scale(0.85); } }
+@keyframes navFabInDown { from { opacity: 0; transform: translateY(-14px) scale(0.85); } }
+@media (prefers-reduced-motion: reduce) { .nav-fab-item, .nav-fab-i, .nav-fab-btn { animation: none; transition: none; } }

@@ -2526,6 +2526,109 @@ function removeAvatar() {
 }
 window.removeAvatar = removeAvatar;
 
+
+/* ═══════════════════════════════════
+   तैरिने नेभिगेसन बटन (SVG) — कुनै पनि कुनामा सार्न मिल्ने
+   बटन थिच्दा: गृह · सूचना · खोज · बुकमार्क · सेटिङ
+   ═══════════════════════════════════ */
+function initNavFab() {
+  if (document.getElementById('navFab')) return;
+  const svg = d => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const ICON = {
+    menu: svg('<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>'),
+    close: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
+    home: svg('<path d="M3 11l9-7.5L21 11"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/>'),
+    news: svg('<path d="M4 5h13a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2V5z"/><path d="M19 9h2v8a2 2 0 0 1-2 2"/><path d="M8 9h7M8 13h7"/>'),
+    search: svg('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>'),
+    bm: svg('<path d="M6.5 3.5h11v17L12 16.5l-5.5 4z"/>'),
+    set: svg('<circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+  };
+  const ITEMS = [
+    ['home',   'गृह',     'home'],
+    ['news',   'सूचना',   'news'],
+    ['search', 'खोज',     'search'],
+    ['bm',     'बुकमार्क', 'bookmarks'],
+    ['set',    'सेटिङ',   'profile'],
+  ];
+  const root = document.createElement('div');
+  root.id = 'navFab'; root.className = 'nav-fab';
+  let corner = 'br'; try { corner = localStorage.getItem('sp_fab_corner') || 'br'; } catch (e) {}
+  if (!/^(tl|tr|bl|br)$/.test(corner)) corner = 'br';
+  root.dataset.corner = corner;
+  root.innerHTML = `<div class="nav-fab-menu" hidden>${ITEMS.map(([k, lbl]) =>
+      `<button type="button" class="nav-fab-item" data-k="${k}"><span class="nav-fab-ico">${ICON[k]}</span><span class="nav-fab-lbl">${lbl}</span></button>`).join('')}</div>
+    <button type="button" class="nav-fab-btn" aria-label="मेनु" aria-expanded="false"><span class="nav-fab-i nav-fab-i-menu">${ICON.menu}</span><span class="nav-fab-i nav-fab-i-close">${ICON.close}</span></button>`;
+  document.body.appendChild(root);
+  const btn = root.querySelector('.nav-fab-btn'), menu = root.querySelector('.nav-fab-menu');
+
+  const setOpen = on => {
+    root.classList.toggle('open', on); menu.hidden = !on;
+    btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+  };
+  menu.addEventListener('click', e => {
+    const it = e.target.closest('.nav-fab-item'); if (!it) return;
+    setOpen(false);
+    const k = it.dataset.k, page = (ITEMS.find(x => x[0] === k) || [])[2];
+    const target = k === 'search' ? document.getElementById('navSearchBtn') : document.querySelector(`.nav-item[data-page="${page}"]`);
+    if (target) target.click();
+  });
+  document.addEventListener('pointerdown', e => { if (root.classList.contains('open') && !root.contains(e.target)) setOpen(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') setOpen(false); });
+  window.addEventListener('scroll', () => { if (root.classList.contains('open')) setOpen(false); }, { passive: true });
+
+  /* सार्न (drag) र छोड्दा नजिकको कुनामा बस्ने */
+  const hdrH = () => { const h = document.querySelector('.site-header'); return (h ? h.offsetHeight : 60) + 10; };
+  const M = 14;
+  const posFor = c => {
+    const w = btn.offsetWidth, h = btn.offsetHeight;
+    const left = c[1] === 'l' ? M : innerWidth - w - M;
+    const top = c[0] === 't' ? hdrH() : innerHeight - h - M - (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab')) || 0);
+    return { left, top };
+  };
+  let drag = null;
+  btn.addEventListener('pointerdown', e => {
+    if (e.button && e.button !== 0) return;
+    const r = root.getBoundingClientRect();
+    drag = { x: e.clientX, y: e.clientY, ox: e.clientX - r.left, oy: e.clientY - r.top, moved: false };
+    try { btn.setPointerCapture(e.pointerId); } catch (er) {}
+  });
+  btn.addEventListener('pointermove', e => {
+    if (!drag) return;
+    if (!drag.moved) {
+      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 8) return;
+      drag.moved = true; setOpen(false);
+      root.classList.add('dragging'); root.classList.remove('snapping');
+      root.style.right = 'auto'; root.style.bottom = 'auto';
+    }
+    const w = btn.offsetWidth, h = btn.offsetHeight;
+    root.style.left = Math.max(4, Math.min(innerWidth - w - 4, e.clientX - drag.ox)) + 'px';
+    root.style.top = Math.max(4, Math.min(innerHeight - h - 4, e.clientY - drag.oy)) + 'px';
+    e.preventDefault();
+  });
+  const end = () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (!d.moved) { setOpen(!root.classList.contains('open')); return; }
+    root.classList.remove('dragging');
+    const r = root.getBoundingClientRect();
+    const c = (r.top + r.height / 2 < innerHeight / 2 ? 't' : 'b') + (r.left + r.width / 2 < innerWidth / 2 ? 'l' : 'r');
+    const p = posFor(c);
+    root.classList.add('snapping');
+    root.style.left = p.left + 'px'; root.style.top = p.top + 'px';
+    setTimeout(() => {
+      root.classList.remove('snapping');
+      root.style.left = root.style.top = root.style.right = root.style.bottom = '';
+      root.dataset.corner = c;
+      try { localStorage.setItem('sp_fab_corner', c); } catch (er) {}
+    }, 300);
+  };
+  btn.addEventListener('pointerup', end);
+  btn.addEventListener('pointercancel', end);
+  btn.addEventListener('contextmenu', e => e.preventDefault());
+}
+window.initNavFab = initNavFab;
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNavFab); else initNavFab();
+
 // Expose App
 window.App=App;
 window.applyTheme=applyTheme;
