@@ -96,7 +96,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAppInfo();
   initBackgroundCanvas();
   initHistoryNav();
-  // initSwipeBack();   // किनाराबाट swipe गरेर अघिल्लो पृष्ठमा फर्किने सुविधा हटाइएको (फर्काउन यो लाइनको // हटाउनुस्)
   initSheetDragGestures();
   initChapterProgress();
   applyLanguage(App.lang);
@@ -752,105 +751,6 @@ function initHistoryNav() {
 
     App_navigatingFromPopstate = false;
   });
-}
-
-/* ════════════════════════════════════
-   स्वाइप गरेर पछि जाने — दायाँतिर स्वाइप गर्दा Back (फोनको back बटन जस्तै)
-   - पेजले औँलासँगै सर्छ; पर्याप्त तानेपछि छोड्दा मात्र पछि जान्छ, नत्र फर्किन्छ
-   - किनाराबाट (२४px) सुरु हुने स्वाइपलाई फोनको आफ्नै back gesture का लागि छोडिन्छ (दोहोरो back नहोस्)
-   - input/textarea, तेर्सो स्क्रोल हुने ठाउँ, खुला modal/menu/पूरा-स्क्रिन editor मा काम गर्दैन
-   - होम पेजमा केही हुँदैन (साइट बाहिर निस्कँदैन)
-   ════════════════════════════════════ */
-function initSwipeBack() {
-  const EDGE = 24;
-  let sx = 0, sy = 0, st = 0, dx = 0, tracking = false, locked = false, pg = null;
-
-  const horizScrollable = (el) => {
-    while (el && el !== document.body && el.nodeType === 1) {
-      const tag = el.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable) return true;
-      if (el.scrollWidth > el.clientWidth + 4) {
-        const ox = getComputedStyle(el).overflowX;
-        if (ox === 'auto' || ox === 'scroll') return true;
-      }
-      el = el.parentElement;
-    }
-    return false;
-  };
-  const chapterOpen = () => !!document.querySelector('.chapter-item.open');
-  const canBack = () => {
-    if (document.querySelector('.overlay.open')) return false;
-    if (document.getElementById('mdImgSheet')) return false;
-    if (document.getElementById('dotsMenu')?.classList.contains('open')) return false;
-    if (document.getElementById('sDrop')?.classList.contains('open')) return false;
-    return App.page !== 'home' || chapterOpen();
-  };
-  const reset = (el) => { if (el) { el.style.transition = ''; el.style.transform = ''; el.style.opacity = ''; } };
-  const snapBack = (el) => {
-    if (!el) return;
-    el.style.transition = 'transform 0.18s var(--ease-out), opacity 0.18s';
-    el.style.transform = 'translateX(0)'; el.style.opacity = '1';
-    setTimeout(() => reset(el), 220);
-  };
-
-  const clearStuck = () => {   // अघिल्लो swipe बाट पृष्ठ सरेको अवस्थामै अड्किएको भए सफा गर्ने
-    if (pg) { reset(pg); pg = null; }
-    document.querySelectorAll('.page').forEach(el => { if (el.style.transform || el.style.opacity) reset(el); });
-  };
-  document.addEventListener('touchstart', (e) => {
-    clearStuck();
-    tracking = false; locked = false; dx = 0;
-    if (e.touches.length !== 1) return;
-    const t = e.touches[0];
-    if (t.clientX < EDGE || t.clientX > window.innerWidth - EDGE) return;
-    if (!canBack() || horizScrollable(e.target)) return;
-    sx = t.clientX; sy = t.clientY; st = Date.now(); tracking = true;
-  }, { passive: true });
-
-  document.addEventListener('touchmove', (e) => {
-    if (!tracking) return;
-    const t = e.touches[0];
-    dx = t.clientX - sx;
-    const dy = t.clientY - sy;
-    if (!locked) {
-      if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { tracking = false; return; }      // ठाडो स्क्रोल
-      if (dx < -12) { tracking = false; return; }                                             // बायाँतिर — हाम्रो होइन
-      if (dx > 14 && dx > Math.abs(dy) * 1.6) {
-        locked = true;
-        pg = document.querySelector('.page.on');
-        if (pg) pg.style.transition = 'none';
-      } else return;
-    }
-    if (pg) {
-      const x = Math.max(0, dx);
-      pg.style.transform = `translateX(${Math.round(x * 0.6)}px)`;
-      pg.style.opacity = String(Math.max(0.55, 1 - x / (window.innerWidth * 1.4)));
-    }
-  }, { passive: true });
-
-  const finish = (cancel) => {
-    if (!tracking || !locked) { tracking = false; locked = false; if (pg) { snapBack(pg); pg = null; } return; }
-    tracking = false; locked = false;
-    const el = pg; pg = null;
-    const elapsed = Math.max(1, Date.now() - st);
-    const fast = (dx / elapsed) > 0.55 && dx > 50;
-    const far = dx > Math.max(90, window.innerWidth * 0.3);
-    if (cancel || !(fast || far)) { snapBack(el); return; }
-    if (chapterOpen()) {                       // खुला अध्याय बन्द गर्ने मात्र — पेज उही रहन्छ
-      snapBack(el);
-      history.back();
-    } else if (el) {                           // अघिल्लो पेजमा
-      el.style.transition = 'transform 0.16s ease-out, opacity 0.16s';
-      el.style.transform = 'translateX(38%)'; el.style.opacity = '0';
-      setTimeout(() => { history.back(); setTimeout(() => reset(el), 30); }, 150);
-    } else history.back();
-  };
-  document.addEventListener('touchend', () => finish(false), { passive: true });
-  document.addEventListener('touchcancel', () => finish(true), { passive: true });
-  const safety = () => { if (!tracking) clearStuck(); };
-  document.addEventListener('visibilitychange', safety);
-  window.addEventListener('pageshow', safety);
-  window.addEventListener('popstate', () => setTimeout(safety, 400));
 }
 
 /* ════════════════════════════════════
