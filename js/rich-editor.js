@@ -371,7 +371,7 @@
         el.focus({ preventScroll: true }); restoreSel(el, s.sel) || placeCaret(el, true);
       },
       markDirty() { this.dirty = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 160); },
-      syncFont() { el.style.fontFamily = ta.style.fontFamily || (typeof fontCssFor === 'function' ? fontCssFor(ta.dataset.fontKey || 'siddhanta') : ''); },
+      syncFont() { if (ta.dataset.fontKey === 'eczar') el.setAttribute('lang', 'hi'); else el.removeAttribute('lang'); el.style.fontFamily = ta.style.fontFamily || (typeof fontCssFor === 'function' ? fontCssFor(ta.dataset.fontKey || 'siddhanta') : ''); },
       focus(end) {
         el.focus({ preventScroll: true });
         if (end !== false) placeCaret(el, true);
