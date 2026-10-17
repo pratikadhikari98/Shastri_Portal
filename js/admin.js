@@ -684,12 +684,19 @@ async function adminChapterSave() {       // "👁 पूर्वावलो�
   const cur = App.chaptersCache[bookId] || [];
   const i = App.adminChapter.editingIdx;
   const isEdit = (i !== null && i !== undefined && cur[i]);
-  adminPreview({
-    title: '👁 अध्याय — पूर्वावलोकन',
-    after: chapterPreviewHtml(item, isEdit ? i + 1 : cur.length + 1),
-    before: isEdit ? chapterPreviewHtml(cur[i], i + 1) : null,
-    onConfirm: async () => { const ok = await commitChapter(bookId, item, isEdit ? i : null); if (ok) pvDone('chapterFormModal'); return ok; }
-  });
+  // पूर्वावलोकन हटाइएको — सिधै GitHub मा commit
+  if (App._chCommitBusy) return;
+  App._chCommitBusy = true;
+  const btn = document.getElementById('chapterCommitBtn');
+  const old = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Commit हुँदैछ…'; }
+  try {
+    const ok = await commitChapter(bookId, item, isEdit ? i : null);
+    if (ok) closeOv('chapterFormModal');
+  } finally {
+    App._chCommitBusy = false;
+    if (btn) { btn.disabled = false; btn.textContent = old; }
+  }
 }
 window.adminChapterSave = adminChapterSave;
 
