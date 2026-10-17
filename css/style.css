@@ -2223,3 +2223,12 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 
 /* v8: आइकनको रङ पूरा (फिक्का होइन) */
 .subj-tab-ico, .subj-tab:not(.active) .subj-tab-ico, .subj-tab.active .subj-tab-ico { opacity: 1 !important; filter: none !important; }
+
+/* v9: ट्याब-पट्टी (बैनर) स्क्रिनको दुवै छेउ छुने, अध्यायको zipper-पट्टी जस्तै (टाँसिने) */
+.subj-tabs {
+  position: sticky; top: var(--hdr-h, 56px); z-index: 150;
+  width: 100vw; max-width: 100vw; margin: 0 0 14px calc(50% - 50vw); box-sizing: border-box;
+  border-radius: 0; padding: 8px 12px; background: var(--bg);
+  border-bottom: 1px solid var(--divider); box-shadow: 0 3px 8px var(--neu-dark);
+  justify-content: space-evenly; overflow-x: auto;
+}

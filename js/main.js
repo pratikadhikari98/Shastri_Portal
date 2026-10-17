@@ -1069,6 +1069,7 @@ function renderYearPage(yearId) {
 /* विषय ट्याबको पछाडि सर्ने उठेको पट्टी (Neuromorphic Navbar शैली) */
 function positionSubjHl() {
   const box = document.getElementById('subjTabs'); if (!box) return;
+  const _h = document.querySelector('.site-header'); if (_h) document.documentElement.style.setProperty('--hdr-h', _h.offsetHeight + 'px');
   const hl = box.querySelector('.subj-hl'), at = box.querySelector('.subj-tab.active');
   if (!hl || !at || !at.offsetWidth) return;
   hl.style.width = at.offsetWidth + 'px'; hl.style.height = at.offsetHeight + 'px';
