@@ -2206,3 +2206,10 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 }
 .subj-tab:not(.active) .subj-tab-ico { opacity: 0.88; }
 .subj-tab:active .subj-tab-ico { transform: scale(1.12); }
+
+/* v6: डबल गडाइ हटाइयो — खाना (सर्ने भाग) सादा, गडाइ आइकनमा मात्र (एउटा) */
+.subj-hl { background: transparent; box-shadow: none; }
+.subj-tab.active .subj-tab-ico {
+  box-shadow: inset 3px 3px 6px rgba(0,0,0,0.30), inset -3px -3px 6px rgba(255,255,255,0.40);
+  transform: scale(1.08);
+}
