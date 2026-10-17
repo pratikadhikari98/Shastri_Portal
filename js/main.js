@@ -1049,14 +1049,13 @@ function renderYearPage(yearId) {
       </div>
     </div>
 
-    <div class="subj-tabs" id="subjTabs">
+    <div class="subj-tabs" id="subjTabs"><span class="subj-hl" aria-hidden="true"></span>
       ${subjEntries.map(([key,books])=>{
         const s=SUBJ[key]||{label:key,short:'क',g:'#EEE,#CCC'};
         const [gc1,gc2]=s.g.split(',');
         return `
-        <button class="subj-tab ${key===firstKey?'active':''}" data-key="${key}" onclick="setYearSubjectTab(${yr.id},'${key}')">
+        <button class="subj-tab ${key===firstKey?'active':''}" data-key="${key}" title="${s.label}" aria-label="${s.label}" onclick="setYearSubjectTab(${yr.id},'${key}')">
           <span class="subj-tab-ico" style="background:linear-gradient(135deg,${gc1},${gc2})">${s.short}</span>
-          <span class="subj-tab-lbl">${s.label}</span>
         </button>`;
       }).join('')}
     </div>
@@ -1067,10 +1066,27 @@ function renderYearPage(yearId) {
   </div>`;
 }
 
+/* विषय ट्याबको पछाडि सर्ने उठेको पट्टी (Neuromorphic Navbar शैली) */
+function positionSubjHl() {
+  const box = document.getElementById('subjTabs'); if (!box) return;
+  const hl = box.querySelector('.subj-hl'), at = box.querySelector('.subj-tab.active');
+  if (!hl || !at || !at.offsetWidth) return;
+  hl.style.width = at.offsetWidth + 'px'; hl.style.height = at.offsetHeight + 'px';
+  hl.style.top = at.offsetTop + 'px';
+  hl.style.transform = `translateX(${at.offsetLeft}px)`;
+  if (!box.classList.contains('ready')) requestAnimationFrame(() => box.classList.add('ready'));
+}
+window.positionSubjHl = positionSubjHl;
+window.addEventListener('resize', positionSubjHl);
+document.addEventListener('DOMContentLoaded', () => {
+  const py = document.getElementById('p-year');
+  if (py) new MutationObserver(() => requestAnimationFrame(positionSubjHl)).observe(py, { childList: true, subtree: false, attributes: true, attributeFilter: ['class'] });
+});
 function setYearSubjectTab(yearId, key, fromHistory=false) {
   const yr = App.data.years.find(y=>y.id===yearId);
   if (!yr) return;
   document.querySelectorAll('#subjTabs .subj-tab').forEach(b=>b.classList.toggle('active', b.dataset.key===key));
+  positionSubjHl();
   const _at = document.querySelector('#subjTabs .subj-tab.active');
   if (_at && _at.scrollIntoView) _at.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   const books = yr.subjects[key] || [];

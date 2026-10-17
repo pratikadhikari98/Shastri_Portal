@@ -2132,3 +2132,32 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 
 /* वर्ष-कार्डको Ananda शीर्षक: नक्कली बोल्ड हटाएर हल्का (सामान्य मोटाइ + अति पातलो रेखा) */
 .yc-title .an-leg { font-weight: 400; font-synthesis: none; -webkit-text-stroke: 0.012em currentColor; }
+
+
+/* ═══ विषय ट्याब v3 — Neuromorphic Navbar शैली, आइकन मात्र ═══ */
+.subj-tabs {
+  --neu-dark:  color-mix(in srgb, var(--bg) 78%, #000 22%);
+  --neu-light: color-mix(in srgb, var(--bg) 55%, #fff 45%);
+  position: relative; display: flex; width: max-content; max-width: 100%; gap: 0; overflow-x: auto; scrollbar-width: none;
+  margin: 6px 2px 18px; padding: 6px; border-radius: 22px; background: var(--bg);
+  box-shadow: inset 5px 5px 10px var(--neu-dark), inset -5px -5px 10px var(--neu-light);
+}
+.subj-tabs::-webkit-scrollbar { display: none; }
+.subj-hl {
+  position: absolute; left: 0; top: 6px; width: 0; height: 0; border-radius: 16px; pointer-events: none;
+  background: var(--bg); box-shadow: 4px 4px 9px var(--neu-dark), -4px -4px 9px var(--neu-light);
+}
+.subj-tabs.ready .subj-hl { transition: transform 0.34s cubic-bezier(0.34, 1.3, 0.5, 1), width 0.3s ease, height 0.3s ease; }
+.subj-tab, .subj-tab.active, .subj-tab:hover, .subj-tab:active {
+  position: relative; z-index: 1; background: transparent; border: none; box-shadow: none; animation: none; transform: none;
+  padding: 7px; border-radius: 16px; min-width: 0;
+}
+.subj-tab::after, .subj-tab.active::after { display: none; }
+.subj-tab-lbl { display: none; }
+.subj-tab-ico { width: 40px; height: 40px; border-radius: 13px; font-size: 14px; opacity: 0.72; filter: saturate(0.85);
+  transition: transform 0.3s var(--ease-spring), opacity 0.2s, filter 0.2s, box-shadow 0.2s; }
+.subj-tab.active .subj-tab-ico { opacity: 1; filter: none; transform: scale(1.05); animation: none;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.45); }
+/* छुँदा pop */
+.subj-tab:active .subj-tab-ico { transform: scale(1.2); opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .subj-tabs.ready .subj-hl, .subj-tab-ico { transition: none; } }
