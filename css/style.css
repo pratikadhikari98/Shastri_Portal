@@ -2129,3 +2129,6 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   box-shadow: 0 0 0 2px rgba(255,255,255,0.55), inset 0 1px 0 rgba(255,255,255,0.4); }
 @keyframes subjTabPop { 0% { transform: scale(0.88); } 55% { transform: scale(1.12); } 100% { transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { .subj-tab.active { animation: none; } .subj-tab:active { transform: none; } }
+
+/* वर्ष-कार्डको Ananda शीर्षक: नक्कली बोल्ड हटाएर हल्का (सामान्य मोटाइ + अति पातलो रेखा) */
+.yc-title .an-leg { font-weight: 400; font-synthesis: none; -webkit-text-stroke: 0.012em currentColor; }
