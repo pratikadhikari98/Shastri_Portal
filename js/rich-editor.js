@@ -260,18 +260,21 @@
 
 
   /* ═════════ बटनको "चालु/बन्द" अवस्था — कर्सर/चुनिएको अक्षरमा के लागू छ देखाउने ═════════ */
-  function selectedTexts(range) {
+  function selectedTexts(range, cap) {
+    cap = cap || 300;                       // ठूलो selection मा सबै node जाँच्दा mobile अड्कन्थ्यो — सुरुका ३०० node मात्र
     const out = [];
-    const root = range.commonAncestorContainer;
-    if (root.nodeType === 3) { if (range.toString().trim()) out.push(root); return out; }
-    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    while (tw.nextNode()) {
-      const n = tw.currentNode;
-      if (!range.intersectsNode(n)) continue;
-      const r = document.createRange(); r.selectNodeContents(n);
-      if (n === range.startContainer) r.setStart(n, range.startOffset);
-      if (n === range.endContainer) r.setEnd(n, range.endOffset);
-      if (r.toString().trim()) out.push(n);
+    const sc = range.startContainer, ec = range.endContainer;
+    const clip = n => { let v = n.nodeValue || ''; if (n === ec) v = v.slice(0, range.endOffset); if (n === sc) v = v.slice(range.startOffset); return v; };
+    if (sc === ec && sc.nodeType === 3) { if (clip(sc).trim()) out.push(sc); return out; }
+    const tw = document.createTreeWalker(range.commonAncestorContainer, NodeFilter.SHOW_TEXT);
+    const first = sc.nodeType === 3 ? sc : (sc.childNodes[range.startOffset] || null);
+    let n;
+    if (first) { tw.currentNode = first; n = first.nodeType === 3 ? first : tw.nextNode(); } else n = tw.nextNode();
+    for (; n; n = tw.nextNode()) {
+      if (n !== ec && range.comparePoint(n, 0) > 0) break;       // selection पछाडि पुगियो
+      if (n !== sc && n !== ec && range.comparePoint(n, 0) < 0) continue;
+      if (clip(n).trim()) { out.push(n); if (out.length >= cap) break; }
+      if (n === ec) break;
     }
     return out;
   }
@@ -357,7 +360,8 @@
         if (cur && cur.html === html) { cur.sel = selPath(el); return; }
         this.hist.length = this.hi + 1;
         this.hist.push({ html, sel: selPath(el) });
-        if (this.hist.length > 80) this.hist.shift();
+        const maxH = html.length > 150000 ? 8 : html.length > 50000 ? 20 : 60;
+        while (this.hist.length > maxH) this.hist.shift();
         this.hi = this.hist.length - 1;
       },
       goto(i) {
@@ -444,7 +448,10 @@
       const sel = getSelection();
       if (sel && sel.rangeCount && el.contains(sel.anchorNode) && el.contains(sel.focusNode)) {
         inst.range = sel.getRangeAt(0).cloneRange();
-        if (!inst._raf) inst._raf = requestAnimationFrame(() => { inst._raf = 0; inst.updateState(); });
+        if (inst._raf) return;
+        const big = !inst.range.collapsed;
+        const run = () => { inst._raf = 0; inst.updateState(); };
+        inst._raf = big ? setTimeout(run, 160) : requestAnimationFrame(run);
       }
     });
     new MutationObserver(() => inst.syncFont()).observe(ta, { attributes: true, attributeFilter: ['style', 'data-font-key'] });
@@ -478,6 +485,7 @@
     // नोट: node सार्ने/हटाउने काम गर्दैनौं (selection बिग्रन्छ) — attribute मात्र हटाउँछौं।
     root.querySelectorAll('font').forEach(f => { f.removeAttribute('face'); f.removeAttribute('size'); f.removeAttribute('color'); });
     root.querySelectorAll('span, h1,h2,h3,h4,h5,blockquote,ul,ol,li,div,p,b,i,u,s,strike,strong,em').forEach(x => {
+      if (!x.hasAttribute('style') && !x.hasAttribute('align')) return;
       if (x.classList.contains('rte-hl') || x.classList.contains('rte-fc') || x.classList.contains('rte-box') ||
           x.classList.contains('rte-box-head') || x.closest('.rte-box-head')) return;
       if (x.hasAttribute('style')) {
