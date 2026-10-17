@@ -793,7 +793,12 @@ function initSwipeBack() {
     setTimeout(() => reset(el), 220);
   };
 
+  const clearStuck = () => {   // अघिल्लो swipe बाट पृष्ठ सरेको अवस्थामै अड्किएको भए सफा गर्ने
+    if (pg) { reset(pg); pg = null; }
+    document.querySelectorAll('.page').forEach(el => { if (el.style.transform || el.style.opacity) reset(el); });
+  };
   document.addEventListener('touchstart', (e) => {
+    clearStuck();
     tracking = false; locked = false; dx = 0;
     if (e.touches.length !== 1) return;
     const t = e.touches[0];
@@ -824,8 +829,8 @@ function initSwipeBack() {
   }, { passive: true });
 
   const finish = (cancel) => {
-    if (!tracking || !locked) { tracking = false; return; }
-    tracking = false;
+    if (!tracking || !locked) { tracking = false; locked = false; if (pg) { snapBack(pg); pg = null; } return; }
+    tracking = false; locked = false;
     const el = pg; pg = null;
     const elapsed = Math.max(1, Date.now() - st);
     const fast = (dx / elapsed) > 0.55 && dx > 50;
@@ -842,6 +847,10 @@ function initSwipeBack() {
   };
   document.addEventListener('touchend', () => finish(false), { passive: true });
   document.addEventListener('touchcancel', () => finish(true), { passive: true });
+  const safety = () => { if (!tracking) clearStuck(); };
+  document.addEventListener('visibilitychange', safety);
+  window.addEventListener('pageshow', safety);
+  window.addEventListener('popstate', () => setTimeout(safety, 400));
 }
 
 /* ════════════════════════════════════
