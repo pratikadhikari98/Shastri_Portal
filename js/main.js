@@ -860,6 +860,22 @@ function anandaHtml(text) {
   return `<span class="an-uni">${text}</span><span class="an-leg" aria-hidden="true">${words.map(w => ANANDA_MAP[w]).join(' ')}</span>`;
 }
 
+/* विषयको छोटो नाम (Ananda बोल्ड फन्टमा). अङ्ग्रेजी "eng" लेटिनमै (Ananda फन्टमा लेटिन अक्षर देखिँदैनन्) */
+const SUBJ_ABBR = {
+  vyakaran: { uni: 'व्या',  leg: 'Jof'  },
+  english:  { latin: 'eng' },
+  nepali:   { uni: 'ने',    leg: 'g]'   },
+  sanskrit: { uni: 'स',     leg: ';'    },
+  jyotish:  { uni: 'ज्यो',  leg: 'Hof]' },
+};
+function subjAbbrHtml(key, s) {
+  const a = SUBJ_ABBR[key];
+  if (!a) return (s && (s.short || s.label)) || key;
+  if (a.latin) return `<span class="subj-abbr-lat">${a.latin}</span>`;
+  return `<span class="an-uni">${a.uni}</span><span class="an-leg subj-abbr" aria-hidden="true">${a.leg}</span>`;
+}
+window.subjAbbrHtml = subjAbbrHtml;
+
 function renderHome() {
   if (!App.data) return;
   const grid = document.getElementById('yearsGrid');
@@ -877,8 +893,8 @@ function renderHome() {
         <div class="yc-sub">${yr.subtitle}</div>
         <div class="yc-badges">
           <span class="yc-badge">📚 ${total}</span>
-          <span class="yc-badge">🕉️ संस्कृत</span>
-          <span class="yc-badge">⭐ ज्योतिष</span>
+          <span class="yc-badge">🕉️ ${subjAbbrHtml('sanskrit',{})}</span>
+          <span class="yc-badge">⭐ ${subjAbbrHtml('jyotish',{})}</span>
         </div>
       </div>
       <div class="yc-arrow">›</div>
@@ -1046,8 +1062,7 @@ function renderYearPage(yearId) {
         const [gc1,gc2]=s.g.split(',');
         return `
         <button class="subj-tab ${key===firstKey?'active':''}" data-key="${key}" onclick="setYearSubjectTab(${yr.id},'${key}')">
-          <span class="subj-tab-ico" style="background:linear-gradient(135deg,${gc1},${gc2})">${s.short}</span>
-          <span class="subj-tab-lbl">${s.label}</span>
+          <span class="subj-tab-lbl">${subjAbbrHtml(key,s)}</span>
         </button>`;
       }).join('')}
     </div>

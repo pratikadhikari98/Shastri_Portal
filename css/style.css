@@ -2115,3 +2115,9 @@ html, body {
 
 /* वर्ष-कार्डका विषय चिप (रंगीन कार्डमाथि) — हल्का */
 .yc-badge { box-shadow: 2px 2px 4px rgba(0,0,0,0.12), -2px -2px 4px rgba(255,255,255,0.35); }
+
+/* विषयको छोटो नाम (Ananda बोल्ड) */
+.subj-abbr { font-size: 1.45em; line-height: 1; font-weight: 700; font-synthesis: weight; }
+.subj-abbr-lat { font-weight: 800; letter-spacing: 0.02em; font-size: 1.05em; }
+.subj-tab { min-width: 52px; justify-content: center; padding-left: 14px; padding-right: 14px; }
+.yc-badge .subj-abbr { font-size: 1.25em; }
