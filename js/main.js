@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAppInfo();
   initBackgroundCanvas();
   initHistoryNav();
-  initSwipeBack();
+  // initSwipeBack();   // किनाराबाट swipe गरेर अघिल्लो पृष्ठमा फर्किने सुविधा हटाइएको (फर्काउन यो लाइनको // हटाउनुस्)
   initSheetDragGestures();
   initChapterProgress();
   applyLanguage(App.lang);
