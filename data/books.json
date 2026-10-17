@@ -47,7 +47,8 @@
             "author": "Author Name"
           }
         ],
-        "nepali": []
+        "nepali": [],
+        "sahitya": []
       }
     },
     {
@@ -180,7 +181,8 @@
             "description": "",
             "author": ""
           }
-        ]
+        ],
+        "sahitya": []
       }
     },
     {
@@ -258,7 +260,8 @@
             "description": "तृतीय वर्षको संस्कृत साहित्य",
             "cover": "images/year3/san3.jpg"
           }
-        ]
+        ],
+        "sahitya": []
       },
       "color": "blue",
       "title": "तृतीय वर्ष"
@@ -343,7 +346,8 @@
             "author": "लेखकको नाम",
             "description": "चतुर्थ वर्षको ज्योतिष शास्त्र"
           }
-        ]
+        ],
+        "sahitya": []
       },
       "subtitle": "चौथो वर्ष",
       "color": "purple",
