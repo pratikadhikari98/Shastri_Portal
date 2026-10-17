@@ -2232,3 +2232,20 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   border-bottom: 1px solid var(--divider); box-shadow: 0 3px 8px var(--neu-dark);
   justify-content: space-evenly; overflow-x: auto;
 }
+
+/* v10: आइकन = अध्यायको zipper-बटन जस्तै (.neu-btn): गोलो/वर्ग क्रमैसँग, सक्रिय चाहिँ accent रङ्गमा */
+.subj-hl { background: transparent !important; box-shadow: none !important; }
+.subj-tab-ico, .subj-tab:not(.active) .subj-tab-ico {
+  width: 44px; height: 44px; border-radius: 14px; font-size: 14px; font-weight: 700; color: var(--text-2);
+  background: linear-gradient(135deg, var(--bg), var(--surface-high)) !important;
+  border: 1px solid var(--divider);
+  box-shadow: 1px 1px 2px 0 var(--shadow), 2px 2px 4px -1px var(--shadow), 5px 5px 12px -3px var(--shadow), 10px 10px 20px -5px var(--shadow),
+              -1px -1px 2px 0 var(--surface-high), -3px -3px 8px -2px var(--surface-high);
+}
+.subj-tab:nth-child(even) .subj-tab-ico { border-radius: 50%; }
+.subj-tab.active .subj-tab-ico {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)) !important; color: #fff; border-color: transparent;
+  box-shadow: 0 6px 14px var(--accent-glow, rgba(0,0,0,0.3)), inset 0 1px 0 rgba(255,255,255,0.4);
+  transform: scale(1.06);
+}
+.subj-tab:active .subj-tab-ico { transform: scale(1.12); }
