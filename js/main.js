@@ -1039,16 +1039,6 @@ function renderYearPage(yearId) {
   const firstKey = subjEntries[0]?.[0];
   el.innerHTML = `
   <div class="content">
-    <div class="yr-head yc-bg yc-${yClr[ci]||'o'} s${ci+1}" style="position:relative;overflow:hidden">
-      <div class="yc-shine" style="position:absolute;inset:0"></div>
-      <div class="yc-glare" style="position:absolute;top:0;left:0;right:0;height:48%"></div>
-      <div class="yc-blob yc-blob-1"></div><div class="yc-blob yc-blob-2"></div>
-      <div style="position:relative;z-index:2">
-        <div class="yr-head-title" style="color:${['#5A2800','#0A3010','#082050','#280650'][ci]||'#1A1209'};${ci===3&&App.theme==='dark'?'color:white':''}">${yr.title}</div>
-        <div class="yr-head-sub" style="color:${['#5A2800','#0A3010','#082050','#280650'][ci]||'#5C4A2A'}">${yr.subtitle}</div>
-      </div>
-    </div>
-
     <div class="subj-tabs" id="subjTabs"><span class="subj-hl" aria-hidden="true"></span>
       ${subjEntries.map(([key,books])=>{
         const s=SUBJ[key]||{label:key,short:'क',g:'#EEE,#CCC'};
@@ -1157,22 +1147,6 @@ function renderSubjectPage(subjectId, yearId) {
 
   document.getElementById('p-subject').innerHTML = `
   <div class="content">
-    <div class="subj-hero" style="background:linear-gradient(135deg,${c1},${c2})">
-      ${book.cover
-        ? `<img src="${book.cover}" loading="lazy" decoding="async" alt="${book.title}"
-               style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;z-index:0"
-               onerror="this.style.display='none';document.getElementById('hero-emoji-${book.id}').style.display='flex'">`
-        : ''}
-      <!-- letter-avatar देखिने कभर फोटो नभएमा मात्र -->
-      <span class="subj-hero-emoji" id="hero-emoji-${book.id}"
-            style="${book.cover ? 'display:none' : 'display:flex'}">${s.short}</span>
-      <div class="subj-hero-overlay" style="z-index:2">
-        <!-- कभर फोटोमा पहिल्यै शीर्षक लेखिएको हुनसक्ने भएकोले, फोटो भएमा दोहोरो नआउन यो text लुकाइन्छ -->
-        ${book.cover ? '<div></div>' : `<div><div class="sh-title">${book.title}</div><div class="sh-meta">${s.label} · ${yr.title}</div></div>`}
-        <span class="bm-btn" onclick="toggleBm('${book.id}')">${isBm?'🔖':'🏷️'}</span>
-      </div>
-    </div>
-
     <div id="tab-ch" class="tab-pane on">
       <div id="chList"><div class="spin-wrap"><div class="spinner"></div></div></div>
     </div>
