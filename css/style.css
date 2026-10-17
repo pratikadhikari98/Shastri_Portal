@@ -2189,3 +2189,20 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .subj-tab:active .subj-tab-ico { transform: scale(1.22); }
 @keyframes subjIcoPop { 0% { transform: scale(0.78); } 60% { transform: scale(1.16); } 100% { transform: scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .subj-tab.active .subj-tab-ico { animation: none; } }
+
+/* v5: पट्टी (खाना) बाहिर उठेको, सक्रिय खाना र आइकन भित्र गडेको */
+.subj-tabs { box-shadow: 6px 6px 14px var(--neu-dark), -6px -6px 14px var(--neu-light); margin-bottom: 22px; }
+.subj-hl {
+  background: var(--bg);
+  box-shadow: inset 4px 4px 8px var(--neu-dark), inset -4px -4px 8px var(--neu-light);
+}
+.subj-tab-ico {
+  opacity: 1; filter: none;
+  box-shadow: inset 3px 3px 6px rgba(0,0,0,0.30), inset -3px -3px 6px rgba(255,255,255,0.40);
+}
+.subj-tab.active .subj-tab-ico {
+  filter: none; transform: scale(1.04);
+  box-shadow: inset 4px 4px 8px rgba(0,0,0,0.34), inset -3px -3px 7px rgba(255,255,255,0.45);
+}
+.subj-tab:not(.active) .subj-tab-ico { opacity: 0.88; }
+.subj-tab:active .subj-tab-ico { transform: scale(1.12); }
