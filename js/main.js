@@ -1071,6 +1071,8 @@ function setYearSubjectTab(yearId, key, fromHistory=false) {
   const yr = App.data.years.find(y=>y.id===yearId);
   if (!yr) return;
   document.querySelectorAll('#subjTabs .subj-tab').forEach(b=>b.classList.toggle('active', b.dataset.key===key));
+  const _at = document.querySelector('#subjTabs .subj-tab.active');
+  if (_at && _at.scrollIntoView) _at.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
   const books = yr.subjects[key] || [];
   const el = document.getElementById('yearBooksList');
   if (!el) return;
