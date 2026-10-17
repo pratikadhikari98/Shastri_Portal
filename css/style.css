@@ -2249,3 +2249,12 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   transform: scale(1.06);
 }
 .subj-tab:active .subj-tab-ico { transform: scale(1.12); }
+
+/* v11: सबै वर्ग; छानिएको चाहिँ रङ्ग-gradient होइन, थिचिएको (press) देखिने */
+.subj-tab:nth-child(even) .subj-tab-ico { border-radius: 14px; }
+.subj-tab.active .subj-tab-ico {
+  background: linear-gradient(135deg, var(--bg), var(--surface-high)) !important; color: var(--accent); border-color: var(--divider);
+  box-shadow: inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 28px var(--shadow);
+  transform: scale(0.97);
+}
+.subj-tab.active:active .subj-tab-ico { transform: scale(0.94); }
