@@ -2161,3 +2161,7 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* छुँदा pop */
 .subj-tab:active .subj-tab-ico { transform: scale(1.2); opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .subj-tabs.ready .subj-hl, .subj-tab-ico { transition: none; } }
+
+/* ट्याब-पट्टी पूरै चौडाइमा (दुवै छेउ छुने), आइकन बराबर फैलिएर */
+.subj-tabs { width: 100%; max-width: 100%; margin-left: 0; margin-right: 0; box-sizing: border-box; }
+.subj-tab, .subj-tab.active, .subj-tab:hover, .subj-tab:active { flex: 1 0 52px; display: flex; align-items: center; justify-content: center; }
