@@ -323,6 +323,35 @@
   }
 
   /* ═════════ instance ═════════ */
+  /* ठूलो selection मा ब्राउजरको execCommand मोबाइलमा अड्कन्थ्यो — त्यस्तोमा आफैं एकै पटकमा <b>/<i>/<u>/<s> ले बेर्ने */
+  function fastWrap(inst, selector, tag) {
+    const el = inst.el, sel = getSelection();
+    if (!sel.rangeCount) return false;
+    const range = sel.getRangeAt(0);
+    if (range.collapsed || !el.contains(range.startContainer) || !el.contains(range.endContainer)) return false;
+    const nodes = selectedTexts(range, 1e9);
+    if (nodes.length < 150) return false;                 // सानो selection: सामान्य तरिका
+    const so = range.startContainer, eo = range.endContainer, sOff = range.startOffset, eOff = range.endOffset;
+    const firstN = nodes[0], lastN = nodes[nodes.length - 1];
+    if (lastN === eo && eOff < lastN.nodeValue.length) lastN.splitText(eOff);
+    if (firstN === so && sOff > 0) nodes[0] = firstN.splitText(sOff);
+    const wraps = []; let prev = null;
+    for (const n of nodes) {
+      const pe = n.parentElement;
+      if (!pe || !el.contains(pe) || pe.closest(selector) && el.contains(pe.closest(selector)) ||
+          pe.closest('h1,h2,h3,h4,h5,.rte-box-head,[contenteditable="false"]')) { prev = null; continue; }
+      const w = document.createElement(tag);
+      pe.insertBefore(w, n); w.appendChild(n);
+      if (prev && w.previousSibling === prev) { prev.appendChild(n); w.remove(); }
+      else { wraps.push(w); prev = w; }
+    }
+    if (!wraps.length) return false;
+    const r = document.createRange();
+    r.setStartBefore(wraps[0]); r.setEndAfter(wraps[wraps.length - 1]);
+    sel.removeAllRanges(); sel.addRange(r); inst.range = r.cloneRange();
+    return true;
+  }
+
   const protoValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
 
   function attach(id) {
@@ -385,10 +414,10 @@
         if (r) { sel.removeAllRanges(); sel.addRange(r); } else placeCaret(el, true);
       },
       /* ── toolbar क्रियाहरू ── */
-      bold() { this.restore(); document.execCommand('bold'); this.flush(); this.updateState(); },
-      italic() { this.restore(); document.execCommand('italic'); this.flush(); this.updateState(); },
-      strike() { this.restore(); document.execCommand('strikeThrough'); cleanStyles(el); this.flush(); this.updateState(); },
-      underline() { this.restore(); document.execCommand('underline'); cleanStyles(el); this.flush(); this.updateState(); },
+      bold() { this.restore(); if (!fastWrap(this, 'b,strong', 'b')) document.execCommand('bold'); this.flush(); this.updateState(); },
+      italic() { this.restore(); if (!fastWrap(this, 'i,em', 'i')) document.execCommand('italic'); this.flush(); this.updateState(); },
+      strike() { this.restore(); if (!fastWrap(this, 's,strike,del', 's')) document.execCommand('strikeThrough'); cleanStyles(el); this.flush(); this.updateState(); },
+      underline() { this.restore(); if (!fastWrap(this, 'u', 'u')) document.execCommand('underline'); cleanStyles(el); this.flush(); this.updateState(); },
       heading(n) { this.restore(); setBlock(this, n ? 'h' + n : 'div', '', true); this.updateState(); },
       align(al) { this.restore(); if (blockedHere(this)) return; alignBlocks(this, al); cleanStyles(el); this.flush(); this.updateState(); },
       undo() { if (this.dirty) this.flush(); if (this.hi > 0) this.goto(this.hi - 1); },
