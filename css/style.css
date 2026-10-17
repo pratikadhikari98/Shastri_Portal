@@ -2258,3 +2258,8 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   transform: scale(0.97);
 }
 .subj-tab.active:active .subj-tab-ico { transform: scale(0.94); }
+
+/* v12: ट्याब-बैनर होचो */
+.subj-tabs { padding: 3px 10px; margin-bottom: 10px; }
+.subj-tab, .subj-tab.active, .subj-tab:hover, .subj-tab:active { flex: 0 0 52px; width: 52px; height: 44px; }
+.subj-tab-ico, .subj-tab:not(.active) .subj-tab-ico { width: 38px; height: 38px; border-radius: 12px; font-size: 13px; }
