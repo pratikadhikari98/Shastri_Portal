@@ -2111,3 +2111,21 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   .subj-tab, .subj-tab-ico { transition: none; }
   .subj-tab.active::after, .subj-tab.active .subj-tab-ico { animation: none; }
 }
+
+/* ═══ विषय ट्याब — v2: चतुर्भुज (गोलो होइन), छुँदा pop ═══ */
+.subj-tab { border-radius: 14px; padding: 7px 16px 7px 7px; gap: 9px; overflow: visible;
+  background: var(--surface); box-shadow: 0 3px 10px -3px var(--shadow-lg); transform: none;
+  transition: transform 0.28s var(--ease-spring), box-shadow 0.2s var(--ease-out),
+              background-color 0.2s var(--ease-out), color 0.2s var(--ease-out), border-color 0.2s; }
+.subj-tab:hover { transform: none; }
+.subj-tab-ico { width: 32px; height: 32px; border-radius: 9px; font-size: 12px; transform: none; }
+/* छुँदा pop: दबाउँदा ठूलो हुन्छ, छोड्दा स्प्रिङले बस्छ */
+.subj-tab:active { transform: scale(1.12); box-shadow: 0 8px 18px -4px var(--shadow-lg); transition-duration: 0.12s; }
+.subj-tab.active { border-radius: 14px; transform: none; border-color: var(--accent);
+  background: var(--accent); box-shadow: 0 6px 16px -4px var(--accent-glow, rgba(0,0,0,0.3)); animation: subjTabPop 0.42s var(--ease-spring); }
+.subj-tab.active:active { transform: scale(1.12); }
+.subj-tab.active::after { display: none; }
+.subj-tab.active .subj-tab-ico { transform: none; animation: none;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.55), inset 0 1px 0 rgba(255,255,255,0.4); }
+@keyframes subjTabPop { 0% { transform: scale(0.88); } 55% { transform: scale(1.12); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .subj-tab.active { animation: none; } .subj-tab:active { transform: none; } }
