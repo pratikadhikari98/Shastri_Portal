@@ -1,10 +1,10 @@
 {
   "years": [
     {
-      "title": "प्रथम वर्ष",
+      "title": "प्रथमः खण्डः",
       "id": 1,
       "color": "orange",
-      "subtitle": "पहिलो वर्ष",
+      "subtitle": "",
       "subjects": {
         "sanskrit": [],
         "jyotish": [
@@ -65,9 +65,9 @@
     },
     {
       "id": 2,
-      "title": "द्वितीय वर्ष",
+      "title": "द्वितीयः खण्डः",
       "color": "green",
-      "subtitle": "दोस्रो वर्ष",
+      "subtitle": "",
       "subjects": {
         "jyotish": [
           {
@@ -192,7 +192,7 @@
     },
     {
       "id": 3,
-      "subtitle": "तेस्रो वर्ष",
+      "subtitle": "",
       "subjects": {
         "jyotish": [
           {
@@ -271,7 +271,7 @@
         "account": []
       },
       "color": "blue",
-      "title": "तृतीय वर्ष"
+      "title": "तृतीयः खण्डः"
     },
     {
       "subjects": {
@@ -358,9 +358,9 @@
         "vedanta": [],
         "account": []
       },
-      "subtitle": "चौथो वर्ष",
+      "subtitle": "",
       "color": "purple",
-      "title": "चतुर्थ वर्ष",
+      "title": "चतुर्थः खण्डः",
       "id": 4
     }
   ]

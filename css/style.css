@@ -2418,3 +2418,6 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .pdf-zoom-bar button { width: 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.12); color: #fff; font-size: 1.3rem; font-weight: 700; cursor: pointer; }
 .pdf-zoom-sc { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
 .pdf-zoom-sc img { display: block; max-width: none; background: #fff; }
+
+/* वर्ष-कार्डको शीर्षक (प्रथमः खण्डः …) ठूलो */
+.yc-title { font-size: 2rem; line-height: 1.15; margin-bottom: 10px; }

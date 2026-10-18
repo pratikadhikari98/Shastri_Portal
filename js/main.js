@@ -205,8 +205,8 @@ function makeFallback() {
     jyotish: mk(`jyo${id}`,'ज्योतिष शास्त्र',2),
   }});
   return {
-    years:[yr(1,'प्रथम वर्ष','पहिलो वर्ष','o'),yr(2,'द्वितीय वर्ष','दोस्रो वर्ष','g'),
-           yr(3,'तृतीय वर्ष','तेस्रो वर्ष','b'),yr(4,'चतुर्थ वर्ष','चौथो वर्ष','p')],
+    years:[yr(1,'प्रथमः खण्डः','','o'),yr(2,'द्वितीयः खण्डः','','g'),
+           yr(3,'तृतीयः खण्डः','','b'),yr(4,'चतुर्थः खण्डः','','p')],
     news:[]
   };
 }
@@ -762,7 +762,8 @@ function initHistoryNav() {
    बराबरी (key) दिइएको छ। सूचीमा नभएको शब्द भए सामान्य फन्टमै देखिन्छ (केही बिग्रँदैन)।
    फन्ट लोड हुनुअघि र लोड नभए Unicode पाठ देखिन्छ (html.an-ready आएपछि मात्र फन्ट देखिन्छ)।
    ════════════════════════════════════ */
-const ANANDA_MAP = { 'प्रथम': 'k|yd', 'द्वितीय': 'låtLo', 'तृतीय': 't[tLo', 'चतुर्थ': "rt'y{", 'वर्ष': 'jif{' };   // ष को पूरा रूप: i (आधा) + f
+const ANANDA_MAP = { 'प्रथम': 'k|yd', 'द्वितीय': 'låtLo', 'तृतीय': 't[tLo', 'चतुर्थ': "rt'y{", 'वर्ष': 'jif{',
+  'प्रथमः': 'k|ydM', 'द्वितीयः': 'låtLoM', 'तृतीयः': 't[tLoM', 'चतुर्थः': "rt'y{M", 'खण्डः': 'v08M' };   // ष को पूरा रूप: i (आधा) + f
 function anandaHtml(text) {
   const words = String(text == null ? '' : text).trim().split(/\s+/);
   if (!words[0] || !words.every(w => ANANDA_MAP[w])) return text;
@@ -783,7 +784,7 @@ function renderHome() {
       <div class="yc-blob yc-blob-1"></div><div class="yc-blob yc-blob-2"></div>
       <div class="yc-body">
         <div class="yc-title">${anandaHtml(yr.title)}</div>
-        <div class="yc-sub">${yr.subtitle}</div>
+        ${yr.subtitle ? `<div class="yc-sub">${yr.subtitle}</div>` : ''}
         <div class="yc-badges">
           <span class="yc-badge">📚 ${total}</span>
           <span class="yc-badge">🕉️ संस्कृत</span>
