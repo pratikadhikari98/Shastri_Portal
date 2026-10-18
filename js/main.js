@@ -2458,13 +2458,16 @@ const PDFV = (() => {
       const page = await pdf.getPage(n);
       const base = page.getViewport({ scale: 1 });
       const cssW = w.clientWidth || 360;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const scale = Math.min((cssW * dpr) / base.width, 1800 / base.width);
+      const dpr = window.devicePixelRatio || 1;
+      // उच्च गुणस्तर: कम्तीमा १६०० px चौडाइ (अक्षर स्पष्ट पढ्न), बढीमा २४००; क्यानभास क्षेत्रफल ९ मेगापिक्सेल भित्र
+      const targetW = Math.min(2400, Math.max(1600, cssW * dpr * 2));
+      let scale = targetW / base.width;
+      if (base.width * scale * base.height * scale > 9e6) scale = Math.sqrt(9e6 / (base.width * base.height));
       const vp = page.getViewport({ scale });
       const c = document.createElement('canvas');
       c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
       await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.95));
       c.width = c.height = 0;                    // मेमोरी खाली
       const img = new Image();
       img.alt = 'PDF पृष्ठ ' + n; img.decoding = 'async'; img.src = URL.createObjectURL(blob);
@@ -2504,6 +2507,30 @@ const PDFV = (() => {
     }), { rootMargin: '500px 0px' });
     els.forEach(el => { el.dataset.obs = '1'; mountIO.observe(el); });
   }
+  /* पृष्ठमा थिचेर ठूलो गरेर हेर्ने (zoom +/−, सार्न मिल्ने) */
+  function openZoom(src) {
+    const ov = document.createElement('div');
+    ov.className = 'pdf-zoom';
+    ov.innerHTML = '<div class="pdf-zoom-bar"><button type="button" data-a="out" aria-label="सानो">−</button><button type="button" data-a="in" aria-label="ठूलो">+</button><button type="button" data-a="x" aria-label="बन्द">✕</button></div><div class="pdf-zoom-sc"><img alt="PDF पृष्ठ"></div>';
+    const img = ov.querySelector('img'), sc = ov.querySelector('.pdf-zoom-sc');
+    img.src = src;
+    let z = 2.2;
+    const apply = () => { img.style.width = (z * 100) + '%'; };
+    apply();
+    ov.addEventListener('click', e => {
+      const a = e.target.closest('button'); if (!a) return;
+      const cx = (sc.scrollLeft + sc.clientWidth / 2) / sc.scrollWidth, cy = (sc.scrollTop + sc.clientHeight / 2) / sc.scrollHeight;
+      if (a.dataset.a === 'x') { ov.remove(); document.body.style.overflow = ''; return; }
+      z = Math.max(1, Math.min(5, z + (a.dataset.a === 'in' ? 0.6 : -0.6))); apply();
+      sc.scrollLeft = cx * sc.scrollWidth - sc.clientWidth / 2; sc.scrollTop = cy * sc.scrollHeight - sc.clientHeight / 2;
+    });
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(ov);
+  }
+  document.addEventListener('click', e => {
+    const im = e.target.closest && e.target.closest('.pdf-page img');
+    if (im) { e.preventDefault(); openZoom(im.src); }
+  });
   return { scan, mount };
 })();
 window.PDFV = PDFV;
