@@ -1174,6 +1174,7 @@ function _renderChapterListHtmlRaw(bookId) {
       </div>
       <div class="ch-read-body">
         <div class="ch-jump" id="chj-${bookId}-${i}" onclick="event.stopPropagation()">
+          <div class="ch-jump-title">${toN(i+1)}. ${String(ch.title||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>
           <button class="neu-btn neu-btn--round" title="अघिल्लो अध्याय" ${i===0?'disabled':''} onclick="chJump('${bookId}',${i},'prev')">⏮</button>
           <button class="neu-btn" title="अघिल्लो प्रश्न / भाग" onclick="chJump('${bookId}',${i},'top')">▲</button>
           <input type="range" class="ch-zip" min="0" max="100" step="0.1" value="0" aria-label="अध्यायको कुनै पनि भागमा जानुहोस्"
