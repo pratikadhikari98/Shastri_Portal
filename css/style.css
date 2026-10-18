@@ -2343,3 +2343,21 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* शीर्षकको ग्याप कम */
 .ch-read-content h1, .ch-read-content h2, .ch-read-content h3, .ch-read-content h4, .ch-read-content h5 { line-height: 1.5; }
 .ch-read-content h3 { margin: 6px 0 2px; }
+
+/* वर्ष-कार्ड — उठेको (neumorphic), छुँदा भित्र गएको जस्तो */
+.year-card {
+  --neu-dark:  color-mix(in srgb, var(--bg) 72%, #000 28%);
+  --neu-light: color-mix(in srgb, var(--bg) 45%, #fff 55%);
+  box-shadow: 9px 9px 20px var(--neu-dark), -8px -8px 18px var(--neu-light), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.year-card:hover { transform: none; box-shadow: 9px 9px 20px var(--neu-dark), -8px -8px 18px var(--neu-light), inset 0 1px 0 rgba(255,255,255,0.4); }
+.year-card::before {            /* थिच्दा भित्री छाया (बच्चा तहहरूले ढाक्ने भएकाले पर्दा जस्तो माथि राखेको) */
+  content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit;
+  box-shadow: inset 10px 10px 22px rgba(0,0,0,0.34), inset -8px -8px 18px rgba(255,255,255,0.40);
+  background: rgba(0,0,0,0.06);
+  opacity: 0; transition: opacity 0.15s var(--ease-out);
+}
+.year-card:active { transform: none; box-shadow: 1px 1px 3px var(--neu-dark), -1px -1px 3px var(--neu-light); }
+.year-card:active::before { opacity: 1; }
+.year-card:active .yc-body { transform: translate(1px, 2px); }
+.year-card .yc-body { transition: transform 0.15s var(--ease-out); }
