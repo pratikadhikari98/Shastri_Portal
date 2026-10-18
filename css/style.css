@@ -2361,3 +2361,27 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .year-card:active::before { opacity: 1; }
 .year-card:active .yc-body { transform: translate(1px, 2px); }
 .year-card .yc-body { transition: transform 0.15s var(--ease-out); }
+
+/* वर्ष-कार्ड = zipper-बटन (.neu-btn) जस्तै: पृष्ठकै रङको सपाट उठेको सतह, गाढा रङ्ग/gradient हटाइएको */
+.yc-bg, .yc-shine, .yc-glare, .yc-blob { display: none; }
+.year-card::before { display: none; }
+.year-card, .year-card:hover {
+  background: linear-gradient(135deg, var(--bg), var(--surface-high)); border: 1px solid var(--divider);
+  box-shadow: 1px 1px 2px 0 var(--shadow), 2px 2px 4px -1px var(--shadow), 5px 5px 12px -3px var(--shadow), 10px 10px 20px -5px var(--shadow),
+              -1px -1px 2px 0 var(--surface-high), -3px -3px 8px -2px var(--surface-high);
+}
+.year-card:active {
+  box-shadow: inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 28px var(--shadow);
+}
+.year-card::after { color: var(--accent); opacity: 0.13; }
+.year-card .yc-title, [data-theme="dark"] .year-card .yc-title { color: var(--text-1); }
+.year-card .yc-sub, [data-theme="dark"] .year-card .yc-sub { color: var(--text-2); opacity: 0.9; }
+.year-card .yc-badge, [data-theme="dark"] .year-card .yc-badge {
+  color: var(--text-2); border: 1px solid var(--divider); background: linear-gradient(135deg, var(--bg), var(--surface-high));
+  box-shadow: 1px 1px 2px var(--shadow), 2px 2px 5px -1px var(--shadow), -1px -1px 2px var(--surface-high);
+}
+.year-card .yc-arrow, [data-theme="dark"] .year-card .yc-arrow {
+  color: var(--accent); border: 1px solid var(--divider); background: linear-gradient(135deg, var(--bg), var(--surface-high));
+  box-shadow: 1px 1px 2px 0 var(--shadow), 3px 3px 7px -1px var(--shadow), -1px -1px 2px 0 var(--surface-high), -2px -2px 5px -2px var(--surface-high);
+}
+.year-card .yc-body { transform: none; }
