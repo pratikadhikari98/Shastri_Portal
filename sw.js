@@ -3,7 +3,7 @@
 //    data/* = network-first तर ढिलो नेटवर्कमा २.५s पछि cache। कोड अपडेट गर्दा APP_CACHE को नम्बर बढाउनुस्।
 const APP_CACHE      = 'shastri-app-v80';     // App shell (auto)
 const OFFLINE_CACHE  = 'shastri-offline-v2';  // User-triggered "Save for offline" content
-const DATA_CACHE     = 'shastri-data-v1';     // data/* (अध्याय आदि) — app version बदलिँदा पनि मेटिँदैन
+const DATA_CACHE     = 'shastri-data-v2';     // data/* (अध्याय आदि) — app version बदलिँदा पनि मेटिँदैन
 
 const APP_ASSETS = [
   './',
@@ -26,6 +26,9 @@ const APP_ASSETS = [
 
 
 // Redirect भएको (redirected) response लाई navigation मा सिधै दिँदा Chrome ले ERR_FAILED देखाउँछ — सफा प्रतिलिपि बनाएर दिने
+// डेटा फाइलको सट्टा HTML पृष्ठ (Cloudflare को SPA fallback) आयो कि?
+function isHtml(res) { return /text\/html/i.test((res && res.headers && res.headers.get('content-type')) || ''); }
+
 function clean(res) {
   if (!res || !res.redirected) return res;
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: res.headers });
@@ -82,11 +85,23 @@ self.addEventListener('fetch', e => {
 
   // ⚡ डाटा (किताब/सूचना/अध्याय): network-first, तर ढिलो नेटवर्कमा २.५ सेकेन्डपछि cache दिने
   //    (ताजा डाटा आउनासाथ cache अपडेट हुन्छ)
+  // PDF फाइल (नाम अद्वितीय, कहिल्यै बदलिँदैन): cache-first. साइटले (SPA fallback) PDF को सट्टा HTML दियो भने cache नगर्ने
+  if (isData && /\.pdf(\?|#|$)/i.test(url)) {
+    e.respondWith((async () => {
+      const hit = await caches.match(e.request);
+      if (hit && !isHtml(hit)) return hit;
+      const res = await fetch(e.request);
+      if (res && res.ok && !isHtml(res)) { const c = res.clone(); caches.open(DATA_CACHE).then(ca => ca.put(e.request, c)); }
+      return res;
+    })());
+    return;
+  }
+
   if (isData) {
     e.respondWith((async () => {
-      const cacheMatch = () => caches.match(e.request).then(r => r || caches.match(e.request, { cacheName: OFFLINE_CACHE }));
+      const cacheMatch = () => caches.match(e.request).then(r => r || caches.match(e.request, { cacheName: OFFLINE_CACHE })).then(r => (r && !isHtml(r)) ? r : undefined);
       const net = fetch(e.request).then(res => {
-        if (res && res.ok) { const c = res.clone(); caches.open(DATA_CACHE).then(ca => ca.put(e.request, c)); }
+        if (res && res.ok && !isHtml(res)) { const c = res.clone(); caches.open(DATA_CACHE).then(ca => ca.put(e.request, c)); }
         return res;
       });
       const cached = await cacheMatch();

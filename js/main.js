@@ -2484,7 +2484,12 @@ const PDFV = (() => {
     el.innerHTML = '<div class="pdf-ph">📄 PDF लोड हुँदैछ…</div>';
     try {
       await loadLib();
-      const pdf = await lib().getDocument({ url: src, disableRange: true, disableStream: true }).promise;
+      const resp = await fetch(src, { cache: 'no-store' });
+      if (!resp.ok) throw new Error('PDF फाइल भेटिएन (' + resp.status + ')');
+      const buf = new Uint8Array(await resp.arrayBuffer());
+      const head = String.fromCharCode.apply(null, buf.subarray(0, 5));
+      if (head !== '%PDF-') throw new Error('PDF फाइल अझै साइटमा पुगेको छैन — Commit पछि १-२ मिनेट पर्खेर फेरि प्रयास गर्नुहोस्');
+      const pdf = await lib().getDocument({ data: buf }).promise;
       const p1 = await pdf.getPage(1); const v1 = p1.getViewport({ scale: 1 });
       el.innerHTML = '';
       const io = new IntersectionObserver(es => es.forEach(en => {
@@ -2498,7 +2503,9 @@ const PDFV = (() => {
       }
     } catch (e) {
       el.dataset.ready = '';
-      el.innerHTML = '<div class="pdf-ph">⚠️ PDF देखाउन सकिएन (' + (e && e.message ? e.message : 'त्रुटि') + ') — <a href="' + src + '" target="_blank" rel="noopener">PDF खोल्नुहोस्</a></div>';
+      el.innerHTML = '<div class="pdf-ph">⚠️ <span class="pdf-err"></span> — <a href="#" class="pdf-retry">फेरि प्रयास</a> · <a href="' + src + '" target="_blank" rel="noopener">PDF खोल्नुहोस्</a></div>';
+      el.querySelector('.pdf-err').textContent = 'PDF देखाउन सकिएन (' + (e && e.message ? e.message : 'त्रुटि') + ')';
+      el.querySelector('.pdf-retry').onclick = ev => { ev.preventDefault(); el.dataset.ready = ''; mount(el); };
     }
   }
   function scan() {
