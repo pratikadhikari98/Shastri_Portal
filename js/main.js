@@ -1204,6 +1204,7 @@ function renderChapterListHtml(bookId) {
   const it = document.getElementById(`chi-${bookId}-${idx}`);
   if (it) it.classList.add('open');
   setTimeout(() => window._updateChProgress && window._updateChProgress(), 60);
+  if (window.PDFV) PDFV.scan();
 }
 window.renderChapterListHtml = renderChapterListHtml;
 
@@ -1548,7 +1549,9 @@ function renderMd(text) {
     .replace(/\n\n/g,'</p><p>')
     .replace(/\n/g,'<br>')
     // शीर्षक (###) पछिको अतिरिक्त <br> / खाली अनुच्छेदले ठूलो ग्याप बनाउँथ्यो — हटाउने
-    .replace(/(<\/h[1-5]>)(?:<br>|<\/p><p>)+/g,'$1');
+    .replace(/(<\/h[1-5]>)(?:<br>|<\/p><p>)+/g,'$1')
+    // [[pdf:data/pdf/x.pdf]] → PDF को पृष्ठहरू चित्र जस्तै देखाउने ठाउँ (PDFV ले भर्छ)
+    .replace(/\[\[pdf:([A-Za-z0-9_\-./]+?\.pdf)\]\]/g, '<div class="pdf-embed" data-src="$1"><div class="pdf-ph">📄 PDF लोड हुँदैछ…</div></div>');
 
   html = html.replace(/@@BLOCK(\d+)@@/g, (m, idx) => blocks[+idx]);
   return html;
@@ -2428,6 +2431,82 @@ function removeAvatar() {
 }
 window.removeAvatar = removeAvatar;
 
+
+/* ═══════════════════════════════════
+   PDF दर्शक: PDF का पृष्ठहरू अध्यायभित्र चित्र जस्तै (PDF.js, पृष्ठ देखिन लाग्दा मात्र बनाउने)
+   ═══════════════════════════════════ */
+const PDFV = (() => {
+  const BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  let libP = null, mountIO = null;
+  const lib = () => window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+  function loadLib() {
+    if (lib()) return Promise.resolve();
+    if (libP) return libP;
+    libP = (async () => {
+      const [js, wk] = await Promise.all([
+        fetch(BASE + 'pdf.min.js', { mode: 'cors' }).then(r => { if (!r.ok) throw new Error('pdf.js लोड भएन'); return r.text(); }),
+        fetch(BASE + 'pdf.worker.min.js', { mode: 'cors' }).then(r => { if (!r.ok) throw new Error('pdf worker लोड भएन'); return r.blob(); }),
+      ]);
+      const sc = document.createElement('script'); sc.textContent = js; document.head.appendChild(sc);
+      lib().GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([wk], { type: 'text/javascript' }));
+    })().catch(e => { libP = null; throw e; });
+    return libP;
+  }
+  async function renderPage(pdf, w) {
+    const n = +w.dataset.n;
+    try {
+      const page = await pdf.getPage(n);
+      const base = page.getViewport({ scale: 1 });
+      const cssW = w.clientWidth || 360;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const scale = Math.min((cssW * dpr) / base.width, 1800 / base.width);
+      const vp = page.getViewport({ scale });
+      const c = document.createElement('canvas');
+      c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+      await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
+      c.width = c.height = 0;                    // मेमोरी खाली
+      const img = new Image();
+      img.alt = 'PDF पृष्ठ ' + n; img.decoding = 'async'; img.src = URL.createObjectURL(blob);
+      w.style.aspectRatio = String(base.width / base.height);
+      w.innerHTML = ''; w.appendChild(img); w.classList.add('done');
+      page.cleanup();
+    } catch (e) { w.innerHTML = '<div class="pdf-ph">⚠️ पृष्ठ ' + n + ' देखाउन सकिएन</div>'; }
+  }
+  async function mount(el) {
+    if (el.dataset.ready) return;
+    el.dataset.ready = '1';
+    const src = el.dataset.src;
+    el.innerHTML = '<div class="pdf-ph">📄 PDF लोड हुँदैछ…</div>';
+    try {
+      await loadLib();
+      const pdf = await lib().getDocument({ url: src, disableRange: true, disableStream: true }).promise;
+      const p1 = await pdf.getPage(1); const v1 = p1.getViewport({ scale: 1 });
+      el.innerHTML = '';
+      const io = new IntersectionObserver(es => es.forEach(en => {
+        if (en.isIntersecting) { io.unobserve(en.target); renderPage(pdf, en.target); }
+      }), { rootMargin: '700px 0px' });
+      for (let n = 1; n <= pdf.numPages; n++) {
+        const w = document.createElement('div');
+        w.className = 'pdf-page'; w.dataset.n = n; w.style.aspectRatio = String(v1.width / v1.height);
+        el.appendChild(w); io.observe(w);
+      }
+    } catch (e) {
+      el.dataset.ready = '';
+      el.innerHTML = '<div class="pdf-ph">⚠️ PDF देखाउन सकिएन (' + (e && e.message ? e.message : 'त्रुटि') + ') — <a href="' + src + '" target="_blank" rel="noopener">PDF खोल्नुहोस्</a></div>';
+    }
+  }
+  function scan() {
+    const els = document.querySelectorAll('.pdf-embed:not([data-obs])');
+    if (!els.length) return;
+    if (!mountIO) mountIO = new IntersectionObserver(es => es.forEach(en => {
+      if (en.isIntersecting) { mountIO.unobserve(en.target); mount(en.target); }
+    }), { rootMargin: '500px 0px' });
+    els.forEach(el => { el.dataset.obs = '1'; mountIO.observe(el); });
+  }
+  return { scan, mount };
+})();
+window.PDFV = PDFV;
 
 /* ═══════════════════════════════════
    तैरिने नेभिगेसन बटन (SVG) — कुनै पनि कुनामा सार्न मिल्ने

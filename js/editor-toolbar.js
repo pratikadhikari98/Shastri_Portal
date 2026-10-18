@@ -159,6 +159,37 @@ function _mdStore() { App._mdImgs = App._mdImgs || {}; App._mdImgUp = App._mdImg
 let _mdImgCtx = null;
 let _mdImgSeq = 0;
 
+/* ── PDF अपलोड: GitHub मा data/pdf/ मा राखेर अध्यायमा [[pdf:...]] ठेगाना थप्ने ── */
+function mdUploadPdf(id) {
+  if (!window.GH || !GH.token()) { toast('⚠️ PDF अपलोड गर्न GitHub token चाहिन्छ (Admin मा लगइन गर्नुहोस्)'); return; }
+  let inp = document.getElementById('mdPdfFile');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'application/pdf,.pdf'; inp.id = 'mdPdfFile'; inp.style.display = 'none';
+    inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) _mdPdfStart(f, inp._taId); };
+    document.body.appendChild(inp);
+  }
+  inp._taId = id; inp.value = '';
+  inp.click();
+}
+window.mdUploadPdf = mdUploadPdf;
+async function _mdPdfStart(file, id) {
+  const MAX = 20 * 1024 * 1024;
+  if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { toast('⚠️ PDF फाइल मात्र छान्नुहोस्'); return; }
+  if (file.size > MAX) { toast('⚠️ PDF धेरै ठूलो छ (२० MB भन्दा सानो चाहिन्छ)'); return; }
+  try {
+    toast('⏳ PDF GitHub मा अपलोड हुँदैछ…');
+    const buf = await file.arrayBuffer();
+    const path = 'data/pdf/pdf_' + Date.now().toString(36) + '.pdf';
+    await GH.enqueue(async () => {
+      const res = await GH.putRaw(path, _cfB64(buf), 'Add PDF ' + file.name);
+      if (!res.ok) throw new Error(await GH.errMsg(res));
+    });
+    mdInsertBlock(id, '\n[[pdf:' + path + ']]\n');
+    toast('✅ PDF अपलोड भयो — अध्याय Commit गरेपछि देखिन्छ');
+  } catch (e) { toast('⚠️ PDF अपलोड भएन: ' + e.message); }
+}
+
 function mdUploadImage(id) {
   const ta = _mdTa(id); if (!ta) return;
   _mdImgCtx = { id, start: ta.selectionStart, end: ta.selectionEnd };
@@ -642,6 +673,7 @@ const _DXI = {
   hr:        '<line x1="3" y1="12" x2="21" y2="12"/><path d="m8 7 4-4 4 4"/><path d="m8 17 4 4 4-4"/>',
   box:       '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
   table:     '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+  pdf:       '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 17v-5h1.6a1.4 1.4 0 0 1 0 2.8H9"/><path d="M14 17v-5h2M14 14.5h1.6"/>',
   photo:     '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
   link:      '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
   eraser:    '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
@@ -694,6 +726,7 @@ function renderMdToolbar(textareaId, opts = {}) {
     ${btn('box', 'सूचना/सुझाव बक्स', `mdInsertBox('${id}',this)`, '', 'tb-btn-box')}
     ${btn('table', 'तालिका', `mdInsertTable('${id}')`)}
     ${btn('photo', 'कर्सर भएको ठाउँमा फोटो अपलोड', `mdUploadImage('${id}')`, '', 'tb-btn-photo')}
+    ${btn('pdf', 'PDF अपलोड (पृष्ठहरू अध्यायभित्र चित्र जस्तै देखिन्छन्)', `mdUploadPdf('${id}')`)}
     ${btn('link', 'इन्टरनेटको फोटो (URL)', `mdInsertImage('${id}')`)}
     ${btn('eraser', 'चुनिएको अक्षरको बोल्ड/रंग/हाइलाइट हटाउनुस्', `mdClearMarks('${id}')`)}
     ${sep}

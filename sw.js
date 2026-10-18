@@ -52,6 +52,18 @@ self.addEventListener('fetch', e => {
   const url = e.request.url;
   const isData = url.includes('/data/');
 
+  // PDF.js (cdnjs): पहिलो पटक network बाट, त्यसपछि cache बाट (PDF अफलाइन देखाउन)
+  if (url.startsWith('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/')) {
+    e.respondWith((async () => {
+      const hit = await caches.match(e.request);
+      if (hit) return hit;
+      const res = await fetch(e.request);
+      if (res && res.ok) { const c = res.clone(); caches.open(DATA_CACHE).then(ca => ca.put(e.request, c)); }
+      return res;
+    })());
+    return;
+  }
+
   // पृष्ठ खोल्ने (navigate) request: network पहिले (redirect ब्राउजरले आफैं सम्हाल्छ); offline भए cache गरिएको './'
   if (e.request.mode === 'navigate') {
     e.respondWith((async () => {
