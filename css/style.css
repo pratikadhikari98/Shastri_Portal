@@ -2421,3 +2421,14 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 
 /* वर्ष-कार्डको शीर्षक (प्रथमः खण्डः …) ठूलो */
 .yc-title { font-size: 2rem; line-height: 1.15; margin-bottom: 10px; }
+
+/* PDF — कार्ड होइन, स्क्रिनको दुवै छेउ छुने (full-bleed), सपाट पृष्ठ */
+.pdf-embed { width: 100vw; margin: 12px calc(50% - 50vw); max-width: 100vw; }
+.pdf-page { border-radius: 0; box-shadow: none; margin: 0 0 3px; }
+.pdf-embed .pdf-ph { padding-left: 16px; padding-right: 16px; }
+/* छेउसम्म पुग्न, छेकिरहेका बाहिरी तहको clip हटाउने (PDF भएको अध्यायमा मात्र) */
+.ch-list:has(.pdf-embed), .chapter-item:has(.pdf-embed), .ch-read-body:has(.pdf-embed),
+.ch-read-content:has(.pdf-embed), .tab-pane:has(.pdf-embed), .page:has(.pdf-embed) { overflow: visible; overflow-x: visible; }
+/* zoom देखाउँदा */
+.pdf-zoom-pg { position: relative; background: #fff; }
+.pdf-zoom-pg img { display: block; width: 100%; height: auto; max-width: none; }

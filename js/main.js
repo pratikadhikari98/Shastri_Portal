@@ -2493,6 +2493,7 @@ const PDFV = (() => {
       for (let n = 1; n <= pdf.numPages; n++) {
         const w = document.createElement('div');
         w.className = 'pdf-page'; w.dataset.n = n; w.style.aspectRatio = String(v1.width / v1.height);
+        w._pdf = pdf;
         el.appendChild(w); io.observe(w);
       }
     } catch (e) {
@@ -2508,29 +2509,51 @@ const PDFV = (() => {
     }), { rootMargin: '500px 0px' });
     els.forEach(el => { el.dataset.obs = '1'; mountIO.observe(el); });
   }
-  /* पृष्ठमा थिचेर ठूलो गरेर हेर्ने (zoom +/−, सार्न मिल्ने) */
-  function openZoom(src) {
+  /* पृष्ठमा थिचेर ठूलो गरेर हेर्ने — ठूलो गर्दा PDF बाट नै फेरि स्पष्ट (हाई-रिजोल्युसन) बनाउने, त्यसैले गुणस्तर घट्दैन */
+  function openZoom(src, pageEl) {
     const ov = document.createElement('div');
     ov.className = 'pdf-zoom';
-    ov.innerHTML = '<div class="pdf-zoom-bar"><button type="button" data-a="out" aria-label="सानो">−</button><button type="button" data-a="in" aria-label="ठूलो">+</button><button type="button" data-a="x" aria-label="बन्द">✕</button></div><div class="pdf-zoom-sc"><img alt="PDF पृष्ठ"></div>';
-    const img = ov.querySelector('img'), sc = ov.querySelector('.pdf-zoom-sc');
+    ov.innerHTML = '<div class="pdf-zoom-bar"><button type="button" data-a="out" aria-label="सानो">−</button><button type="button" data-a="in" aria-label="ठूलो">+</button><button type="button" data-a="x" aria-label="बन्द">✕</button></div><div class="pdf-zoom-sc"><div class="pdf-zoom-pg"><img alt="PDF पृष्ठ"></div></div>';
+    const sc = ov.querySelector('.pdf-zoom-sc'), box = ov.querySelector('.pdf-zoom-pg'), img = box.querySelector('img');
     img.src = src;
-    let z = 2.2;
-    const apply = () => { img.style.width = (z * 100) + '%'; };
-    apply();
+    let z = 2.2, cv = null, tmr = 0, token = 0;
+    const apply = () => { box.style.width = (z * 100) + '%'; };
+    const hi = async () => {                         // हाई-रिजोल्युसन क्यानभास
+      if (!pageEl || !pageEl._pdf) return;
+      const my = ++token;
+      try {
+        const page = await pageEl._pdf.getPage(+pageEl.dataset.n);
+        const base = page.getViewport({ scale: 1 });
+        const dpr = window.devicePixelRatio || 1;
+        let pxW = Math.max(sc.clientWidth, 300) * z * dpr;
+        const maxArea = 12e6;                          // फोनको क्यानभास सीमा भित्र
+        let scale = pxW / base.width;
+        if (base.width * scale * base.height * scale > maxArea) scale = Math.sqrt(maxArea / (base.width * base.height));
+        const vp = page.getViewport({ scale });
+        const c = document.createElement('canvas');
+        c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+        await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+        if (my !== token || !ov.isConnected) return;   // बीचमा zoom फेरिएको वा बन्द भएको
+        c.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%';
+        if (cv) cv.remove();
+        cv = c; box.appendChild(c);
+      } catch (e) {}
+    };
+    apply(); hi();
     ov.addEventListener('click', e => {
       const a = e.target.closest('button'); if (!a) return;
       const cx = (sc.scrollLeft + sc.clientWidth / 2) / sc.scrollWidth, cy = (sc.scrollTop + sc.clientHeight / 2) / sc.scrollHeight;
-      if (a.dataset.a === 'x') { ov.remove(); document.body.style.overflow = ''; return; }
+      if (a.dataset.a === 'x') { token++; ov.remove(); document.body.style.overflow = ''; return; }
       z = Math.max(1, Math.min(5, z + (a.dataset.a === 'in' ? 0.6 : -0.6))); apply();
       sc.scrollLeft = cx * sc.scrollWidth - sc.clientWidth / 2; sc.scrollTop = cy * sc.scrollHeight - sc.clientHeight / 2;
+      clearTimeout(tmr); tmr = setTimeout(hi, 220);
     });
     document.body.style.overflow = 'hidden';
     document.body.appendChild(ov);
   }
   document.addEventListener('click', e => {
     const im = e.target.closest && e.target.closest('.pdf-page img');
-    if (im) { e.preventDefault(); openZoom(im.src); }
+    if (im) { e.preventDefault(); openZoom(im.src, im.closest('.pdf-page')); }
   });
   return { scan, mount };
 })();
