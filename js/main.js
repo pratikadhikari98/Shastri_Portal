@@ -2438,14 +2438,14 @@ function initNavFab() {
     menu: svg('<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>'),
     close: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
     home: svg('<path d="M3 11l9-7.5L21 11"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/>'),
-    news: svg('<path d="M4 5h13a2 2 0 0 1 2 2v12H6a2 2 0 0 1-2-2V5z"/><path d="M19 9h2v8a2 2 0 0 1-2 2"/><path d="M8 9h7M8 13h7"/>'),
+    back: svg('<path d="M10 6l-6 6 6 6"/><path d="M4 12h16"/>'),
     search: svg('<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>'),
     bm: svg('<path d="M6.5 3.5h11v17L12 16.5l-5.5 4z"/>'),
     set: svg('<circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
   };
   const ITEMS = [
     ['home',   'गृह',     'home'],
-    ['news',   'सूचना',   'news'],
+    ['back',   'पछाडि',   null],
     ['search', 'खोज',     'search'],
     ['bm',     'बुकमार्क', 'bookmarks'],
     ['set',    'सेटिङ',   'profile'],
@@ -2469,6 +2469,7 @@ function initNavFab() {
     const it = e.target.closest('.nav-fab-item'); if (!it) return;
     setOpen(false);
     const k = it.dataset.k, page = (ITEMS.find(x => x[0] === k) || [])[2];
+    if (k === 'back') { history.back(); return; }
     const target = k === 'search' ? document.getElementById('navSearchBtn') : document.querySelector(`.nav-item[data-page="${page}"]`);
     if (target) target.click();
   });
