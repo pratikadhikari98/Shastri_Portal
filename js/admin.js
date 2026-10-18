@@ -640,6 +640,61 @@ function _chapterFormToolbar() {
   }
 }
 
+/* ── अध्यायमा PDF (Admin) ── */
+const _PDF_TOKEN_RE = /\[\[pdf:([A-Za-z0-9_\-./]+?\.pdf)\]\]/g;
+App._pdfNames = App._pdfNames || {};
+function adminChapterPdfRefresh() {
+  const ta = document.getElementById('chapterFormContent'), box = document.getElementById('chapterPdfList');
+  if (!ta || !box) return;
+  const found = [...String(ta.value || '').matchAll(_PDF_TOKEN_RE)].map(m => m[1]);
+  box.innerHTML = found.map((path, k) => `<div class="pdf-adm-row"><span class="pdf-adm-name"></span>
+      <button type="button" class="pdf-adm-del" onclick="adminChapterPdfRemove(${k})">हटाउनुहोस्</button></div>`).join('');
+  box.querySelectorAll('.pdf-adm-name').forEach((el, k) => { el.textContent = '📄 ' + (App._pdfNames[found[k]] || found[k].split('/').pop()); });
+}
+window.adminChapterPdfRefresh = adminChapterPdfRefresh;
+function adminChapterPdfRemove(k) {
+  const ta = document.getElementById('chapterFormContent'); if (!ta) return;
+  let n = -1;
+  ta.value = String(ta.value || '').replace(_PDF_TOKEN_RE, m => (++n === k ? '' : m));
+  adminChapterPdfRefresh();
+  toast('PDF अध्यायबाट हटाइयो (Commit गरेपछि लागू हुन्छ)');
+}
+window.adminChapterPdfRemove = adminChapterPdfRemove;
+function adminChapterPdfPick() {
+  if (!App.isAdmin) return;
+  if (!window.GH || !GH.token()) { toast('⚠️ PDF अपलोड गर्न GitHub token चाहिन्छ (Admin मा लगइन गर्नुहोस्)'); return; }
+  let inp = document.getElementById('chapterPdfFile');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'application/pdf,.pdf'; inp.id = 'chapterPdfFile'; inp.style.display = 'none';
+    inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) adminChapterPdfUpload(f); };
+    document.body.appendChild(inp);
+  }
+  inp.value = ''; inp.click();
+}
+window.adminChapterPdfPick = adminChapterPdfPick;
+async function adminChapterPdfUpload(file) {
+  const MAX = 20 * 1024 * 1024;
+  if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { toast('⚠️ PDF फाइल मात्र छान्नुहोस्'); return; }
+  if (file.size > MAX) { toast('⚠️ PDF धेरै ठूलो छ (२० MB भन्दा सानो चाहिन्छ)'); return; }
+  const btn = document.getElementById('chapterPdfBtn'), old = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ अपलोड हुँदैछ…'; }
+  try {
+    const buf = await file.arrayBuffer();
+    const path = 'data/pdf/pdf_' + Date.now().toString(36) + '.pdf';
+    await GH.enqueue(async () => {
+      const res = await GH.putRaw(path, _cfB64(buf), 'Add PDF ' + file.name);
+      if (!res.ok) throw new Error(await GH.errMsg(res));
+    });
+    App._pdfNames[path] = file.name;
+    const ta = document.getElementById('chapterFormContent');
+    ta.value = String(ta.value || '').replace(/\s+$/, '') + '\n\n[[pdf:' + path + ']]\n';
+    adminChapterPdfRefresh();
+    toast('✅ PDF अपलोड भयो — अध्याय Commit गरेपछि देखिन्छ');
+  } catch (e) { toast('⚠️ PDF अपलोड भएन: ' + e.message); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = old; } }
+}
+
 function adminChapterAddNew() {
   if (!App.isAdmin) return;
   _chapterFormToolbar();
@@ -648,6 +703,7 @@ function adminChapterAddNew() {
   document.getElementById('chapterFormContent').value = '';
   document.getElementById('chapterFormContent').dataset.fontKey = 'eczar';
   document.getElementById('chapterFormHeading').textContent = '➕ नयाँ अध्याय';
+  adminChapterPdfRefresh();
   openOv('chapterFormModal');
 }
 window.adminChapterAddNew = adminChapterAddNew;
@@ -662,6 +718,7 @@ function adminChapterEdit(idx) {
   document.getElementById('chapterFormContent').value = c.content || '';
   document.getElementById('chapterFormContent').dataset.fontKey = c.font || 'eczar';
   document.getElementById('chapterFormHeading').textContent = '✏️ अध्याय सम्पादन';
+  adminChapterPdfRefresh();
   openOv('chapterFormModal');
 }
 window.adminChapterEdit = adminChapterEdit;

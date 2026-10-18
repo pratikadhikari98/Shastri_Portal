@@ -2401,3 +2401,12 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .pdf-ph a { color: var(--accent); font-weight: 700; }
 @keyframes pdfShimmer { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .pdf-page:not(.done) { animation: none; } }
+
+/* Admin — अध्यायको PDF खण्ड */
+.pdf-adm { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.pdf-adm-hint { font-size: 0.74rem; color: var(--text-3); }
+#chapterPdfList { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.pdf-adm-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 12px;
+  border: 1px solid var(--divider); background: var(--surface); }
+.pdf-adm-name { font-size: 0.82rem; font-weight: 600; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.pdf-adm-del { flex-shrink: 0; font: inherit; font-size: 0.74rem; font-weight: 700; color: #d33; background: none; border: none; cursor: pointer; padding: 4px 6px; }

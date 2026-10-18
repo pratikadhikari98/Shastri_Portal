@@ -752,6 +752,14 @@
       <div id="chapterContentToolbar"></div>
       <textarea class="f-textarea" id="chapterFormContent" rows="18" style="min-height:340px" placeholder="अध्यायको पूरा सामग्री यहाँ लेख्नुस्..."></textarea>
     </div>
+    <div class="f-group" id="chapterPdfBox">
+      <label class="f-label">📄 PDF (ऐच्छिक)</label>
+      <div class="pdf-adm">
+        <button type="button" class="btn-s" id="chapterPdfBtn" onclick="adminChapterPdfPick()">📄 PDF अपलोड गर्नुहोस्</button>
+        <div class="pdf-adm-hint">PDF का पृष्ठहरू अध्यायको अन्त्यमा चित्र जस्तै देखिन्छन् · २० MB सम्म</div>
+        <div id="chapterPdfList"></div>
+      </div>
+    </div>
     </div>
     <div class="m-btns">
       <button class="btn-s" onclick="closeOv('chapterFormModal')">रद्द</button>
