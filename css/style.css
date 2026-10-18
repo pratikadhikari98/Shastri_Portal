@@ -2432,3 +2432,8 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* zoom देखाउँदा */
 .pdf-zoom-pg { position: relative; background: #fff; }
 .pdf-zoom-pg img { display: block; width: 100%; height: auto; max-width: none; }
+
+/* PDF पृष्ठ बन्दै गर्दा पृष्ठ नम्बर देखाउने (छिटो जाँदा कहाँ छौं थाहा पाउन) */
+.pdf-page:not(.done)::before { content: attr(data-n); position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font: 800 3.4rem/1 var(--font); color: rgba(0,0,0,0.10); pointer-events: none; }
+.pdf-page img { opacity: 1; transition: opacity 0.18s ease-out; }

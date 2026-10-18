@@ -2453,29 +2453,73 @@ const PDFV = (() => {
     })().catch(e => { libP = null; throw e; });
     return libP;
   }
-  async function renderPage(pdf, w) {
+  /* ── पृष्ठ बनाउने व्यवस्थापक: नजिकको पृष्ठ पहिले, पहिले छिटो हल्का चित्र (low-res) अनि स्पष्ट (hi-res), एकैपटक २ वटा मात्र ── */
+  const ST = { wanted: new Set(), running: 0, max: 2, done: [] };
+  const dist = w => { const r = w.getBoundingClientRect(); return Math.abs((r.top + r.bottom) / 2 - innerHeight / 2); };
+  function setImg(w, blob, ratio, hi) {
+    const old = w.querySelector('img');
+    const url = URL.createObjectURL(blob);
+    if (old) { const u = old.src; old.src = url; if (u.startsWith('blob:')) URL.revokeObjectURL(u); }
+    else { const img = new Image(); img.alt = 'PDF पृष्ठ ' + w.dataset.n; img.decoding = 'async'; img.src = url; w.innerHTML = ''; w.appendChild(img); }
+    w.style.aspectRatio = String(ratio); w.classList.add('done'); w._state = hi ? 2 : 1;
+  }
+  async function renderStage(w, hi) {
     const n = +w.dataset.n;
     try {
-      const page = await pdf.getPage(n);
+      const page = await (w._pg || (w._pg = w._pdf.getPage(n)));
       const base = page.getViewport({ scale: 1 });
-      const cssW = w.clientWidth || 360;
-      const dpr = window.devicePixelRatio || 1;
-      // उच्च गुणस्तर: कम्तीमा १६०० px चौडाइ (अक्षर स्पष्ट पढ्न), बढीमा २४००; क्यानभास क्षेत्रफल ९ मेगापिक्सेल भित्र
-      const targetW = Math.min(2400, Math.max(1600, cssW * dpr * 2));
+      const cssW = w.clientWidth || 360, dpr = window.devicePixelRatio || 1;
+      const targetW = hi ? Math.min(2400, Math.max(1600, cssW * dpr * 2)) : Math.min(720, cssW * dpr);
       let scale = targetW / base.width;
       if (base.width * scale * base.height * scale > 9e6) scale = Math.sqrt(9e6 / (base.width * base.height));
       const vp = page.getViewport({ scale });
       const c = document.createElement('canvas');
       c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
       await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.95));
-      c.width = c.height = 0;                    // मेमोरी खाली
-      const img = new Image();
-      img.alt = 'PDF पृष्ठ ' + n; img.decoding = 'async'; img.src = URL.createObjectURL(blob);
-      w.style.aspectRatio = String(base.width / base.height);
-      w.innerHTML = ''; w.appendChild(img); w.classList.add('done');
-      page.cleanup();
-    } catch (e) { w.innerHTML = '<div class="pdf-ph">⚠️ पृष्ठ ' + n + ' देखाउन सकिएन</div>'; }
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', hi ? 0.95 : 0.72));
+      c.width = c.height = 0;
+      setImg(w, blob, base.width / base.height, hi);
+      if (hi) { page.cleanup(); }
+      const k = ST.done.indexOf(w); if (k >= 0) ST.done.splice(k, 1); ST.done.push(w);
+      while (ST.done.length > 36) {          // दूरका पुराना पृष्ठ मेमोरीबाट हटाउने (फेरि चाहिँदा बन्छ)
+        const o = ST.done.shift();
+        if (o._want || o === w) { ST.done.push(o); break; }
+        const im = o.querySelector('img'); if (im && im.src.startsWith('blob:')) URL.revokeObjectURL(im.src);
+        o.innerHTML = ''; o.classList.remove('done'); o._state = 0; o._pg = null;
+      }
+    } catch (e) { if (!w.querySelector('img')) w.innerHTML = '<div class="pdf-ph">⚠️ पृष्ठ ' + n + ' देखाउन सकिएन</div>'; w._state = Math.max(w._state || 0, 2); }
+  }
+  function pump() {
+    while (ST.running < ST.max) {
+      let best = null, bk = 0, bd = 0;
+      ST.wanted.forEach(w => {
+        if (w._busy || (w._state || 0) >= 2 || !w.isConnected) return;
+        const key = 0, d = dist(w);                            // सबैभन्दा नजिकको पृष्ठ पहिले
+        if (!best || key < bk || (key === bk && d < bd)) { best = w; bk = key; bd = d; }
+      });
+      if (!best) break;
+      best._busy = true; ST.running++;
+      renderStage(best, true).finally(() => { best._busy = false; ST.running--; pump(); });   // नापजाँचमा हल्का चरणले समय बचाएन — सिधै स्पष्ट
+    }
+  }
+  function want(w, on) {
+    w._want = on;
+    if (on) { ST.wanted.add(w); pump(); } else ST.wanted.delete(w);
+  }
+  async function readWithProgress(resp, el) {
+    const total = +resp.headers.get('content-length') || 0;
+    if (!resp.body || !resp.body.getReader) return new Uint8Array(await resp.arrayBuffer());
+    const reader = resp.body.getReader(); const chunks = []; let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); got += value.length;
+      const ph = el.querySelector('.pdf-ph');
+      if (ph) ph.textContent = '📄 PDF लोड हुँदैछ… ' + (total ? Math.round(got * 100 / total) + '%' : (got / 1048576).toFixed(1) + ' MB');
+    }
+    const out = new Uint8Array(got); let o = 0;
+    for (const c of chunks) { out.set(c, o); o += c.length; }
+    return out;
   }
   async function mount(el) {
     if (el.dataset.ready) return;
@@ -2486,15 +2530,13 @@ const PDFV = (() => {
       await loadLib();
       const resp = await fetch(src, { cache: 'no-store' });
       if (!resp.ok) throw new Error('PDF फाइल भेटिएन (' + resp.status + ')');
-      const buf = new Uint8Array(await resp.arrayBuffer());
+      const buf = await readWithProgress(resp, el);
       const head = String.fromCharCode.apply(null, buf.subarray(0, 5));
       if (head !== '%PDF-') throw new Error('PDF फाइल अझै साइटमा पुगेको छैन — Commit पछि १-२ मिनेट पर्खेर फेरि प्रयास गर्नुहोस्');
       const pdf = await lib().getDocument({ data: buf }).promise;
       const p1 = await pdf.getPage(1); const v1 = p1.getViewport({ scale: 1 });
       el.innerHTML = '';
-      const io = new IntersectionObserver(es => es.forEach(en => {
-        if (en.isIntersecting) { io.unobserve(en.target); renderPage(pdf, en.target); }
-      }), { rootMargin: '700px 0px' });
+      const io = new IntersectionObserver(es => es.forEach(en => want(en.target, en.isIntersecting)), { rootMargin: '1200px 0px' });
       for (let n = 1; n <= pdf.numPages; n++) {
         const w = document.createElement('div');
         w.className = 'pdf-page'; w.dataset.n = n; w.style.aspectRatio = String(v1.width / v1.height);
