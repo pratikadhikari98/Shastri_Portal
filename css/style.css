@@ -2385,3 +2385,7 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   box-shadow: 1px 1px 2px 0 var(--shadow), 3px 3px 7px -1px var(--shadow), -1px -1px 2px 0 var(--surface-high), -2px -2px 5px -2px var(--surface-high);
 }
 .year-card .yc-body { transform: none; }
+
+/* किताब-पङ्क्ति: दायाँको तीर (›) हटाएर नाम-ब्यानर पङ्क्तिको अन्त्यसम्म फैलिएको */
+.book-row-chevron { display: none; }
+.book-row { padding-right: 6px; }
