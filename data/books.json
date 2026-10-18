@@ -149,13 +149,13 @@
         ],
         "vyakaran": [
           {
-            "pdf": "",
-            "description": "",
-            "author": "",
-            "title": "## पाठ्यक्रम",
             "id": "vya2_1783823016171",
+            "title": "पाठ्यक्रम",
+            "author": "",
             "cover": "",
-            "font": "siddhanta"
+            "description": "",
+            "font": "siddhanta",
+            "pdf": ""
           },
           {
             "id": "vya2_1",
