@@ -1546,7 +1546,9 @@ function renderMd(text) {
     // (पहिले हरेक बुँदा छुट्टै <ul> बन्थ्यो र बीचमा </p><p>, <br> थपिएर ठूलो ग्याप आउँथ्यो)
     .replace(/<li[^>]*>[^\n]*?<\/li>(?:\s*<li[^>]*>[^\n]*?<\/li>)*\s*/g, m => '<ul>' + m.replace(/<\/li>\s+<li/g, '</li><li').replace(/\s+$/, '') + '</ul>')
     .replace(/\n\n/g,'</p><p>')
-    .replace(/\n/g,'<br>');
+    .replace(/\n/g,'<br>')
+    // शीर्षक (###) पछिको अतिरिक्त <br> / खाली अनुच्छेदले ठूलो ग्याप बनाउँथ्यो — हटाउने
+    .replace(/(<\/h[1-5]>)(?:<br>|<\/p><p>)+/g,'$1');
 
   html = html.replace(/@@BLOCK(\d+)@@/g, (m, idx) => blocks[+idx]);
   return html;
