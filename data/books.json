@@ -86,12 +86,13 @@
             "author": "कालिदासः"
           },
           {
-            "cover": "images/year2/san1.jpg",
             "id": "san2_1",
-            "description": "",
-            "pdf": "",
             "title": "कादम्बरी",
-            "author": "वाणभट्टः"
+            "author": "बाणभट्टः",
+            "cover": "images/year2/san1.jpg",
+            "description": "",
+            "font": "siddhanta",
+            "pdf": ""
           },
           {
             "author": "भवभूति",
