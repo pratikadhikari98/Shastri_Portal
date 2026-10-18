@@ -47,7 +47,17 @@
             "author": "Author Name"
           }
         ],
-        "nepali": [],
+        "nepali": [
+          {
+            "id": "nep1_1792304802626",
+            "title": "Hh",
+            "author": "Hh",
+            "cover": "",
+            "description": "",
+            "font": "siddhanta",
+            "pdf": "https://docs.google.com/document/d/1yRAxzdu68MCK05b5bFAXN4bdoaKN-eMQ_teyPacdYvI/edit?usp=drivesdk"
+          }
+        ],
         "sahitya": [],
         "vedanta": [],
         "account": []
