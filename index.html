@@ -268,32 +268,7 @@
 <div id="p-profile" class="page">
   <div class="content">
 
-    <!-- ── Profile Hero ── -->
-    <div class="prof-hero s1" id="profHero">
-      <!-- Avatar: photo वा emoji -->
-      <div class="p-av" id="profAvWrap" onclick="triggerAvatarPick()">
-        <img id="profAvImg" src="" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none">
-        <span id="profAvEmoji">👨‍🎓</span>
-        <div class="p-av-edit">✏️</div>
-      </div>
-      <div class="p-name" id="profNameDisp">विद्यार्थी</div>
-      <div class="p-role" id="profRoleDisp">शास्त्री कक्षा पोर्टल</div>
-      <button class="prof-edit-btn" onclick="openProfileEdit()">✏️ <span data-i18n="edit">सम्पादन</span></button>
-      <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="handleAvatarChange(event)">
-    </div>
-
-    <!-- ── Social Links ── -->
-    <div id="socialLinks" style="display:none;margin-bottom:14px">
-      <div class="sett-group">
-        <div class="sett-grp-lbl" data-i18n="contact_social">सम्पर्क / Social</div>
-        <div id="socialLinksBody"></div>
-      </div>
-    </div>
-
-    <div class="sec-head s2"><div class="sec-title" data-i18n="stats">तथ्याङ्क</div></div>
-    <div class="stats-grid" id="statsGrid"></div>
-
-    <div class="sec-head s3"><div class="sec-title" data-i18n="settings">सेटिङहरू</div></div>
+<div class="sec-head s3"><div class="sec-title" data-i18n="settings">सेटिङहरू</div></div>
 
     <div class="sett-group s4b" id="adminLoginBox">
       <div class="sett-grp-lbl">🔐 Admin</div>
@@ -751,73 +726,6 @@
 </div>
 
 <!-- Profile Edit Modal -->
-<div class="overlay" id="profileEditModal" onclick="if(event.target===this)closeOv('profileEditModal')">
-  <div class="modal-sheet">
-    <div class="m-handle"></div>
-    <div class="m-title" data-i18n="edit_profile">👤 Profile सम्पादन</div>
-
-    <!-- Avatar picker -->
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:12px;background:var(--surface-b);border-radius:var(--r-md)">
-      <div id="editAvPreview" style="width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;overflow:hidden;cursor:pointer" onclick="triggerAvatarPick()">
-        <img id="editAvImg" src="" style="width:100%;height:100%;object-fit:cover;display:none;border-radius:50%">
-        <span id="editAvEmoji">👨‍🎓</span>
-      </div>
-      <div>
-        <div style="font-size:0.84rem;font-weight:700;color:var(--text-1);margin-bottom:4px" data-i18n="profile_photo">प्रोफाइल फोटो</div>
-        <button onclick="triggerAvatarPick()" style="font-size:0.76rem;padding:5px 12px;background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent);border-radius:20px;cursor:pointer;font-family:var(--font);font-weight:700" data-i18n="choose_photo">📷 फोटो छान्नुस्</button>
-        <button onclick="removeAvatar()" style="font-size:0.76rem;padding:5px 10px;background:none;color:var(--text-3);border:none;cursor:pointer;font-family:var(--font);margin-left:4px" data-i18n="remove">हटाउनुस्</button>
-      </div>
-    </div>
-
-    <div class="form-panel">
-    <div class="f-group">
-      <label class="f-label" data-i18n="name">नाम *</label>
-      <input class="f-input" id="editName" type="text" placeholder="तपाईंको नाम">
-    </div>
-    <div class="f-group">
-      <label class="f-label" data-i18n="role">भूमिका / पद</label>
-      <input class="f-input" id="editRole" type="text" placeholder="जस्तै: शास्त्री विद्यार्थी, प्राध्यापक...">
-    </div>
-    </div>
-
-    <!-- Social Links -->
-    <div style="margin-top:4px;margin-bottom:8px">
-      <div style="font-size:0.8rem;font-weight:700;color:var(--text-2);margin-bottom:10px" data-i18n="contact_social_full">🔗 सम्पर्क / Social Links</div>
-      <div class="form-panel">
-      <div class="f-group">
-        <label class="f-label">📧 Email</label>
-        <input class="f-input" id="editEmail" type="email" placeholder="example@email.com">
-      </div>
-      <div class="f-group">
-        <label class="f-label">📘 Facebook</label>
-        <input class="f-input" id="editFacebook" type="url" placeholder="https://facebook.com/yourpage">
-      </div>
-      <div class="f-group">
-        <label class="f-label">📸 Instagram</label>
-        <input class="f-input" id="editInstagram" type="url" placeholder="https://instagram.com/yourhandle">
-      </div>
-      <div class="f-group">
-        <label class="f-label">▶️ YouTube</label>
-        <input class="f-input" id="editYoutube" type="url" placeholder="https://youtube.com/@yourchannel">
-      </div>
-      <div class="f-group">
-        <label class="f-label">🐙 GitHub</label>
-        <input class="f-input" id="editGithub" type="url" placeholder="https://github.com/yourusername">
-      </div>
-      <div class="f-group">
-        <label class="f-label">🌐 Website</label>
-        <input class="f-input" id="editWebsite" type="url" placeholder="https://yourwebsite.com">
-      </div>
-      </div>
-    </div>
-
-    <div class="m-btns">
-      <button class="btn-s" onclick="closeOv('profileEditModal')" data-i18n="cancel">रद्द</button>
-      <button class="btn-p" onclick="saveProfileEdit()" data-i18n="save_settings">सुरक्षित गर्नुस्</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toastEl"></div>
 
 <!-- Admin: Zip बाट साइट अपडेट (यो पूर्वावलोकन modal भन्दा अघि राख्ने) -->

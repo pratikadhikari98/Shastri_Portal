@@ -22,17 +22,6 @@ const App = {
   editNoteId: null,
   newsIdx: 0,
   data: null,
-  profile: JSON.parse(localStorage.getItem('sp_profile') || JSON.stringify({
-    name: 'विद्यार्थी',
-    role: 'शास्त्री कक्षा पोर्टल',
-    avatar: '',
-    email: '',
-    facebook: '',
-    instagram: '',
-    youtube: '',
-    github: '',
-    website: '',
-  })),
 };
 
 /* ── Subject config ──
@@ -1995,9 +1984,7 @@ window.toggleFeedBody = toggleFeedBody;
    PROFILE
    ════════════════════════════════════ */
 function renderProfile() {
-  renderStats();
   renderHistory();
-  loadProfile();
 
   // Night mode toggle - sync with current theme
   const tog = document.getElementById('profileDarkTog');
@@ -2023,16 +2010,6 @@ function renderProfile() {
 
 }
 
-function renderStats() {
-  let books=0,chs=0;
-  if(App.data) App.data.years.forEach(yr=>Object.values(yr.subjects).forEach(bs=>{books+=bs.length;bs.forEach(b=>{chs+=(App.chaptersCache[b.id]||[]).length;});}));
-  const el=document.getElementById('statsGrid');
-  if(el) el.innerHTML=`
-    <div class="stat-card"><div class="stat-num">${books}</div><div class="stat-lbl">📚 किताबहरू</div></div>
-    <div class="stat-card"><div class="stat-num">${chs}</div><div class="stat-lbl">📖 अध्यायहरू</div></div>
-    <div class="stat-card"><div class="stat-num">${App.notes.length}</div><div class="stat-lbl">📝 नोटहरू</div></div>
-    <div class="stat-card"><div class="stat-num">${App.bookmarks.length}</div><div class="stat-lbl">🔖 Bookmarks</div></div>`;
-}
 
 function renderHistory() {
   const el=document.getElementById('histList');
@@ -2295,143 +2272,6 @@ function toast(msg) {
   setTimeout(()=>t.classList.remove('show'),2400);
 }
 window.toast=toast;
-
-/* ════════════════════════════════════
-   PROFILE EDIT SYSTEM
-   ════════════════════════════════════ */
-
-function loadProfile() {
-  const p = App.profile;
-
-  // Update hero display
-  const nameEl = document.getElementById('profNameDisp');
-  const roleEl = document.getElementById('profRoleDisp');
-  if (nameEl) nameEl.textContent = p.name || 'विद्यार्थी';
-  if (roleEl) roleEl.textContent = p.role || 'शास्त्री कक्षा पोर्टल';
-
-  // Avatar
-  const avImg  = document.getElementById('profAvImg');
-  const avEmoji= document.getElementById('profAvEmoji');
-  if (avImg && avEmoji) {
-    if (p.avatar) {
-      avImg.src = p.avatar;
-      avImg.style.display = 'block';
-      avEmoji.style.display = 'none';
-    } else {
-      avImg.style.display = 'none';
-      avEmoji.style.display = 'block';
-    }
-  }
-
-  // Social links
-  renderSocialLinks(p);
-}
-
-function renderSocialLinks(p) {
-  const wrap = document.getElementById('socialLinks');
-  const body = document.getElementById('socialLinksBody');
-  if (!wrap || !body) return;
-
-  const links = [
-    { key:'email',     ico:'📧', label:'Email',     bg:'#e3f2fd', href: p.email     ? 'mailto:'+p.email : '' },
-    { key:'facebook',  ico:'📘', label:'Facebook',  bg:'#e8f0fe', href: p.facebook  || '' },
-    { key:'instagram', ico:'📸', label:'Instagram', bg:'#fce4ec', href: p.instagram || '' },
-    { key:'youtube',   ico:'▶️', label:'YouTube',   bg:'#ffebee', href: p.youtube   || '' },
-    { key:'github',    ico:'🐙', label:'GitHub',    bg:'#f3e5f5', href: p.github    || '' },
-    { key:'website',   ico:'🌐', label:'Website',   bg:'#e0f7fa', href: p.website   || '' },
-  ].filter(l => l.href);
-
-  if (!links.length) {
-    wrap.style.display = 'none';
-    return;
-  }
-  wrap.style.display = 'block';
-  body.innerHTML = links.map(l => `
-    <a class="social-link-row" href="${l.href}" target="_blank" rel="noopener">
-      <div class="social-ico" style="background:${l.bg}">${l.ico}</div>
-      <div>
-        <div class="social-name">${l.label}</div>
-        <div class="social-val">${l.href.replace('mailto:','')}</div>
-      </div>
-      <span class="social-arr">↗</span>
-    </a>`).join('');
-}
-
-function openProfileEdit() {
-  const p = App.profile;
-  document.getElementById('editName').value      = p.name      || '';
-  document.getElementById('editRole').value      = p.role      || '';
-  document.getElementById('editEmail').value     = p.email     || '';
-  document.getElementById('editFacebook').value  = p.facebook  || '';
-  document.getElementById('editInstagram').value = p.instagram || '';
-  document.getElementById('editYoutube').value   = p.youtube   || '';
-  document.getElementById('editGithub').value    = p.github    || '';
-  document.getElementById('editWebsite').value   = p.website   || '';
-
-  // Sync edit avatar preview
-  const eImg   = document.getElementById('editAvImg');
-  const eEmoji = document.getElementById('editAvEmoji');
-  if (eImg && eEmoji) {
-    if (p.avatar) { eImg.src=p.avatar; eImg.style.display='block'; eEmoji.style.display='none'; }
-    else          { eImg.style.display='none'; eEmoji.style.display='block'; }
-  }
-  openOv('profileEditModal');
-}
-
-function saveProfileEdit() {
-  App.profile.name      = document.getElementById('editName').value.trim()      || 'विद्यार्थी';
-  App.profile.role      = document.getElementById('editRole').value.trim()      || 'शास्त्री कक्षा पोर्टल';
-  App.profile.email     = document.getElementById('editEmail').value.trim();
-  App.profile.facebook  = document.getElementById('editFacebook').value.trim();
-  App.profile.instagram = document.getElementById('editInstagram').value.trim();
-  App.profile.youtube   = document.getElementById('editYoutube').value.trim();
-  App.profile.github    = document.getElementById('editGithub').value.trim();
-  App.profile.website   = document.getElementById('editWebsite').value.trim();
-
-  localStorage.setItem('sp_profile', JSON.stringify(App.profile));
-  closeOv('profileEditModal');
-  loadProfile();
-  toast('Profile सुरक्षित भयो ✓');
-}
-window.saveProfileEdit = saveProfileEdit;
-
-function triggerAvatarPick() {
-  document.getElementById('avatarInput').click();
-}
-window.triggerAvatarPick = triggerAvatarPick;
-
-function handleAvatarChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  // Check size < 2MB
-  if (file.size > 2 * 1024 * 1024) { toast('फोटो 2MB भन्दा सानो हुनु पर्छ!'); return; }
-  const reader = new FileReader();
-  reader.onload = ev => {
-    App.profile.avatar = ev.target.result;
-    localStorage.setItem('sp_profile', JSON.stringify(App.profile));
-    loadProfile();
-    // Also update edit modal preview
-    const eImg   = document.getElementById('editAvImg');
-    const eEmoji = document.getElementById('editAvEmoji');
-    if (eImg) { eImg.src = ev.target.result; eImg.style.display='block'; }
-    if (eEmoji) eEmoji.style.display = 'none';
-    toast('फोटो सुरक्षित भयो ✓');
-  };
-  reader.readAsDataURL(file);
-}
-window.handleAvatarChange = handleAvatarChange;
-
-function removeAvatar() {
-  App.profile.avatar = '';
-  localStorage.setItem('sp_profile', JSON.stringify(App.profile));
-  loadProfile();
-  const eImg   = document.getElementById('editAvImg');
-  const eEmoji = document.getElementById('editAvEmoji');
-  if (eImg) eImg.style.display = 'none';
-  if (eEmoji) eEmoji.style.display = 'block';
-  toast('फोटो हटाइयो');
-}
-window.removeAvatar = removeAvatar;
 
 
 /* ═══════════════════════════════════
