@@ -38,7 +38,7 @@
   <link rel="icon" type="image/png" sizes="48x48" href="images/icon-512.png">
   <link rel="shortcut icon" type="image/png" href="images/icon-512.png">
   <link rel="apple-touch-icon" href="images/icon-512.png">
-  <meta name="theme-color" content="#FF6835">
+  <meta name="theme-color" content="#FFFFFF">
 
   <!-- ══ Structured data — Google ले साइटको नाम ठ्याक्कै चिनोस् भनेर (og:site_name मात्रले नपुगेको देखियो) ══ -->
   <script type="application/ld+json">
@@ -69,7 +69,7 @@
   <!-- ★ Apply theme + font BEFORE rendering (prevent FOUC) -->
   <script>
     (function(){
-      var t = localStorage.getItem('sp_theme') || 'light';
+      var t = 'white';   // एउटै सेतो थिम
       document.documentElement.setAttribute('data-theme', t);
       document.documentElement.style.colorScheme = (t === 'dark') ? 'dark' : 'light';
 
@@ -113,24 +113,6 @@
     <div class="dots-menu-wrap">
       <button class="hdr-btn" id="dotsBtn" title="थप विकल्प" data-i18n-title="more_options">⋮</button>
       <div class="dots-menu" id="dotsMenu">
-
-        <!-- Theme section -->
-        <div class="dm-section">
-          <div class="dm-label">🎨 <span data-i18n="dm_theme">Theme छान्नुस्</span></div>
-          <div class="theme-dots" id="themeDots"></div>
-        </div>
-
-        <!-- Dark mode toggle -->
-        <div class="dm-section" style="padding-top:6px;border-top:1px solid var(--divider)">
-          <div class="dm-item">
-            <div class="dm-item-ico">🌙</div>
-            <div>
-              <div class="dm-item-name" data-i18n="dm_dark_mode">रात्रि मोड</div>
-              <div class="dm-item-sub" data-i18n="dm_dark_sub">Midnight Dark theme</div>
-            </div>
-            <div class="dm-tog" id="darkMenuTog"><div class="dm-tog-k"></div></div>
-          </div>
-        </div>
 
         <!-- Language -->
         <div class="dm-section" style="padding-top:6px;border-top:1px solid var(--divider)">

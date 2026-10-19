@@ -10,7 +10,7 @@ const App = {
   yearId: null,
   subjectId: null,
   _booting: true, // boot/restore सकिने बित्तिकै false हुन्छ — यो हुँदासम्म nav indicator कुनै animation बिना सिधै सही ठाउँमा बस्छ
-  theme: localStorage.getItem('sp_theme') || 'light',
+  theme: 'white',
   fontSize: 14,   // १४px मा लक
   lang: localStorage.getItem('sp_lang') || 'ne',
   notes: JSON.parse(localStorage.getItem('sp_notes') || '[]'),
@@ -215,6 +215,7 @@ function makeFallback() {
    THEME  ← KEY FIX
    ════════════════════════════════════ */
 function applyTheme(t, save=true) {
+  t = 'white'; save = false;   // एउटै सेतो थिम — बदल्न मिल्दैन
   if (save) {   // प्रयोगकर्ताले थीम बदल्दा मात्र नरम रङ-परिवर्तन (सधैं होइन)
     const root = document.documentElement;
     root.classList.add('theme-switching');
