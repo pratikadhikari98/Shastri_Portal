@@ -2563,6 +2563,27 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
   setTimeout(upd, 600);
 })();
 
+/* ═══ सबै पप-अपको माथि ✕ (बन्द) बटन ═══ */
+function initModalCloseButtons() {
+  document.querySelectorAll('.overlay > .modal-sheet:not([data-x])').forEach(sh => {
+    sh.dataset.x = '1';
+    const bar = document.createElement('div');
+    bar.className = 'm-x-bar';
+    bar.innerHTML = '<button type="button" class="m-x" aria-label="बन्द">✕</button>';
+    bar.firstChild.addEventListener('click', e => {
+      e.stopPropagation();
+      const ov = sh.closest('.overlay'); if (!ov) return;
+      if (ov.id === 'confirmModal' && window._confirmCancel) return _confirmCancel();
+      if (ov.id === 'textPromptModal' && window._textPromptCancel) return _textPromptCancel();
+      closeOv(ov.id);
+    });
+    sh.insertBefore(bar, sh.firstChild);
+  });
+}
+window.initModalCloseButtons = initModalCloseButtons;
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initModalCloseButtons); else initModalCloseButtons();
+setTimeout(initModalCloseButtons, 800);
+
 // Expose App
 window.App=App;
 window.applyTheme=applyTheme;
