@@ -87,11 +87,12 @@ self.addEventListener('fetch', e => {
   //    (ताजा डाटा आउनासाथ cache अपडेट हुन्छ)
   // PDF फाइल (नाम अद्वितीय, कहिल्यै बदलिँदैन): cache-first. साइटले (SPA fallback) PDF को सट्टा HTML दियो भने cache नगर्ने
   if (isData && /\.pdf(\?|#|$)/i.test(url)) {
+    if (e.request.headers.has('range')) return;   // आंशिक (Range) माग सिधै नेटवर्कमा — पूरै फाइल मात्र सेभ गर्ने
     e.respondWith((async () => {
       const hit = await caches.match(e.request);
       if (hit && !isHtml(hit)) return hit;
       const res = await fetch(e.request);
-      if (res && res.ok && !isHtml(res)) { const c = res.clone(); caches.open(DATA_CACHE).then(ca => ca.put(e.request, c)); }
+      if (res && res.status === 200 && !isHtml(res)) { const c = res.clone(); caches.open(DATA_CACHE).then(ca => ca.put(e.request, c)); }
       return res;
     })());
     return;

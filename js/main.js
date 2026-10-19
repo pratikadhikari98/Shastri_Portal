@@ -2469,14 +2469,15 @@ const PDFV = (() => {
       const page = await (w._pg || (w._pg = w._pdf.getPage(n)));
       const base = page.getViewport({ scale: 1 });
       const cssW = w.clientWidth || 360, dpr = window.devicePixelRatio || 1;
-      const targetW = hi ? Math.min(2400, Math.max(1600, cssW * dpr * 2)) : Math.min(720, cssW * dpr);
+      // स्क्रिनकै पिक्सेल (devicePixelRatio) जति — दोब्बर होइन। ठूलो गर्दा zoom ले PDF बाट नै फेरि स्पष्ट बनाउँछ
+      const targetW = Math.min(1500, Math.max(900, cssW * dpr));
       let scale = targetW / base.width;
-      if (base.width * scale * base.height * scale > 9e6) scale = Math.sqrt(9e6 / (base.width * base.height));
+      if (base.width * scale * base.height * scale > 4e6) scale = Math.sqrt(4e6 / (base.width * base.height));
       const vp = page.getViewport({ scale });
       const c = document.createElement('canvas');
       c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
       await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', hi ? 0.95 : 0.72));
+      const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88));
       c.width = c.height = 0;
       setImg(w, blob, base.width / base.height, hi);
       if (hi) { page.cleanup(); }
@@ -2506,20 +2507,14 @@ const PDFV = (() => {
     w._want = on;
     if (on) { ST.wanted.add(w); pump(); } else ST.wanted.delete(w);
   }
-  async function readWithProgress(resp, el) {
-    const total = +resp.headers.get('content-length') || 0;
-    if (!resp.body || !resp.body.getReader) return new Uint8Array(await resp.arrayBuffer());
-    const reader = resp.body.getReader(); const chunks = []; let got = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value); got += value.length;
-      const ph = el.querySelector('.pdf-ph');
-      if (ph) ph.textContent = '📄 PDF लोड हुँदैछ… ' + (total ? Math.round(got * 100 / total) + '%' : (got / 1048576).toFixed(1) + ' MB');
-    }
-    const out = new Uint8Array(got); let o = 0;
-    for (const c of chunks) { out.set(c, o); o += c.length; }
-    return out;
+  /* PDF को सुरुका बाइट मात्र जाँच्ने: साइटले PDF को सट्टा HTML दियो कि? (पूरै फाइल तान्दैन) */
+  async function sniff(src) {
+    const r = await fetch(src, { headers: { Range: 'bytes=0-15' }, cache: 'no-store' });
+    if (!r.ok && r.status !== 206) throw new Error('PDF फाइल भेटिएन (' + r.status + ')');
+    let head;
+    if (r.body && r.body.getReader) { const rd = r.body.getReader(); const { value } = await rd.read(); try { rd.cancel(); } catch (e) {} head = value || new Uint8Array(0); }
+    else head = new Uint8Array(await r.arrayBuffer());
+    if (String.fromCharCode.apply(null, head.subarray(0, 5)) !== '%PDF-') throw new Error('PDF फाइल अझै साइटमा पुगेको छैन — Commit पछि १-२ मिनेट पर्खेर फेरि प्रयास गर्नुहोस्');
   }
   async function mount(el) {
     if (el.dataset.ready) return;
@@ -2528,15 +2523,23 @@ const PDFV = (() => {
     el.innerHTML = '<div class="pdf-ph">📄 PDF लोड हुँदैछ…</div>';
     try {
       await loadLib();
-      const resp = await fetch(src, { cache: 'no-store' });
-      if (!resp.ok) throw new Error('PDF फाइल भेटिएन (' + resp.status + ')');
-      const buf = await readWithProgress(resp, el);
-      const head = String.fromCharCode.apply(null, buf.subarray(0, 5));
-      if (head !== '%PDF-') throw new Error('PDF फाइल अझै साइटमा पुगेको छैन — Commit पछि १-२ मिनेट पर्खेर फेरि प्रयास गर्नुहोस्');
-      const pdf = await lib().getDocument({ data: buf }).promise;
+      let docSrc, cached = false;
+      const hit = window.caches ? await caches.match(src).catch(() => null) : null;
+      if (hit && !/text\/html/i.test(hit.headers.get('content-type') || '')) {      // फोनमा सेभ भएको छ भने तुरुन्तै (नेट नचाहिने)
+        const buf = new Uint8Array(await hit.arrayBuffer());
+        if (String.fromCharCode.apply(null, buf.subarray(0, 5)) === '%PDF-') { docSrc = { data: buf }; cached = true; }
+      }
+      if (!docSrc) {                                                                    // नत्र: पूरै तान्न नपर्ने (range/stream) — पहिलो पृष्ठ छिटो आउँछ
+        await sniff(src);
+        docSrc = { url: src, rangeChunkSize: 1 << 17, disableAutoFetch: true };
+      }
+      const pdf = await lib().getDocument(docSrc).promise;
+      if (!cached && !(navigator.connection && navigator.connection.saveData)) {
+        setTimeout(() => { fetch(src).then(r => r.ok ? r.arrayBuffer() : null).catch(() => {}); }, 3000);   // पछि पृष्ठभूमिमा पूरै सेभ (अफलाइन/अर्को पटक छिटो)
+      }
       const p1 = await pdf.getPage(1); const v1 = p1.getViewport({ scale: 1 });
       el.innerHTML = '';
-      const io = new IntersectionObserver(es => es.forEach(en => want(en.target, en.isIntersecting)), { rootMargin: '1200px 0px' });
+      const io = new IntersectionObserver(es => es.forEach(en => want(en.target, en.isIntersecting)), { rootMargin: '700px 0px' });
       for (let n = 1; n <= pdf.numPages; n++) {
         const w = document.createElement('div');
         w.className = 'pdf-page'; w.dataset.n = n; w.style.aspectRatio = String(v1.width / v1.height);
