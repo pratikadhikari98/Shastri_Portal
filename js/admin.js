@@ -863,15 +863,39 @@ function renderAdminSubjectsList() {
     return `
     <div class="sett-row">
       <div class="sett-left">
-        <div class="sett-ico" style="background:linear-gradient(135deg,${c1},${c2})">${escapeHtml(s.short || '?')}</div>
+        <div class="sett-ico subj-mgr-ico">${escapeHtml(s.short || '?')}</div>
         <div><div class="sett-name">${escapeHtml(s.label || k)}</div><div class="sett-desc">key: ${escapeHtml(k)}</div></div>
       </div>
-      <div style="display:flex;gap:12px;flex-shrink:0">
-        <button onclick="adminSubjectEdit('${k}')" style="background:none;border:none;font-size:1.05rem;cursor:pointer">✏️</button>
+      <div style="display:flex;gap:10px;flex-shrink:0">
+        <button type="button" class="neu-btn" style="width:40px;height:40px" title="सम्पादन" onclick="adminSubjectEdit('${k}')">✏️</button>
+        <button type="button" class="neu-btn" style="width:40px;height:40px" title="मेटाउनुहोस्" onclick="adminSubjectDelete('${k}')">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
+
+async function adminSubjectDelete(key) {
+  if (!App.isAdmin || !SUBJ[key]) return;
+  const nBooks = (App.data.years || []).reduce((n, y) => n + (((y.subjects || {})[key] || []).length), 0);
+  if (nBooks > 0) { toast('⚠️ "' + (SUBJ[key].label || key) + '" मा ' + nBooks + ' किताब छन् — पहिले ती किताब मेटाउनुहोस्'); return; }
+  if (!(await showConfirm('"' + (SUBJ[key].label || key) + '" विषय मेटाउने? (फिर्ता गर्न मिल्दैन)'))) return;
+  const snapYears = JSON.stringify(App.data.years), snapSubj = JSON.stringify(SUBJ);
+  toast('⏳ GitHub मा commit हुँदैछ…');
+  delete SUBJ[key];
+  (App.data.years || []).forEach(y => { if (y.subjects) delete y.subjects[key]; });
+  const ok = (await saveBooksToGitHub('Delete subject: ' + key)) && (await saveSubjectsToGitHub());
+  if (!ok) {
+    App.data.years = JSON.parse(snapYears);
+    Object.keys(SUBJ).forEach(k => delete SUBJ[k]); Object.assign(SUBJ, JSON.parse(snapSubj));
+    return;
+  }
+  if (App.adminBook && App.adminBook.subjectId === key) App.adminBook.subjectId = Object.keys(SUBJ)[0] || null;
+  toast('✅ विषय मेटियो');
+  renderAdminSubjectsList();
+  renderAdminBooksSubjectTabs();
+  refreshBookViews();
+}
+window.adminSubjectDelete = adminSubjectDelete;
 
 function adminSubjectAddNew() {
   if (!App.isAdmin) return;
