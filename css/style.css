@@ -2469,3 +2469,11 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
   --text-4:        #AEB6C3;
   --scheme:        light;
 }
+
+/* ═══ सबै कार्ड/ब्लक: स्क्रिनको दुवै छेउ छुने, कुना गोलो होइन ═══ */
+.year-card, .book-row, .book-card, .info-card, .note-card, .sett-group, .copyright-block, .creator-block,
+.contrib-block, .ch-list, .hist-item, .form-panel, .ticker-bar, .news-board, .zu-drop {
+  border-radius: 0 !important;
+  margin-left: calc(-1 * var(--pad, 16px)); margin-right: calc(-1 * var(--pad, 16px));
+  border-left-width: 0; border-right-width: 0;
+}
