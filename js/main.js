@@ -2555,6 +2555,14 @@ function initNavFab() {
 window.initNavFab = initNavFab;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNavFab); else initNavFab();
 
+/* हेडरको उचाइ CSS मा (--hdr-h): ३ डट्स मेनु, टाँसिने पट्टी आदिका लागि */
+(function () {
+  const upd = () => { const h = document.querySelector('.site-header'); if (h) document.documentElement.style.setProperty('--hdr-h', h.offsetHeight + 'px'); };
+  window.addEventListener('resize', upd);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', upd); else upd();
+  setTimeout(upd, 600);
+})();
+
 // Expose App
 window.App=App;
 window.applyTheme=applyTheme;

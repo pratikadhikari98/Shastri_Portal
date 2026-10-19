@@ -2471,9 +2471,19 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 }
 
 /* ═══ सबै कार्ड/ब्लक: स्क्रिनको दुवै छेउ छुने, कुना गोलो होइन ═══ */
-.year-card, .book-row, .book-card, .info-card, .note-card, .sett-group, .copyright-block, .creator-block,
-.contrib-block, .ch-list, .hist-item, .form-panel, .ticker-bar, .news-board, .zu-drop {
+.book-row, .book-card, .info-card, .note-card, .sett-group, .copyright-block, .creator-block,
+.contrib-block, .ch-list, .hist-item, .form-panel, .zu-drop {
   border-radius: 0 !important;
   margin-left: calc(-1 * var(--pad, 16px)); margin-right: calc(-1 * var(--pad, 16px));
   border-left-width: 0; border-right-width: 0;
 }
+
+/* पप-अप (विन्डो, ३ डट्स मेनु, खोज सुझाव) — स्क्रिनको दुवै छेउ छुने */
+.overlay { padding: 0; }
+.modal-sheet, .modal-sheet.zu-sheet { max-width: none; width: 100%; border-radius: 0; border-left-width: 0; border-right-width: 0; }
+.modal-sheet .form-panel { margin-left: 0; margin-right: 0; }
+.dots-menu {
+  position: fixed; left: 0; right: 0; top: var(--hdr-h, 62px); width: 100vw !important; max-width: none !important;
+  border-radius: 0 !important; border-left-width: 0; border-right-width: 0; max-height: calc(100dvh - var(--hdr-h, 62px)); overflow-y: auto;
+}
+.s-drop { left: calc(-1 * var(--pad, 16px)); right: calc(-1 * var(--pad, 16px)); border-radius: 0; border-left-width: 0; border-right-width: 0; }
