@@ -2584,19 +2584,41 @@ window.initModalCloseButtons = initModalCloseButtons;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initModalCloseButtons); else initModalCloseButtons();
 setTimeout(initModalCloseButtons, 800);
 
-/* ═══ नीलो बोर्डर (कार्ड र आइकन) — ३ डट्स मेनुबाट चालु/बन्द ═══ */
-function applyBorders(on, save) {
-  document.documentElement.classList.toggle('borders-on', !!on);
-  if (save) { try { localStorage.setItem('sp_borders', on ? '1' : '0'); } catch (e) {} }
-  const sub = document.getElementById('borderToggleSub'), sw = document.getElementById('borderSwitch');
-  if (sub) sub.textContent = on ? 'चालु' : 'बन्द';
-  if (sw) sw.classList.toggle('on', !!on);
+/* ═══ Neumorphic छायाको रङ — ३ डट्स मेनुबाट कुनै पनि रङ छान्ने ═══ */
+const SHADOW_COLORS = [
+  ['नीलो', '#2878D8'], ['आकाशी', '#29A8E0'], ['हरियो', '#2E9E5A'], ['सुन्तला', '#F08A24'], ['रातो', '#E5484D'],
+  ['गुलाबी', '#D9468F'], ['बैजनी', '#7B4FD6'], ['खैरो', '#8A5A3A'], ['सामान्य', ''],
+];
+function applyShadowColor(hex, save) {
+  const html = document.documentElement.style, body = document.body ? document.body.style : null;
+  const ok = /^#[0-9a-fA-F]{6}$/.test(hex || '');
+  if (ok) {
+    const n = parseInt(hex.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
+    const a = `rgba(${r},${g},${b},0.26)`, b2 = `rgba(${r},${g},${b},0.42)`;
+    [html, body].forEach(st => { if (st) { st.setProperty('--shadow', a); st.setProperty('--shadow-lg', b2); } });
+  } else {
+    [html, body].forEach(st => { if (st) { st.removeProperty('--shadow'); st.removeProperty('--shadow-lg'); } });
+  }
+  if (save) { try { localStorage.setItem('sp_shadow', ok ? hex : 'none'); } catch (e) {} }
+  document.querySelectorAll('#shadowChips .sc-chip').forEach(el => el.classList.toggle('on', (el.dataset.c || '') === (ok ? hex.toUpperCase() : '')));
+  const cu = document.getElementById('shadowCustom'); if (cu && ok) cu.value = hex;
 }
-function toggleBorders() { applyBorders(!document.documentElement.classList.contains('borders-on'), true); }
-window.toggleBorders = toggleBorders;
+window.applyShadowColor = applyShadowColor;
+function initShadowChips() {
+  const box = document.getElementById('shadowChips'); if (!box || box.dataset.ready) return;
+  box.dataset.ready = '1';
+  box.innerHTML = SHADOW_COLORS.map(([n, c]) =>
+    `<button type="button" class="sc-chip" data-c="${c}" title="${n}" style="${c ? 'background:' + c : ''}">${c ? '' : '∅'}</button>`).join('') +
+    '<label class="sc-chip sc-custom" title="अर्को रङ">＋<input type="color" id="shadowCustom" value="#2878D8"></label>';
+  box.addEventListener('click', e => { const b = e.target.closest('.sc-chip[data-c]'); if (b) applyShadowColor(b.dataset.c, true); });
+  const cu = document.getElementById('shadowCustom');
+  cu.addEventListener('input', () => applyShadowColor(cu.value, true));
+}
 (function () {
-  let on = true; try { on = localStorage.getItem('sp_borders') !== '0'; } catch (e) {}
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => applyBorders(on, false)); else applyBorders(on, false);
+  let c = null; try { c = localStorage.getItem('sp_shadow'); } catch (e) {}
+  if (c === null) c = '#2878D8';
+  const run = () => { initShadowChips(); applyShadowColor(c === 'none' ? '' : c, false); setTimeout(() => applyShadowColor(c === 'none' ? '' : c, false), 300); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
 })();
 
 // Expose App

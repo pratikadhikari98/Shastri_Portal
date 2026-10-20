@@ -70,7 +70,9 @@
   <script>
     (function(){
       var t = 'white';   // एउटै सेतो थिम
-      if (localStorage.getItem('sp_borders') !== '0') document.documentElement.classList.add('borders-on');
+      (function(){ try { var c = localStorage.getItem('sp_shadow'); if (c === null) c = '#2878D8';
+        if (/^#[0-9a-fA-F]{6}$/.test(c)) { var n = parseInt(c.slice(1),16), r=n>>16&255, g=n>>8&255, b=n&255, s = document.documentElement.style;
+          s.setProperty('--shadow','rgba('+r+','+g+','+b+',0.26)'); s.setProperty('--shadow-lg','rgba('+r+','+g+','+b+',0.42)'); } } catch(e){} })();
       document.documentElement.setAttribute('data-theme', t);
       document.documentElement.style.colorScheme = (t === 'dark') ? 'dark' : 'light';
 
@@ -115,13 +117,10 @@
       <button class="hdr-btn" id="dotsBtn" title="थप विकल्प" data-i18n-title="more_options">⋮</button>
       <div class="dots-menu" id="dotsMenu">
 
-        <!-- बोर्डर (नीलो) चालु/बन्द -->
+        <!-- Neumorphic छायाको रङ -->
         <div class="dm-section" style="padding-top:6px">
-          <div class="dm-item" id="borderToggle" onclick="toggleBorders()">
-            <div class="dm-item-ico">🔲</div>
-            <div style="flex:1"><div class="dm-item-name">नीलो छाया</div><div class="dm-item-sub" id="borderToggleSub">चालु</div></div>
-            <span class="dm-switch" id="borderSwitch"></span>
-          </div>
+          <div class="dm-label">🎨 <span>छायाको रङ</span></div>
+          <div class="shadow-chips" id="shadowChips"></div>
         </div>
 
         <!-- Language -->
