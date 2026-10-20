@@ -71,7 +71,7 @@
     (function(){
       var t = 'white';   // एउटै सेतो थिम
       (function(){ try { var c = localStorage.getItem('sp_shadow'); if (c === null) c = '#2878D8';
-        if (/^#[0-9a-fA-F]{6}$/.test(c)) { var n = parseInt(c.slice(1),16), r=n>>16&255, g=n>>8&255, b=n&255, s = document.documentElement.style;
+        if (c === 'rainbow') document.documentElement.classList.add('sh-rainbow'); else if (/^#[0-9a-fA-F]{6}$/.test(c)) { var n = parseInt(c.slice(1),16), r=n>>16&255, g=n>>8&255, b=n&255, s = document.documentElement.style;
           s.setProperty('--shadow','rgba('+r+','+g+','+b+',0.26)'); s.setProperty('--shadow-lg','rgba('+r+','+g+','+b+',0.42)'); } } catch(e){} })();
       document.documentElement.setAttribute('data-theme', t);
       document.documentElement.style.colorScheme = (t === 'dark') ? 'dark' : 'light';

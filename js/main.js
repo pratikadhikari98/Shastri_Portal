@@ -2587,20 +2587,24 @@ setTimeout(initModalCloseButtons, 800);
 /* ═══ Neumorphic छायाको रङ — ३ डट्स मेनुबाट कुनै पनि रङ छान्ने ═══ */
 const SHADOW_COLORS = [
   ['नीलो', '#2878D8'], ['आकाशी', '#29A8E0'], ['हरियो', '#2E9E5A'], ['सुन्तला', '#F08A24'], ['रातो', '#E5484D'],
-  ['गुलाबी', '#D9468F'], ['बैजनी', '#7B4FD6'], ['खैरो', '#8A5A3A'], ['सामान्य', ''],
+  ['गुलाबी', '#D9468F'], ['बैजनी', '#7B4FD6'], ['खैरो', '#8A5A3A'], ['सबै रङ (थोरै-थोरै)', 'rainbow'], ['सामान्य', ''],
 ];
 function applyShadowColor(hex, save) {
   const html = document.documentElement.style, body = document.body ? document.body.style : null;
+  const rb = hex === 'rainbow';
+  document.documentElement.classList.toggle('sh-rainbow', rb);
   const ok = /^#[0-9a-fA-F]{6}$/.test(hex || '');
-  if (ok) {
+  if (rb) {
+    [html, body].forEach(st => { if (st) { st.removeProperty('--shadow'); st.removeProperty('--shadow-lg'); } });
+  } else if (ok) {
     const n = parseInt(hex.slice(1), 16), r = n >> 16 & 255, g = n >> 8 & 255, b = n & 255;
     const a = `rgba(${r},${g},${b},0.26)`, b2 = `rgba(${r},${g},${b},0.42)`;
     [html, body].forEach(st => { if (st) { st.setProperty('--shadow', a); st.setProperty('--shadow-lg', b2); } });
   } else {
     [html, body].forEach(st => { if (st) { st.removeProperty('--shadow'); st.removeProperty('--shadow-lg'); } });
   }
-  if (save) { try { localStorage.setItem('sp_shadow', ok ? hex : 'none'); } catch (e) {} }
-  document.querySelectorAll('#shadowChips .sc-chip').forEach(el => el.classList.toggle('on', (el.dataset.c || '') === (ok ? hex.toUpperCase() : '')));
+  if (save) { try { localStorage.setItem('sp_shadow', rb ? 'rainbow' : ok ? hex : 'none'); } catch (e) {} }
+  document.querySelectorAll('#shadowChips .sc-chip').forEach(el => el.classList.toggle('on', (el.dataset.c || '') === (rb ? 'rainbow' : ok ? hex.toUpperCase() : '')));
   const cu = document.getElementById('shadowCustom'); if (cu && ok) cu.value = hex;
 }
 window.applyShadowColor = applyShadowColor;
@@ -2608,7 +2612,7 @@ function initShadowChips() {
   const box = document.getElementById('shadowChips'); if (!box || box.dataset.ready) return;
   box.dataset.ready = '1';
   box.innerHTML = SHADOW_COLORS.map(([n, c]) =>
-    `<button type="button" class="sc-chip" data-c="${c}" title="${n}" style="${c ? 'background:' + c : ''}">${c ? '' : '∅'}</button>`).join('') +
+    `<button type="button" class="sc-chip${c === 'rainbow' ? ' sc-rainbow' : ''}" data-c="${c}" title="${n}" style="${c && c !== 'rainbow' ? 'background:' + c : ''}">${c ? '' : '∅'}</button>`).join('') +
     '<label class="sc-chip sc-custom" title="अर्को रङ">＋<input type="color" id="shadowCustom" value="#2878D8"></label>';
   box.addEventListener('click', e => { const b = e.target.closest('.sc-chip[data-c]'); if (b) applyShadowColor(b.dataset.c, true); });
   const cu = document.getElementById('shadowCustom');
@@ -2617,7 +2621,8 @@ function initShadowChips() {
 (function () {
   let c = null; try { c = localStorage.getItem('sp_shadow'); } catch (e) {}
   if (c === null) c = '#2878D8';
-  const run = () => { initShadowChips(); applyShadowColor(c === 'none' ? '' : c, false); setTimeout(() => applyShadowColor(c === 'none' ? '' : c, false), 300); };
+  const cc = c === 'none' ? '' : c;
+  const run = () => { initShadowChips(); applyShadowColor(cc, false); setTimeout(() => applyShadowColor(cc, false), 300); };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
 })();
 
