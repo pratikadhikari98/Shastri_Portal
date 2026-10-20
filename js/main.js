@@ -2584,6 +2584,21 @@ window.initModalCloseButtons = initModalCloseButtons;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initModalCloseButtons); else initModalCloseButtons();
 setTimeout(initModalCloseButtons, 800);
 
+/* ═══ नीलो बोर्डर (कार्ड र आइकन) — ३ डट्स मेनुबाट चालु/बन्द ═══ */
+function applyBorders(on, save) {
+  document.documentElement.classList.toggle('borders-on', !!on);
+  if (save) { try { localStorage.setItem('sp_borders', on ? '1' : '0'); } catch (e) {} }
+  const sub = document.getElementById('borderToggleSub'), sw = document.getElementById('borderSwitch');
+  if (sub) sub.textContent = on ? 'चालु' : 'बन्द';
+  if (sw) sw.classList.toggle('on', !!on);
+}
+function toggleBorders() { applyBorders(!document.documentElement.classList.contains('borders-on'), true); }
+window.toggleBorders = toggleBorders;
+(function () {
+  let on = true; try { on = localStorage.getItem('sp_borders') !== '0'; } catch (e) {}
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => applyBorders(on, false)); else applyBorders(on, false);
+})();
+
 // Expose App
 window.App=App;
 window.applyTheme=applyTheme;

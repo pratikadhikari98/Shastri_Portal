@@ -70,6 +70,7 @@
   <script>
     (function(){
       var t = 'white';   // एउटै सेतो थिम
+      if (localStorage.getItem('sp_borders') !== '0') document.documentElement.classList.add('borders-on');
       document.documentElement.setAttribute('data-theme', t);
       document.documentElement.style.colorScheme = (t === 'dark') ? 'dark' : 'light';
 
@@ -113,6 +114,15 @@
     <div class="dots-menu-wrap">
       <button class="hdr-btn" id="dotsBtn" title="थप विकल्प" data-i18n-title="more_options">⋮</button>
       <div class="dots-menu" id="dotsMenu">
+
+        <!-- बोर्डर (नीलो) चालु/बन्द -->
+        <div class="dm-section" style="padding-top:6px">
+          <div class="dm-item" id="borderToggle" onclick="toggleBorders()">
+            <div class="dm-item-ico">🔲</div>
+            <div style="flex:1"><div class="dm-item-name">नीलो बोर्डर</div><div class="dm-item-sub" id="borderToggleSub">चालु</div></div>
+            <span class="dm-switch" id="borderSwitch"></span>
+          </div>
+        </div>
 
         <!-- Language -->
         <div class="dm-section" style="padding-top:6px;border-top:1px solid var(--divider)">
