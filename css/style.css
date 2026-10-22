@@ -2574,3 +2574,7 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
   background: transparent !important; border: 0 !important; box-shadow: none !important; outline: none !important;
   margin-left: 0; margin-right: 0; padding-left: 0; padding-right: 0;
 }
+
+/* किताब-सूची: पङ्क्तिबीचको दूरी (gap) कम */
+.books-list { gap: 0; }
+.book-row, html.borders-on .book-row, html.borders-on.bd-grad-on .book-row { padding-top: 4px; padding-bottom: 4px; }
