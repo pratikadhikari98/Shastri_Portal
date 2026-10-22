@@ -174,11 +174,13 @@
             "cover": "images/year2/eng1.jpg"
           },
           {
+            "id": "eng2_2",
+            "title": "LITERARY CRITICISM  [ii]",
+            "author": "DC Bhusal",
             "cover": "images/year2/eng2.jpg",
             "description": "Second year English literature",
-            "title": "English Literature II",
-            "id": "eng2_2",
-            "author": "Author Name"
+            "font": "siddhanta",
+            "pdf": ""
           },
           {
             "cover": "images/year2/eng3.jpg",
