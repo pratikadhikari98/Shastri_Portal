@@ -54,11 +54,13 @@
             "pdf": ""
           },
           {
-            "title": "English Literature II",
-            "description": "First year English literature",
+            "id": "eng1_2",
+            "title": "History of English Literature",
+            "author": "DC Bhusal",
             "cover": "images/year1/eng2.jpg",
-            "author": "Author Name",
-            "id": "eng1_2"
+            "description": "First year English literature",
+            "font": "siddhanta",
+            "pdf": ""
           },
           {
             "cover": "images/year1/eng3.jpg",
