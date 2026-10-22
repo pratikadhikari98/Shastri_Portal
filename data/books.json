@@ -23,7 +23,17 @@
             "description": "प्रथम वर्षको ज्योतिष शास्त्र"
           }
         ],
-        "vyakaran": [],
+        "vyakaran": [
+          {
+            "id": "vya1_1792683756662",
+            "title": "वैयाकरण सिद्धान्तकौमुदी",
+            "author": "प्रथम पत्र",
+            "cover": "",
+            "description": "",
+            "font": "siddhanta",
+            "pdf": ""
+          }
+        ],
         "english": [
           {
             "cover": "images/year1/eng1.jpg",
