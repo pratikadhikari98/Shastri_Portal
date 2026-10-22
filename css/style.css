@@ -2532,7 +2532,7 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .borders-on .neu-btn, .borders-on .hdr-btn, .borders-on .back-btn, .borders-on .subj-tab-ico, .borders-on .book-row-cover,
 .borders-on .book-row-info, .borders-on .yc-badge, .borders-on .yc-arrow, .borders-on .sett-ico, .borders-on .subj-mgr-ico,
 .borders-on .dm-item-ico, .borders-on .nav-fab-item, .borders-on .nav-fab-ico, .borders-on .m-x, .borders-on .ch-list {
-  outline: 0.5px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -0.5px;
+  outline: 0.5px solid color-mix(in srgb, var(--bd-color, var(--accent)) 70%, transparent); outline-offset: -0.5px;
 }
 .borders-on .nav-fab-btn { outline: 1px solid #fff; outline-offset: -4px; }
 .borders-on .subj-tab.active .subj-tab-ico { outline-width: 0.75px; }
@@ -2542,3 +2542,19 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .dm-switch.on { background: var(--accent); }
 .dm-switch.on::after { transform: translateX(16px); }
 #borderToggle { display: flex; align-items: center; gap: 10px; }
+
+/* बोर्डर: इन्द्रेणी — हरेक कार्ड/आइकनको बोर्डर क्रमैसँग फरक रङमा */
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+1) { --bd-color: #2878D8; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+2) { --bd-color: #D9468F; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+3) { --bd-color: #2E9E5A; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+4) { --bd-color: #F08A24; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+5) { --bd-color: #7B4FD6; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+6) { --bd-color: #14A3A0; }
+/* बोर्डरको रङ छान्ने चिप */
+.bd-chips { display: flex; flex-wrap: wrap; gap: 10px; padding: 6px 14px 10px; }
+.bc-chip { width: 34px; height: 34px; border-radius: 11px; border: 2px solid var(--divider); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; font-weight: 700; color: var(--text-2); background: var(--surface-opaque); position: relative; transition: transform 0.2s var(--ease-spring); }
+.bc-chip.on { border-color: var(--text-1); transform: scale(1.12); box-shadow: 0 3px 8px var(--shadow-lg); }
+.bc-chip:active { transform: scale(0.92); }
+.bc-custom input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.bc-rainbow { background: conic-gradient(#2878D8, #D9468F, #F08A24, #2E9E5A, #7B4FD6, #14A3A0, #2878D8); }

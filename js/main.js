@@ -2599,6 +2599,37 @@ window.toggleBorders = toggleBorders;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => applyBorders(on, false)); else applyBorders(on, false);
 })();
 
+/* ═══ बोर्डरको रङ — ३ डट्स मेनुबाट (तयार रङ, इन्द्रेणी, वा कुनै पनि रङ) ═══ */
+const BORDER_COLORS = [
+  ['नीलो (सामान्य)', ''], ['आकाशी', '#29A8E0'], ['हरियो', '#2E9E5A'], ['सुन्तला', '#F08A24'], ['रातो', '#E5484D'],
+  ['गुलाबी', '#D9468F'], ['बैजनी', '#7B4FD6'], ['खैरो', '#8A5A3A'], ['इन्द्रेणी (विभिन्न रङ)', 'rainbow'],
+];
+function applyBorderColor(val, save) {
+  const html = document.documentElement;
+  const rb = val === 'rainbow', ok = /^#[0-9a-fA-F]{6}$/.test(val || '');
+  html.classList.toggle('bd-rainbow', rb);
+  if (ok) html.style.setProperty('--bd-color', val); else html.style.removeProperty('--bd-color');
+  if (save) { try { if (rb) localStorage.setItem('sp_bdcolor', 'rainbow'); else if (ok) localStorage.setItem('sp_bdcolor', val); else localStorage.removeItem('sp_bdcolor'); } catch (e) {} }
+  document.querySelectorAll('#borderChips .bc-chip[data-c]').forEach(el => el.classList.toggle('on', (el.dataset.c || '') === (rb ? 'rainbow' : ok ? val.toUpperCase() : '')));
+  const cu = document.getElementById('borderCustom'); if (cu && ok) cu.value = val;
+}
+window.applyBorderColor = applyBorderColor;
+function initBorderChips() {
+  const box = document.getElementById('borderChips'); if (!box || box.dataset.ready) return;
+  box.dataset.ready = '1';
+  box.innerHTML = BORDER_COLORS.map(([n, c]) =>
+    `<button type="button" class="bc-chip${c === 'rainbow' ? ' bc-rainbow' : ''}" data-c="${c}" title="${n}" style="${c && c !== 'rainbow' ? 'background:' + c : (c === '' ? 'background:#2878D8' : '')}"></button>`).join('') +
+    '<label class="bc-chip bc-custom" title="अर्को रङ">＋<input type="color" id="borderCustom" value="#2878D8"></label>';
+  box.addEventListener('click', e => { const b = e.target.closest('.bc-chip[data-c]'); if (b) applyBorderColor(b.dataset.c, true); });
+  const cu = document.getElementById('borderCustom');
+  cu.addEventListener('input', () => applyBorderColor(cu.value, true));
+}
+(function () {
+  let c = ''; try { c = localStorage.getItem('sp_bdcolor') || ''; } catch (e) {}
+  const run = () => { initBorderChips(); applyBorderColor(c, false); };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run); else run();
+})();
+
 // Expose App
 window.App=App;
 window.applyTheme=applyTheme;
