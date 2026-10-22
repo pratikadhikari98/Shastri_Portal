@@ -2532,10 +2532,10 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .borders-on .neu-btn, .borders-on .hdr-btn, .borders-on .back-btn, .borders-on .subj-tab-ico, .borders-on .book-row-cover,
 .borders-on .book-row-info, .borders-on .yc-badge, .borders-on .yc-arrow, .borders-on .sett-ico, .borders-on .subj-mgr-ico,
 .borders-on .dm-item-ico, .borders-on .nav-fab-item, .borders-on .nav-fab-ico, .borders-on .m-x, .borders-on .ch-list {
-  outline: 1px solid color-mix(in srgb, var(--accent) 75%, transparent); outline-offset: -1px;
+  outline: 0.5px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -0.5px;
 }
-.borders-on .nav-fab-btn { outline: 1.5px solid #fff; outline-offset: -4px; }
-.borders-on .subj-tab.active .subj-tab-ico { outline-width: 1.5px; }
+.borders-on .nav-fab-btn { outline: 1px solid #fff; outline-offset: -4px; }
+.borders-on .subj-tab.active .subj-tab-ico { outline-width: 0.75px; }
 /* ३ डट्स मेनुको स्विच */
 .dm-switch { width: 38px; height: 22px; border-radius: 99px; background: var(--divider); position: relative; flex-shrink: 0; transition: background 0.2s; margin-left: auto; }
 .dm-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px var(--shadow-lg); transition: transform 0.2s var(--ease-spring); }
