@@ -183,11 +183,13 @@
             "pdf": ""
           },
           {
+            "id": "eng2_3",
+            "title": "POETRY: MEDIEVAL TO THE PRESENT",
+            "author": "DC Bhusal",
             "cover": "images/year2/eng3.jpg",
             "description": "Second year English literature",
-            "title": "English Literature III",
-            "id": "eng2_3",
-            "author": "Author Name"
+            "font": "siddhanta",
+            "pdf": ""
           }
         ],
         "vyakaran": [
