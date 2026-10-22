@@ -85,7 +85,17 @@
             "id": "jyo2_2"
           }
         ],
-        "nepali": [],
+        "nepali": [
+          {
+            "id": "nep2_1792676407064",
+            "title": "कविता र काव्य",
+            "author": "तृतीय पत्र",
+            "cover": "",
+            "description": "",
+            "font": "siddhanta",
+            "pdf": ""
+          }
+        ],
         "sanskrit": [
           {
             "pdf": "",
