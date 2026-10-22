@@ -45,11 +45,13 @@
         ],
         "english": [
           {
-            "cover": "images/year1/eng1.jpg",
             "id": "eng1_1",
-            "title": "English Literature I",
-            "author": "Author Name",
-            "description": "First year English literature"
+            "title": "Compulsory English",
+            "author": "DC bhusal",
+            "cover": "images/year1/eng1.jpg",
+            "description": "First year English literature",
+            "font": "siddhanta",
+            "pdf": ""
           },
           {
             "title": "English Literature II",
