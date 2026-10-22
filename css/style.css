@@ -2578,3 +2578,7 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 /* किताब-सूची: पङ्क्तिबीचको दूरी (gap) कम */
 .books-list { gap: 0; }
 .book-row, html.borders-on .book-row, html.borders-on.bd-grad-on .book-row { padding-top: 4px; padding-bottom: 4px; }
+
+/* वर्ष-कार्डको शीर्षक (प्रथमः खण्डः …) को रङ थिमको accent रङ अनुसार */
+.year-card .yc-title, .year-card .yc-title .an-uni, .year-card .yc-title .an-leg,
+[data-theme="dark"] .year-card .yc-title { color: var(--accent) !important; }
