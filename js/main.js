@@ -2604,13 +2604,28 @@ const BORDER_COLORS = [
   ['नीलो (सामान्य)', ''], ['आकाशी', '#29A8E0'], ['हरियो', '#2E9E5A'], ['सुन्तला', '#F08A24'], ['रातो', '#E5484D'],
   ['गुलाबी', '#D9468F'], ['बैजनी', '#7B4FD6'], ['खैरो', '#8A5A3A'], ['इन्द्रेणी (विभिन्न रङ)', 'rainbow'],
 ];
+/* एउटै बोर्डरमा धेरै रङ (gradient) */
+const BORDER_GRADS = [
+  ['इन्द्रेणी', 'linear-gradient(135deg,#FF3B30,#FF9500,#FFCC00,#34C759,#00C7BE,#007AFF,#AF52DE)'],
+  ['सूर्यास्त', 'linear-gradient(135deg,#FF512F,#F09819,#DD2476)'],
+  ['समुद्र', 'linear-gradient(135deg,#2193B0,#6DD5ED,#2193B0)'],
+  ['जङ्गल', 'linear-gradient(135deg,#11998E,#38EF7D,#11998E)'],
+  ['अरोरा', 'linear-gradient(135deg,#4776E6,#8E54E9,#E96443)'],
+  ['आगो', 'linear-gradient(135deg,#F12711,#F5AF19,#F12711)'],
+  ['नीयन', 'linear-gradient(135deg,#00F5A0,#00D9F5,#8E2DE2,#FF2D95)'],
+  ['चक्र (conic)', 'conic-gradient(from 0deg,#FF3B30,#FF9500,#FFCC00,#34C759,#00C7BE,#007AFF,#AF52DE,#FF3B30)'],
+];
 function applyBorderColor(val, save) {
   const html = document.documentElement;
+  const gm = /^grad:(\d+)$/.exec(val || ''), gi = gm ? +gm[1] : -1, gOk = gi >= 0 && gi < BORDER_GRADS.length;
   const rb = val === 'rainbow', ok = /^#[0-9a-fA-F]{6}$/.test(val || '');
   html.classList.toggle('bd-rainbow', rb);
+  html.classList.toggle('bd-grad-on', gOk);
+  if (gOk) html.style.setProperty('--bd-grad', BORDER_GRADS[gi][1]); else html.style.removeProperty('--bd-grad');
   if (ok) html.style.setProperty('--bd-color', val); else html.style.removeProperty('--bd-color');
-  if (save) { try { if (rb) localStorage.setItem('sp_bdcolor', 'rainbow'); else if (ok) localStorage.setItem('sp_bdcolor', val); else localStorage.removeItem('sp_bdcolor'); } catch (e) {} }
-  document.querySelectorAll('#borderChips .bc-chip[data-c]').forEach(el => el.classList.toggle('on', (el.dataset.c || '') === (rb ? 'rainbow' : ok ? val.toUpperCase() : '')));
+  if (save) { try { if (rb || gOk) localStorage.setItem('sp_bdcolor', gOk ? 'grad:' + gi : 'rainbow'); else if (ok) localStorage.setItem('sp_bdcolor', val); else localStorage.removeItem('sp_bdcolor'); } catch (e) {} }
+  const cur = gOk ? 'grad:' + gi : rb ? 'rainbow' : ok ? val.toUpperCase() : '';
+  document.querySelectorAll('#borderChips .bc-chip[data-c], #borderGradChips .bc-chip[data-c]').forEach(el => el.classList.toggle('on', (el.dataset.c || '') === cur));
   const cu = document.getElementById('borderCustom'); if (cu && ok) cu.value = val;
 }
 window.applyBorderColor = applyBorderColor;
@@ -2623,6 +2638,12 @@ function initBorderChips() {
   box.addEventListener('click', e => { const b = e.target.closest('.bc-chip[data-c]'); if (b) applyBorderColor(b.dataset.c, true); });
   const cu = document.getElementById('borderCustom');
   cu.addEventListener('input', () => applyBorderColor(cu.value, true));
+  const gb = document.getElementById('borderGradChips');
+  if (gb && !gb.dataset.ready) {
+    gb.dataset.ready = '1';
+    gb.innerHTML = BORDER_GRADS.map(([n, g], i) => `<button type="button" class="bc-chip" data-c="grad:${i}" title="${n}" style="background:${g}"></button>`).join('');
+    gb.addEventListener('click', e => { const b = e.target.closest('.bc-chip[data-c]'); if (b) applyBorderColor(b.dataset.c, true); });
+  }
 }
 (function () {
   let c = ''; try { c = localStorage.getItem('sp_bdcolor') || ''; } catch (e) {}
