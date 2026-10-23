@@ -48,16 +48,18 @@
   /* ── तैरिने पट्टी (zipper-बटन .neu-btn जस्तै; बोर्डर थिम अनुसार) ── */
   const PAL = ['#F44336', '#FB8C00', '#FBC02D', '#4CAF50', '#2196F3', '#9C27B0'];
   let view = 'main';   // 'main' | 'fc' (अक्षरको रङ) | 'hl' (हाइलाइट)
-  const nb = (attrs, title, html) => `<button type="button" class="neu-btn" ${attrs} title="${title}" aria-label="${title}">${html}</button>`;
+  const nb = (attrs, title, html) => `<button type="button" class="neu-btn${/data-on="1"/.test(attrs) ? ' on' : ''}" ${attrs} title="${title}" aria-label="${title}">${html}</button>`;
+  const tlBtn = (c, title, html) => nb(`data-tl="${c}"` + (out && out.tl === c ? ' data-on="1"' : ''), title, html);
   function paintBar() {
     const b = ensureBar();
+    b.classList.toggle('has-out', !!out && view === 'main');
     const grip = '<span class="tr-grip" title="सार्न तान्नुस् (दुई पटक थिच्दा पुरानै ठाउँमा)" aria-label="पट्टी सार्नुस्"></span>';
     if (view === 'main') {
       const ICO_COPY = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
       b.innerHTML = grip +
-        '<div class="tr-grp">' + nb('data-tl="ne"', 'नेपालीमा अनुवाद', 'ने') + nb('data-tl="en"', 'English मा अनुवाद', 'अं') + nb('data-tl="sa"', 'संस्कृतमा अनुवाद', 'सं') + '</div>' +
+        '<div class="tr-grp">' + tlBtn('ne', 'नेपालीमा अनुवाद', 'ने') + tlBtn('en', 'English मा अनुवाद', 'अं') + tlBtn('sa', 'संस्कृतमा अनुवाद', 'सं') + '</div>' +
         (cur.el && cur.key ? '<div class="tr-grp">' + nb('data-mk="fc"', 'अक्षर रङ्गिन बनाउने', '<span class="tr-ico-fc">अ</span>') + nb('data-mk="hl"', 'हाइलाइट गर्ने', '<span class="tr-ico-hl">अ</span>') + '</div>' : '') +
-        '<div class="tr-grp">' + nb('data-act="copy"', 'कपी गर्ने', ICO_COPY) + nb('data-act="all"', 'सबै पाठ छान्ने', 'सब') + '</div>';
+        '<div class="tr-grp">' + nb('data-act="copy"', 'कपी गर्ने', ICO_COPY) + nb('data-act="all"', 'सबै पाठ छान्ने', 'सब') + '</div>' + outHtml();
     } else {
       b.innerHTML = grip + nb('data-back="1"', 'फर्कनुहोस्', '‹') +
         PAL.map(c => `<button type="button" class="tr-sw" data-c="${c}" style="background:${c}" title="${view === 'fc' ? 'अक्षरको रङ' : 'हाइलाइट'}" aria-label="${c}"></button>`).join('') +
@@ -101,7 +103,9 @@
     bar.addEventListener('click', e => {
       const t = e.target.closest('button'); if (!t) return;
       const info = selInfo(); if (info) { cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e; }
-      if (t.dataset.tl) { if (cur.text) open(t.dataset.tl); return; }
+      if (t.dataset.tl) { if (cur.text) showOut(t.dataset.tl); return; }
+      if (t.dataset.act === 'closeout') { closeOut(); return; }
+      if (t.dataset.act === 'copyout') { copyOut(); return; }
       if (t.dataset.act === 'copy') { copySel(); return; }
       if (t.dataset.act === 'all') { selectAll(); return; }
       if (t.dataset.mk) { view = t.dataset.mk; paintBar(); return; }
@@ -112,10 +116,11 @@
     document.body.appendChild(bar);
     return bar;
   }
-  function hide() { if (bar) { bar.hidden = true; view = 'main'; } }
+  function hide() { if (bar) { bar.hidden = true; view = 'main'; out = null; outText = ''; showOut._n = (showOut._n || 0) + 1; } }
   function place() {
     const info = selInfo();
     if (!info) { hide(); return; }
+    if (out && info.text.slice(0, MAXLEN) !== outText) { out = null; outText = ''; showOut._n = (showOut._n || 0) + 1; if (bar) paintBar(); }   // नयाँ पाठ छानियो — पुरानो अनुवाद हटाउने
     const had = cur.el !== info.el || !!cur.key !== !!info.key;
     cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e;
     const b = ensureBar();
@@ -179,55 +184,41 @@
     return v;
   }
 
-  /* ── पाटी ── */
-  const $ = id => document.getElementById(id);
-  function paintTabs() {
-    const box = $('trTabs'); if (!box) return;
-    box.innerHTML = LANGS.map(l => `<button type="button" class="tr-tab${l.c === cur.tl ? ' on' : ''}" data-tl="${l.c}">${l.n}</button>`).join('');
+  /* ── अनुवाद पट्टीभित्रै तलतिर फैलिएर देखिने (अलग पाटी होइन) ── */
+  let out = null, outText = '';          // out = { tl, st:'loading'|'ok'|'err', text, src }
+  const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function outHtml() {
+    if (!out) return '';
+    const lg = LANGS.find(l => l.c === out.tl), srcN = out.src && LNAME[out.src] ? LNAME[out.src] + ' → ' : '';
+    const body = out.st === 'loading' ? '<div class="tr-out-b loading">अनुवाद हुँदैछ…</div>'
+      : out.st === 'err' ? `<div class="tr-out-b err">${esc(out.text)}</div>`
+      : `<div class="tr-out-b">${esc(out.text)}</div>`;
+    return '<div class="tr-out"><div class="tr-out-h"><span class="tr-out-t">' + esc(srcN + (lg ? lg.n : '')) + '</span>' +
+      (out.st === 'ok' ? '<button type="button" class="neu-btn" data-act="copyout" title="अनुवाद कपी" aria-label="अनुवाद कपी">⧉</button>' : '') +
+      '<button type="button" class="neu-btn" data-act="closeout" title="अनुवाद बन्द" aria-label="अनुवाद बन्द">✕</button></div>' + body + '</div>';
   }
-  async function run(tl) {
-    cur.tl = tl; paintTabs();
-    const dst = $('trDst'), srcL = $('trSrcLang'); if (!dst) return;
-    const my = (run._n = (run._n || 0) + 1);
-    dst.className = 'tr-dst loading'; dst.textContent = 'अनुवाद हुँदैछ…'; if (srcL) srcL.textContent = '';
+  async function showOut(tl) {
+    outText = cur.text.length > MAXLEN ? cur.text.slice(0, MAXLEN) : cur.text;
+    const text = outText, my = (showOut._n = (showOut._n || 0) + 1);
+    out = { tl, st: 'loading', text: '', src: '' };
+    paintBar(); place();
     try {
-      const v = await translate(cur.text, tl);
-      if (my !== run._n) return;                                       // बीचमा अर्को भाषा थिचिएछ
-      dst.className = 'tr-dst'; dst.textContent = v.out;
-      if (srcL) srcL.textContent = v.src && LNAME[v.src] ? '(' + LNAME[v.src] + ')' : '';
+      const v = await translate(text, tl);
+      if (my !== showOut._n || !out) return;                           // बीचमा अर्को भाषा थिचिएछ / बन्द भयो
+      out = { tl, st: 'ok', text: v.out + (cur.text.length > MAXLEN ? '\n\n(धेरै लामो भएकाले पहिलो ' + MAXLEN + ' अक्षर मात्र अनुवाद भयो)' : ''), src: v.src };
     } catch (e) {
-      if (my !== run._n) return;
-      dst.className = 'tr-dst err';
-      dst.textContent = '⚠️ अनुवाद आएन (' + (e && e.message ? e.message : 'त्रुटि') + ')। इन्टरनेट जाँचेर फेरि थिच्नुहोस्।';
+      if (my !== showOut._n || !out) return;
+      out = { tl, st: 'err', text: '⚠️ अनुवाद आएन (' + (e && e.message ? e.message : 'त्रुटि') + ')। इन्टरनेट जाँचेर फेरि थिच्नुहोस्।', src: '' };
     }
+    paintBar(); place();
   }
-  function open(tl) {
-    const text = cur.text.length > MAXLEN ? cur.text.slice(0, MAXLEN) : cur.text;
-    cur.text = text;
-    $('trSrc').textContent = text + (text.length >= MAXLEN ? ' …' : '');
-    const note = $('trNote'); if (note) note.textContent = text.length >= MAXLEN ? 'धेरै लामो भएकाले पहिलो ' + MAXLEN + ' अक्षर मात्र अनुवाद हुन्छ।' : '';
-    hide();
-    if (typeof openOv === 'function') openOv('trModal');
-    run(tl);
+  function closeOut() { out = null; outText = ''; showOut._n = (showOut._n || 0) + 1; if (bar && !bar.hidden) { paintBar(); place(); } }
+  function copyOut() {
+    if (!out || out.st !== 'ok') return;
+    const txt = out.text.replace(/\n\n\(धेरै लामो[^)]*\)$/, '');
+    const ok = () => { if (typeof toast === 'function') toast('अनुवाद कपी भयो ✓'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, () => {});
   }
-  document.addEventListener('click', e => {
-    const t = e.target.closest && e.target.closest('#trTabs .tr-tab'); if (t) run(t.dataset.tl);
-    const c = e.target.closest && e.target.closest('#trCopy');
-    if (c) {
-      const txt = ($('trDst') || {}).textContent || '';
-      if (navigator.clipboard && txt) navigator.clipboard.writeText(txt).then(() => { if (typeof toast === 'function') toast('कपी भयो ✓'); });
-    }
-  });
-
-  /* ── फोनको आफ्नै select-मेनु (Copy / Select all / Web search / Share) रोक्ने प्रयास ──
-     अध्यायको पाठमा औँलाले होल्ड गर्दा आउने contextmenu रोकिन्छ (माउस/दायाँ क्लिक र किबोर्डको Ctrl+C पहिले जस्तै चल्छ)।
-     नोट: यो ब्राउजरले मान्ने कुरा हो — केही ब्राउजर/फोनमा मेनु तैपनि आउन सक्छ। */
-  let touchNow = false;
-  document.addEventListener('pointerdown', e => { touchNow = e.pointerType === 'touch'; }, true);
-  document.addEventListener('contextmenu', e => {
-    const t = e.target && (e.target.nodeType === 3 ? e.target.parentElement : e.target);
-    if (touchNow && t && t.closest && t.closest('.chapter-item .ch-read-content')) e.preventDefault();
-  }, true);
 
   /* ── कपी / सबै छान्ने (फोनको आफ्नै मेनु रोकिएकाले पट्टीमै) ── */
   function copySel() {
