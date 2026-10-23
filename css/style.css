@@ -2632,3 +2632,6 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 .ch-jump-top .ch-jump-lbl { padding: 4px 10px; }
 .ch-jump-top .m-x { width: 34px; height: 34px; margin: 0; flex-shrink: 0; }
 .ch-jump-menu .ch-jm-row.exp { top: 40px; }
+
+/* अक्षरको आकार (सम्पादकभित्र) — {{150%:...}} */
+.rte .rte-fs { line-height: 1.25; }

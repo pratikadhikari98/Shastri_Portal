@@ -460,6 +460,13 @@ function mdAlign(id, al) {
 }
 function mdUndo(id) { const R = _rte(id); if (R && !R.codeMode) R.undo(); else { const ta = _mdTa(id); if (ta) { ta.focus(); document.execCommand('undo'); } } }
 function mdRedo(id) { const R = _rte(id); if (R && !R.codeMode) R.redo(); else { const ta = _mdTa(id); if (ta) { ta.focus(); document.execCommand('redo'); } } }
+/* चुनिएको जुनसुकै अक्षरको आकार सानो (−) / ठूलो (+) — हरेक थिचाइमा एक कदम; सामान्य आकारमा आएपछि चिन्ह हटिन्छ */
+function mdFontSize(id, dir) {
+  const R = window.RTE && RTE.get(id);
+  if (R && !R.codeMode) return R.fontSize(dir);
+  mdWrap(id, dir > 0 ? '{{130%:' : '{{80%:', '}}', 'लेख्नुस्');   // markup (कोड) मोडमा सिधै चिन्ह राख्ने
+}
+window.mdFontSize = mdFontSize;
 function mdClearMarks(id) { const R = _rte(id); if (R && !R.codeMode) R.clearMarks(); else toast('⚠️ पहिले अक्षर select गर्नुस्'); }
 function mdToggleCode(id) { const R = _rte(id); if (R) R.toggleCode(); }
 window.mdFmt = mdFmt; window.mdHeading = mdHeading; window.mdAlign = mdAlign;
@@ -713,6 +720,8 @@ function renderMdToolbar(textareaId, opts = {}) {
     ${btn('mark', 'सामान्य हाइलाइट', `mdWrap('${id}','==','==','हाइलाइट')`, 'hl')}
     ${btn('palette', 'रंगीन Highlight', `mdOpenColorPicker('${id}','highlight',this)`, 'hlc', 'tb-btn-color')}
     ${btn('fcolor', 'रंगीन अक्षर मात्र', `mdOpenColorPicker('${id}','text',this)`, 'fc', 'tb-btn-color')}
+    <button type="button" class="dxtb-btn dxtb-text" title="चुनिएको अक्षर सानो (A−)" aria-label="अक्षर सानो" onmousedown="event.preventDefault()" onclick="mdFontSize('${id}',-1)"><span class="dxtb-lbl" style="font-size:.78rem;font-weight:700">A−</span></button>
+    <button type="button" class="dxtb-btn dxtb-text" title="चुनिएको अक्षर ठूलो (A+)" aria-label="अक्षर ठूलो" onmousedown="event.preventDefault()" onclick="mdFontSize('${id}',1)"><span class="dxtb-lbl" style="font-size:1.05rem;font-weight:700">A+</span></button>
     ${sep}
     ${btn('alignL', 'बायाँ (Align left)', `mdAlign('${id}','left')`, 'alL')}
     ${btn('alignC', 'बीचमा (Align center)', `mdAlign('${id}','center')`, 'alC')}

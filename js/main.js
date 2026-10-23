@@ -1461,10 +1461,46 @@ function resolveHlColor(word) {
   return null;
 }
 
+/* ![|50|left](फोटो) → <img> — alt पछि | राखेर आकार (%) र स्थिति (left/right/center); बक्स/तालिका भित्र पनि चल्छ */
+function mdImgTag(alt, src) {
+  const parts = alt.split('|');
+  let w = 0, al = 'center';
+  parts.slice(1).forEach(tk => {
+    tk = tk.trim().toLowerCase();
+    if (/^\d{1,3}%?$/.test(tk)) w = Math.max(10, Math.min(100, parseInt(tk, 10)));
+    else if (tk === 'left' || tk === 'right' || tk === 'center') al = tk;
+  });
+  const st = [];
+  if (w) st.push('width:' + w + '%');
+  if (al === 'left') st.push('float:left;margin:4px 14px 8px 0');
+  else if (al === 'right') st.push('float:right;margin:4px 0 8px 14px');
+  else if (w) st.push('margin-left:auto;margin-right:auto');
+  return '<img src="' + src + '" alt="' + parts[0].trim() + '" loading="lazy" decoding="async"' + (st.length ? ' style="' + st.join(';') + '"' : '') + '>';
+}
+
+/* {{रातो:शब्द}} रंगीन अक्षर; {{150%:शब्द}} अक्षरको आकार; {{रातो 150%:शब्द}} दुवै */
+function parseFcWord(word) {
+  const toks = String(word || '').trim().split(/\s+/).filter(Boolean);
+  let s = 0; const rest = [];
+  toks.forEach(t => { const m = t.match(/^(\d{2,3})%$/); if (m) s = Math.max(50, Math.min(300, parseInt(m[1], 10))); else rest.push(t); });
+  const cw = rest.join(' ');
+  const c = cw ? resolveHlColor(cw) : null;
+  return { cw, c, s, ok: (!cw || !!c) && (!!c || !!s) };
+}
+function mdFcSpan(word, txt) {
+  const p = parseFcWord(word);
+  if (!p.ok) return word + ':' + txt;
+  const st = [];
+  if (p.c) st.push('color:' + p.c + ';font-weight:600');
+  if (p.s) st.push('font-size:' + p.s + '%');
+  return `<span style="${st.join(';')}">${txt}</span>`;
+}
+
 /* इनलाइन मात्र (heading/paragraph/list जस्ता block-level चिज नछुने) —
    box र table भित्र पनि यही प्रयोग हुन्छ */
 function applyInline(str) {
   return str
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, src) => mdImgTag(alt, src))
     .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/\*(.+?)\*/g,'<em>$1</em>')
@@ -1476,11 +1512,7 @@ function applyInline(str) {
       const full = colorWord ? colorWord + ':' + txt : txt;
       return `<span class="highlight">${full}</span>`;
     })
-    .replace(/\{\{([^:{}\n]{1,16}):([^{}]+?)\}\}/g, (m, colorWord, txt) => {
-      const c = resolveHlColor(colorWord);
-      if (c) return `<span style="color:${c};font-weight:600">${txt}</span>`;
-      return colorWord + ':' + txt;
-    });
+    .replace(/\{\{([^:{}\n]{1,24}):([^{}]+?)\}\}/g, (m, w, txt) => mdFcSpan(w, txt));
 }
 
 /* ── थप बक्स feature — :::type:शीर्षक ... ::: ── */
@@ -1532,22 +1564,7 @@ function renderMd(text) {
   );
 
   let html = escaped
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, src) => {
-      // ![|50|left](फोटो) — alt पछि | राखेर आकार (%) र स्थिति (left/right/center) दिन मिल्छ
-      const parts = alt.split('|');
-      let w = 0, al = 'center';
-      parts.slice(1).forEach(tk => {
-        tk = tk.trim().toLowerCase();
-        if (/^\d{1,3}%?$/.test(tk)) w = Math.max(10, Math.min(100, parseInt(tk, 10)));
-        else if (tk === 'left' || tk === 'right' || tk === 'center') al = tk;
-      });
-      const st = [];
-      if (w) st.push('width:' + w + '%');
-      if (al === 'left') st.push('float:left;margin:4px 14px 8px 0');
-      else if (al === 'right') st.push('float:right;margin:4px 0 8px 14px');
-      else if (w) st.push('margin-left:auto;margin-right:auto');
-      return '<img src="' + src + '" alt="' + parts[0].trim() + '" loading="lazy" decoding="async"' + (st.length ? ' style="' + st.join(';') + '"' : '') + '>';
-    })
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, src) => mdImgTag(alt, src))
     .replace(/^(#{1,5}) (?:\{:(left|center|right|justify)\})?(.+)$/gm, (m, h, al, t) => `<h${h.length}${al && al !== 'left' ? ` style="text-align:${al}"` : ''}>${t}</h${h.length}>`)
     .replace(/^---$/gm,'<hr>')
     .replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>')
@@ -1561,11 +1578,7 @@ function renderMd(text) {
       const full = colorWord ? colorWord + ':' + txt : txt;
       return `<span class="highlight">${full}</span>`;
     })
-    .replace(/\{\{([^:{}\n]{1,16}):([^{}]+?)\}\}/g, (m, colorWord, txt) => {
-      const c = resolveHlColor(colorWord);
-      if (c) return `<span style="color:${c};font-weight:600">${txt}</span>`;
-      return colorWord + ':' + txt;
-    })
+    .replace(/\{\{([^:{}\n]{1,24}):([^{}]+?)\}\}/g, (m, w, txt) => mdFcSpan(w, txt))
     .replace(/^(?:>|&gt;) (?:\{:(left|center|right|justify)\})?(.+)$/gm, (m, al, t) => `<blockquote${al && al !== 'left' ? ` style="text-align:${al}"` : ''}>${t}</blockquote>`)
     .replace(/^- (?:\{:(left|center|right|justify)\})?(.+)$/gm, (m, al, t) => `<li${al && al !== 'left' ? ` style="text-align:${al}"` : ''}>${t}</li>`)
     .replace(/^\{:(left|center|right|justify)\}(.*)(?:\n|$)/gm, (m, al, t) => `<div style="text-align:${al}">${t}</div>`)

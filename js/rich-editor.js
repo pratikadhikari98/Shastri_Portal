@@ -18,6 +18,15 @@
   const store = () => { App._mdImgs = App._mdImgs || {}; App._mdImgUp = App._mdImgUp || {}; return App; };
   const boxMeta = t => (typeof BOX_TYPES !== 'undefined' && (BOX_TYPES[String(t).toLowerCase()] || BOX_TYPES.note)) || { icon: '📝', color: '#4CAF50', label: 'याद राख्नुहोस्' };
   const colorOf = w => (typeof resolveHlColor === 'function' ? resolveHlColor(w) : null);
+  /* {{रातो:..}} रङ, {{150%:..}} आकार, {{रातो 150%:..}} दुवै */
+  function parseFcW(word) {
+    const toks = String(word || '').trim().split(/\s+/).filter(Boolean);
+    let s = 0; const rest = [];
+    toks.forEach(t => { const m = t.match(/^(\d{2,3})%$/); if (m) s = Math.max(50, Math.min(300, parseInt(m[1], 10))); else rest.push(t); });
+    const cw = rest.join(' ');
+    const c = cw ? colorOf(cw) : null;
+    return { cw, c, s, ok: (!cw || !!c) && (!!c || !!s) };
+  }
 
   /* ═════════ markdown → editor HTML ═════════ */
   function imgHtml(alt, src) {
@@ -54,10 +63,13 @@
         if (c) return `<span class="highlight rte-hl" data-c="${escAttr(w.trim())}" style="background:${c}33;color:${c};box-shadow:inset 0 -2px 0 ${c}">${txt}</span>`;
         return `<span class="highlight rte-hl">${w ? w + ':' + txt : txt}</span>`;
       })
-      .replace(/\{\{([^:{}\n]{1,16}):([^{}]+?)\}\}/g, (m, w, txt) => {
-        const c = colorOf(w);
-        if (c) return `<span class="rte-fc" data-c="${escAttr(w.trim())}" style="color:${c};font-weight:600">${txt}</span>`;
-        return w + ':' + txt;
+      .replace(/\{\{([^:{}\n]{1,24}):([^{}]+?)\}\}/g, (m, w, txt) => {
+        const p = parseFcW(w);
+        if (!p.ok) return w + ':' + txt;
+        let h = txt;
+        if (p.c) h = `<span class="rte-fc" data-c="${escAttr(p.cw)}" style="color:${p.c};font-weight:600">${h}</span>`;
+        if (p.s) h = `<span class="rte-fs" data-fs="${p.s}" style="font-size:${p.s}%">${h}</span>`;
+        return h;
       });
     return s.replace(/[\uE001-\uE008]/g, ch => UNSENT[ch]);
   }
@@ -149,7 +161,12 @@
     ctx = ctx || { b: false, i: false, u: false, s: false };
     let s = '';
     for (const n of nodes) {
-      if (n.nodeType === 3) { s += escMd(n.nodeValue.replace(/[\u200b\ufeff]/g, '').replace(/\u00a0/g, ' ').replace(/\r\n?/g, '\n').replace(/\n/g, allowNl ? '\n' : ' ')); continue; }
+      if (n.nodeType === 3) {
+        let tx = escMd(n.nodeValue.replace(/[\u200b\ufeff]/g, '').replace(/\u00a0/g, ' ').replace(/\r\n?/g, '\n').replace(/\n/g, allowNl ? '\n' : ' '));
+        // आकार भएको भागमा रङ र आकार एउटै {{रातो 150%:..}} मा (नेस्ट नगरी) लेखिन्छ
+        if (ctx.flat && (ctx.fc || ctx.fs)) tx = mark('{{' + [ctx.fc, ctx.fs && ctx.fs + '%'].filter(Boolean).join(' ') + ':', '}}', tx);
+        s += tx; continue;
+      }
       if (n.nodeType !== 1) continue;
       const tag = n.tagName;
       const kids = () => inlineMd(n.childNodes, allowNl, ctx);
@@ -179,8 +196,16 @@
         const t = kids(); const c = n.getAttribute('data-c');
         s += mark('==' + (c ? c + ':' : ''), '==', t); continue;
       }
-      if (n.classList.contains('rte-fc')) {
-        const t = kids(); const c = n.getAttribute('data-c');
+      if (n.classList.contains('rte-fc') || n.classList.contains('rte-fs')) {
+        const c = n.getAttribute('data-c'), f = n.getAttribute('data-fs');
+        if (ctx.flat || f || n.querySelector('.rte-fs')) {
+          const sv = [ctx.fc, ctx.fs, ctx.flat];
+          if (c) ctx.fc = c; if (f) ctx.fs = f; ctx.flat = true;
+          const t = kids();
+          ctx.fc = sv[0]; ctx.fs = sv[1]; ctx.flat = sv[2];
+          s += t; continue;
+        }
+        const t = kids();
         s += c ? mark('{{' + c + ':', '}}', t) : t; continue;
       }
       s += kids();
@@ -423,6 +448,7 @@
       undo() { if (this.dirty) this.flush(); if (this.hi > 0) this.goto(this.hi - 1); },
       redo() { if (this.hi < this.hist.length - 1) this.goto(this.hi + 1); },
       mark(kind, color) { this.restore(); applyMark(this, kind, color); },
+      fontSize(dir) { this.restore(); applySizeStep(this, dir); },
       clearMarks() { this.restore(); clearMarks(this); },
       block(tag) { this.restore(); setBlock(this, tag); this.updateState(); },
       list() { this.restore(); if (blockedHere(this)) return; document.execCommand('insertUnorderedList'); cleanStyles(el); this.flush(); this.updateState(); },
@@ -550,8 +576,9 @@
     return segs;
   }
 
-  const MARK = { hl: '.rte-hl', fc: '.rte-fc' };
+  const MARK = { hl: '.rte-hl', fc: '.rte-fc', fs: '.rte-fs' };
   function markSpan(kind, color, inner) {
+    if (kind === 'fs') return `<span class="rte-fs" data-fs="${escAttr(color)}" style="font-size:${escAttr(color)}%">${inner}</span>`;
     const c = color ? colorOf(color) : null;
     if (kind === 'hl') {
       return c ? `<span class="highlight rte-hl" data-c="${escAttr(color)}" style="background:${c}33;color:${c};box-shadow:inset 0 -2px 0 ${c}">${inner}</span>`
@@ -566,6 +593,7 @@
     return tpl.content.firstChild;
   }
   function recolor(sp, kind, color) {
+    if (kind === 'fs') { sp.setAttribute('data-fs', color); sp.setAttribute('style', 'font-size:' + color + '%'); return; }
     const nw = makeSpan(kind, color);
     if (color) { sp.setAttribute('data-c', color); } else sp.removeAttribute('data-c');
     sp.setAttribute('style', nw.getAttribute('style') || ''); if (!nw.getAttribute('style')) sp.removeAttribute('style');
@@ -587,7 +615,8 @@
     let first = null, last = null;
     if (segs.length && segs.every(ancOf)) {
       const spans = [...new Set(segs.map(ancOf))];
-      const same = spans.every(sp => (sp.getAttribute('data-c') || '') === (color || ''));
+      const AT = kind === 'fs' ? 'data-fs' : 'data-c';
+      const same = spans.every(sp => (sp.getAttribute(AT) || '') === (color || ''));
       spans.forEach(sp => { if (same) sp.replaceWith(...sp.childNodes); else { recolor(sp, kind, color); first = first || sp; last = sp; } });
     } else {
       for (const r of segs.slice().reverse()) {
@@ -602,13 +631,34 @@
     inst.commit();
   }
 
+  /* चुनिएको अक्षर सानो/ठूलो — A− / A+ (हरेक पटक एक कदम) */
+  const SIZE_STEPS = [60, 70, 80, 90, 100, 115, 130, 150, 175, 200, 250, 300];
+  function applySizeStep(inst, dir) {
+    const sel = getSelection(); if (!sel.rangeCount) return;
+    const range = sel.getRangeAt(0);
+    if (!inst.el.contains(range.commonAncestorContainer)) return;
+    if (range.collapsed) { toast('⚠️ पहिले अक्षर select गर्नुस्'); return; }
+    const a = range.startContainer, e = a.nodeType === 3 ? a.parentElement : a;
+    let sp = e && e.closest ? e.closest('.rte-fs') : null;
+    if (!sp || !inst.el.contains(sp)) sp = [...inst.el.querySelectorAll('.rte-fs')].find(s => range.intersectsNode(s)) || null;   // चुनाइ आकार-पट्टीलाई घेरेर बसेको बेला पनि
+    const cur = sp ? (parseInt(sp.getAttribute('data-fs'), 10) || 100) : 100;
+    let i = 0, best = 1e9;
+    SIZE_STEPS.forEach((v, k) => { const d = Math.abs(v - cur); if (d < best) { best = d; i = k; } });
+    const nxt = SIZE_STEPS[Math.max(0, Math.min(SIZE_STEPS.length - 1, i + (dir > 0 ? 1 : -1)))];
+    if (nxt === 100) {   // सामान्य आकारमा फर्कने
+      inst.el.querySelectorAll('.rte-fs').forEach(s => { if (range.intersectsNode(s)) s.replaceWith(...s.childNodes); });
+      inst.el.normalize(); inst.commit(); return;
+    }
+    applyMark(inst, 'fs', String(nxt));
+  }
+
   function clearMarks(inst) {
     const sel = getSelection(); if (!sel.rangeCount) return;
     const range = sel.getRangeAt(0);
     if (range.collapsed || !inst.el.contains(range.commonAncestorContainer)) return;
     document.execCommand('removeFormat');                       // बोल्ड/छड्के
     const r2 = sel.rangeCount ? sel.getRangeAt(0) : range;
-    inst.el.querySelectorAll('.rte-hl,.rte-fc').forEach(sp => { if (r2.intersectsNode(sp)) sp.replaceWith(...sp.childNodes); });
+    inst.el.querySelectorAll('.rte-hl,.rte-fc,.rte-fs').forEach(sp => { if (r2.intersectsNode(sp)) sp.replaceWith(...sp.childNodes); });
     inst.commit();
   }
 
@@ -670,7 +720,9 @@
     const sel = getSelection(); const range = sel.rangeCount ? sel.getRangeAt(0) : null;
     let top = range ? range.startContainer : null;
     if (top && top.nodeType === 3) top = top.parentNode;
-    while (top && top !== inst.el && top.parentNode !== inst.el) top = top.parentNode;
+    const boxLine = top && top.closest ? top.closest('.rte-box-body > div') : null;   // बक्सभित्रको लाइन भए त्यहीँ (बक्सबाहिर होइन)
+    if (boxLine && inst.el.contains(boxLine)) top = boxLine;
+    else while (top && top !== inst.el && top.parentNode !== inst.el) top = top.parentNode;
     if (!top || top === inst.el) { inst.el.append(...nodes); return; }
     const isLine = top.tagName === 'DIV' && ![...top.children].some(isBlockEl);
     if (!isLine) { top.after(...nodes); return; }
