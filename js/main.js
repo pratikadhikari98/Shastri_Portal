@@ -1536,11 +1536,12 @@ function renderBox(type, label, inner) {
 
 /* ── तालिका feature — | कलम | कलम |  हेडर पछि |---|---| लाइन चाहिन्छ ── */
 function renderTable(headerLine, bodyBlock) {
+  const cellHtml = s => applyInline(s).replace(/&lt;br\s*\/?&gt;/gi, '<br>');   // कक्षभित्रको नयाँ लाइन
   const headers = headerLine.split('|').map(s=>s.trim()).filter(Boolean);
   const rows = bodyBlock.trim().split('\n').filter(Boolean).map(r =>
-    r.replace(/^\||\|$/g,'').split('|').map(c=>applyInline(c.trim()))
+    r.replace(/^\||\|$/g,'').split('|').map(c=>cellHtml(c.trim()))
   );
-  const thead = `<tr>${headers.map(h=>`<th>${applyInline(h)}</th>`).join('')}</tr>`;
+  const thead = `<tr>${headers.map(h=>`<th>${cellHtml(h)}</th>`).join('')}</tr>`;
   const tbody = rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
   return `<div class="content-table-wrap"><table class="content-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
 }

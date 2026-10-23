@@ -92,7 +92,7 @@
   }
 
   function tableHtml(headers, rows) {
-    const cell = (tag, t) => `<${tag}>${inlineHtml(t) || '<br>'}</${tag}>`;
+    const cell = (tag, t) => `<${tag}>${String(t).split(/<br\s*\/?>/i).map(p => inlineHtml(p)).join('<br>') || '<br>'}</${tag}>`;   // कक्षभित्रको नयाँ लाइन = <br>
     return `<div class="content-table-wrap rte-tablewrap"><table class="content-table rte-table"><thead><tr>${headers.map(h => cell('th', h)).join('')}</tr></thead>` +
       `<tbody>${rows.map(r => '<tr>' + r.map(c => cell('td', c)).join('') + '</tr>').join('')}</tbody></table></div>`;
   }
@@ -170,7 +170,7 @@
       if (n.nodeType !== 1) continue;
       const tag = n.tagName;
       const kids = () => inlineMd(n.childNodes, allowNl, ctx);
-      if (tag === 'BR') { s += allowNl ? '\n' : ' '; continue; }
+      if (tag === 'BR') { s += ctx.cellBr ? '<br>' : (allowNl ? '\n' : ' '); continue; }
       if (tag === 'IMG') {
         const src = n.getAttribute('data-src') || n.getAttribute('src') || '';
         if (/^data:/i.test(src)) continue;
@@ -220,7 +220,7 @@
   }
 
   function tableMd(table, lines) {
-    const cellMd = c => inlineMd(c.childNodes, false).replace(/\|/g, '｜').trim();
+    const cellMd = c => inlineMd(c.childNodes, false, { b: false, i: false, u: false, s: false, cellBr: true }).replace(/\|/g, '｜').trim().replace(/^(?:\s*<br>)+|(?:<br>\s*)+$/g, '').trim();
     const trs = [...table.querySelectorAll('tr')];
     if (trs.length < 2) return;
     const head = [...trs[0].children].map(c => cellMd(c) || 'कलम');
@@ -449,6 +449,15 @@
       redo() { if (this.hi < this.hist.length - 1) this.goto(this.hi + 1); },
       mark(kind, color) { this.restore(); applyMark(this, kind, color); },
       fontSize(dir) { this.restore(); applySizeStep(this, dir); },
+      tableCell() {
+        const sel = getSelection(); let n = null;
+        if (sel.rangeCount && el.contains(sel.anchorNode)) n = sel.anchorNode;
+        else if (this.range && el.contains(this.range.startContainer)) n = this.range.startContainer;
+        if (n && n.nodeType === 3) n = n.parentElement;
+        const c = n && n.closest ? n.closest('td,th') : null;
+        return c && el.contains(c) ? c : null;
+      },
+      tableOp(op, cell) { return tableOp(this, op, cell); },
       clearMarks() { this.restore(); clearMarks(this); },
       block(tag) { this.restore(); setBlock(this, tag); this.updateState(); },
       list() { this.restore(); if (blockedHere(this)) return; document.execCommand('insertUnorderedList'); cleanStyles(el); this.flush(); this.updateState(); },
@@ -491,6 +500,10 @@
     el.addEventListener('blur', () => { cleanStyles(el); inst.flush(); });
     el.addEventListener('keydown', e => onKey(inst, e));
     el.addEventListener('beforeinput', e => {
+      if (e.inputType === 'insertParagraph') {            // मोबाइल किबोर्डको Enter — कक्षभित्र भए कक्षभित्रै नयाँ लाइन
+        const sl = getSelection(); const nn = sl.anchorNode && (sl.anchorNode.nodeType === 3 ? sl.anchorNode.parentElement : sl.anchorNode);
+        if (nn && nn.closest && nn.closest('td,th') && el.contains(nn)) { e.preventDefault(); cellNewline(inst); return; }
+      }
       if (e.inputType === 'historyUndo') { e.preventDefault(); inst.undo(); }
       else if (e.inputType === 'historyRedo') { e.preventDefault(); inst.redo(); }
     });
@@ -631,6 +644,54 @@
     inst.commit();
   }
 
+  /* तालिकाको कक्षभित्र नयाँ लाइन (<br>) — लाइन अन्त्यमा भए देखिने खाली लाइन पनि बनाउँछ */
+  function cellNewline(inst) {
+    const sel = getSelection(); if (!sel.rangeCount) return;
+    const rg = sel.getRangeAt(0); rg.deleteContents();
+    const br = document.createElement('br'); rg.insertNode(br);
+    if (!br.nextSibling) br.after(document.createElement('br'));   // अन्तिम लाइन देखिन अर्को <br> चाहिन्छ
+    const r = document.createRange(); r.setStartAfter(br); r.collapse(true); sel.removeAllRanges(); sel.addRange(r);
+    inst.markDirty();
+  }
+
+  /* तालिका सम्पादन: पङ्क्ति/स्तम्भ थप्ने-हटाउने, तालिका हटाउने (कर्सर भएको कक्षको आधारमा) */
+  function tableOp(inst, op, cell) {
+    const table = cell && cell.closest ? cell.closest('table') : null;
+    if (!table || !inst.el.contains(table)) return null;
+    const tr = cell.closest('tr'), rows = [...table.querySelectorAll('tr')];
+    const col = [...tr.children].indexOf(cell), inHead = !!tr.closest('thead');
+    const mkCell = tag => { const c = document.createElement(tag); c.innerHTML = '<br>'; return c; };
+    const mkRow = () => { const nr = document.createElement('tr'); [...rows[0].children].forEach(() => nr.appendChild(mkCell('td'))); return nr; };
+    const bodyRows = () => table.tBodies[0] ? table.tBodies[0].rows.length : 0;
+    let focus = cell;
+    if (op === 'rowAbove') {
+      if (inHead) { toast('⚠️ शीर्षक पङ्क्तिभन्दा माथि पङ्क्ति राख्न मिल्दैन'); return cell; }
+      const nr = mkRow(); tr.before(nr); focus = nr.children[Math.min(col, nr.children.length - 1)];
+    } else if (op === 'rowBelow') {
+      const nr = mkRow(); if (inHead) table.tBodies[0].prepend(nr); else tr.after(nr);
+      focus = nr.children[Math.min(col, nr.children.length - 1)];
+    } else if (op === 'delRow') {
+      if (inHead) { toast('⚠️ शीर्षक पङ्क्ति हटाउन मिल्दैन'); return cell; }
+      if (bodyRows() < 2) { toast('⚠️ कम्तीमा एउटा पङ्क्ति चाहिन्छ (पूरै हटाउन "पूरै तालिका हटाउनुस्")'); return cell; }
+      const nb = tr.nextElementSibling || tr.previousElementSibling; focus = nb.children[Math.min(col, nb.children.length - 1)]; tr.remove();
+    } else if (op === 'colLeft' || op === 'colRight') {
+      const at = op === 'colLeft' ? col : col + 1;
+      rows.forEach(rw => rw.insertBefore(mkCell(rw.closest('thead') ? 'th' : 'td'), rw.children[at] || null));
+      focus = tr.children[at];
+    } else if (op === 'delCol') {
+      if (tr.children.length < 2) { toast('⚠️ कम्तीमा एउटा स्तम्भ चाहिन्छ (पूरै हटाउन "पूरै तालिका हटाउनुस्")'); return cell; }
+      focus = tr.children[col + 1] || tr.children[col - 1];
+      rows.forEach(rw => { if (rw.children[col]) rw.children[col].remove(); });
+    } else if (op === 'delTable') {
+      const wrap = table.closest('.rte-tablewrap') || table, nxt = wrap.nextElementSibling;
+      if (nxt && nxt.tagName === 'DIV' && !nxt.textContent.replace(/[\u200b\s]/g, '') && !nxt.querySelector('img')) { wrap.remove(); focus = nxt; }
+      else { const ph = document.createElement('div'); ph.innerHTML = '<br>'; wrap.replaceWith(ph); focus = ph; }
+    } else return cell;
+    if (focus) { const sel = getSelection(); const r = document.createRange(); r.selectNodeContents(focus); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); }
+    inst.commit();
+    return op === 'delTable' ? null : focus;
+  }
+
   /* चुनिएको अक्षर सानो/ठूलो — A− / A+ (हरेक पटक एक कदम) */
   const SIZE_STEPS = [60, 70, 80, 90, 100, 115, 130, 150, 175, 200, 250, 300];
   function applySizeStep(inst, dir) {
@@ -759,7 +820,7 @@
     const sel = getSelection();
     const n = sel.anchorNode && (sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode);
     if (e.key === 'Enter' && !e.shiftKey && n && n.closest) {
-      if (n.closest('td,th')) { e.preventDefault(); return; }                      // तालिकाको कक्षमा नयाँ लाइन छैन
+      if (n.closest('td,th')) { e.preventDefault(); cellNewline(inst); return; }    // तालिकाको कक्षभित्र Enter = कक्षभित्रै नयाँ लाइन
       const hb = n.closest('h1,h2,h3,h4,h5,blockquote');
       if (hb && inst.el.contains(hb)) {                                              // शीर्षक पछि सामान्य लाइन आओस्
         e.preventDefault();

@@ -467,6 +467,43 @@ function mdFontSize(id, dir) {
   mdWrap(id, dir > 0 ? '{{130%:' : '{{80%:', '}}', 'लेख्नुस्');   // markup (कोड) मोडमा सिधै चिन्ह राख्ने
 }
 window.mdFontSize = mdFontSize;
+/* तालिका सम्पादन — कर्सर भएको कक्षको पङ्क्ति/स्तम्भ थप्ने-हटाउने */
+function mdTableMenu(id) {
+  const R = window.RTE && RTE.get(id);
+  if (!R || R.codeMode) { toast('⚠️ यो "लेख्ने" मोडमा मात्र चल्छ (Hide markup गरेर)'); return; }
+  const cell = R.tableCell();
+  if (!cell) { toast('⚠️ पहिले तालिकाको कुनै कक्षमा कर्सर राख्नुस्'); return; }
+  document.getElementById('mdTblSheet')?.remove();
+  const sheet = document.createElement('div'); sheet.id = 'mdTblSheet'; sheet.className = 'mdimg-back';
+  const b = (op, label) => `<button type="button" class="mdimg-chip" onmousedown="event.preventDefault()" onclick="mdTableDo('${op}')">${label}</button>`;
+  sheet.innerHTML = `<div class="mdimg-card">
+      <div class="mdimg-title">📊 तालिका सम्पादन</div>
+      <div class="mdimg-lbl">पङ्क्ति (आडो)</div>
+      <div class="mdimg-row">${b('rowAbove', '➕ माथि')}${b('rowBelow', '➕ तल')}${b('delRow', '🗑 यो पङ्क्ति')}</div>
+      <div class="mdimg-lbl">स्तम्भ (ठाडो)</div>
+      <div class="mdimg-row">${b('colLeft', '➕ बायाँ')}${b('colRight', '➕ दायाँ')}${b('delCol', '🗑 यो स्तम्भ')}</div>
+      <div class="mdimg-row">${b('delTable', '🗑 पूरै तालिका हटाउनुस्')}</div>
+      <div class="mdimg-hint">कक्षभित्र Enter थिच्दा कक्षभित्रै नयाँ लाइन आउँछ।</div>
+      <div class="mdimg-btns"><button type="button" class="btn-p" onclick="mdTableClose()">✓ बन्द</button></div>
+    </div>`;
+  sheet.addEventListener('click', e => { if (e.target === sheet) mdTableClose(); });
+  document.body.appendChild(sheet);
+  window._mdTblCtx = { id, cell };
+}
+window.mdTableMenu = mdTableMenu;
+function mdTableDo(op) {
+  const c = window._mdTblCtx; if (!c) return;
+  const R = window.RTE && RTE.get(c.id); if (!R) return;
+  const nc = R.tableOp(op, c.cell);
+  if (op === 'delTable' || !nc) { mdTableClose(); return; }
+  c.cell = nc;
+  if (op.startsWith('del')) mdTableClose();   // हटाएपछि बन्द; थप्दा खुला रहन्छ (धेरै थप्न मिल्ने)
+  else toast('✓ थपियो');
+}
+window.mdTableDo = mdTableDo;
+function mdTableClose() { document.getElementById('mdTblSheet')?.remove(); window._mdTblCtx = null; }
+window.mdTableClose = mdTableClose;
+
 function mdClearMarks(id) { const R = _rte(id); if (R && !R.codeMode) R.clearMarks(); else toast('⚠️ पहिले अक्षर select गर्नुस्'); }
 function mdToggleCode(id) { const R = _rte(id); if (R) R.toggleCode(); }
 window.mdFmt = mdFmt; window.mdHeading = mdHeading; window.mdAlign = mdAlign;
@@ -734,6 +771,7 @@ function renderMdToolbar(textareaId, opts = {}) {
     ${sep}
     ${btn('box', 'सूचना/सुझाव बक्स', `mdInsertBox('${id}',this)`, '', 'tb-btn-box')}
     ${btn('table', 'तालिका', `mdInsertTable('${id}')`)}
+    <button type="button" class="dxtb-btn dxtb-text" title="तालिकाको पङ्क्ति/स्तम्भ थप्ने वा हटाउने (तालिकाको कक्षमा कर्सर राखेर)" aria-label="तालिका सम्पादन" onmousedown="event.preventDefault()" onclick="mdTableMenu('${id}')"><span class="dxtb-lbl" style="font-size:.78rem;font-weight:700">⊞ ±</span></button>
     ${btn('photo', 'कर्सर भएको ठाउँमा फोटो अपलोड', `mdUploadImage('${id}')`, '', 'tb-btn-photo')}
     ${btn('pdf', 'PDF अपलोड (पृष्ठहरू अध्यायभित्र चित्र जस्तै देखिन्छन्)', `mdUploadPdf('${id}')`)}
     ${btn('link', 'इन्टरनेटको फोटो (URL)', `mdInsertImage('${id}')`)}
