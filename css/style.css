@@ -2591,8 +2591,8 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
    माथि/तलको किनारा अहिलेको थिमको रङ (--accent) अनुसार; अक्षर बीचमा होइन, छेउ (बायाँ) मा */
 .nb-banner {
   position: relative; display: flex; align-items: center; justify-content: flex-start;
-  margin: 0 0 12px; padding: 8px 16px; box-sizing: border-box; min-height: 44px; line-height: 1.2;
-  background: var(--bg); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent);
+  margin: 0 16px 12px; padding: 8px 14px; box-sizing: border-box; min-height: 44px; line-height: 1.2;   /* बोर्डसँग बराबर छेउ — स्क्रिनको कुना नछुने */
+  background: var(--bg); border: 1px solid var(--accent);   /* चारै तिर पातलो किनारा, थिमको रङ */
   box-shadow: 0 4px 12px var(--shadow);
   font-family: 'Akshar', var(--font-s); font-size: 1.15rem; font-weight: 800; color: #4BA3E3;
   pointer-events: none;
