@@ -552,6 +552,9 @@ function applyLanguage(lang) {
     const key = el.getAttribute('data-i18n');
     if (dict[key] != null) el.textContent = dict[key];
   });
+  // हेडरको "शास्त्री पोर्टल" नेपाली भाषामा Ananda फन्टमा (संस्कृत/अंग्रेजीमा सामान्य पाठ)
+  const logoTxt = document.getElementById('logoText');
+  if (logoTxt && lang === 'ne') logoTxt.innerHTML = anandaHtml(dict.app_name);
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const key = el.getAttribute('data-i18n-placeholder');
     if (dict[key] != null) el.setAttribute('placeholder', dict[key]);
@@ -753,6 +756,7 @@ function initHistoryNav() {
    फन्ट लोड हुनुअघि र लोड नभए Unicode पाठ देखिन्छ (html.an-ready आएपछि मात्र फन्ट देखिन्छ)।
    ════════════════════════════════════ */
 const ANANDA_MAP = { 'प्रथम': 'k|yd', 'द्वितीय': 'låtLo', 'तृतीय': 't[tLo', 'चतुर्थ': "rt'y{", 'वर्ष': 'jif{',
+  'शास्त्री': 'zf:t|L', 'पोर्टल': 'kf]6{n', 'सूचना': ';"rgf', 'पाटी': 'kf6L',
   'प्रथमः': 'k|ydM', 'द्वितीयः': 'låtLoM', 'तृतीयः': 't[tLoM', 'चतुर्थः': "rt'y{M", 'खण्डः': 'v08M' };   // ष को पूरा रूप: i (आधा) + f
 function anandaHtml(text) {
   const words = String(text == null ? '' : text).trim().split(/\s+/);

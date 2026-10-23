@@ -2582,3 +2582,33 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 /* वर्ष-कार्डको शीर्षक (प्रथमः खण्डः …) को रङ थिमको accent रङ अनुसार */
 .year-card .yc-title, .year-card .yc-title .an-uni, .year-card .yc-title .an-leg,
 [data-theme="dark"] .year-card .yc-title { color: var(--accent) !important; }
+
+
+/* ═══ Ananda बोल्ड — हेडरको "शास्त्री पोर्टल" (इन्द्रेणी रङ) र समाचार-बोर्डको "सूचना पाटी" ═══ */
+.logo-text .an-leg {
+  font-size: 1.45em; line-height: 1; font-weight: 700; font-synthesis: weight;
+  -webkit-text-stroke: 0.02em transparent;
+  background: linear-gradient(90deg, #2878D8, #D9468F, #F08A24, #2E9E5A, #7B4FD6, #14A3A0, #2878D8);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  color: transparent; -webkit-text-fill-color: transparent;
+  animation: logoRainbow 8s linear infinite;
+}
+.logo-text:has(.an-leg) { text-shadow: none; }
+@keyframes logoRainbow { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .logo-text .an-leg { animation: none; } }
+
+/* ब्ल्याकबोर्डको माथि दुवै कुना छुने पट्टी (layer) */
+.nb-banner {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  height: 34px; line-height: 1;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+  color: #fff; font-family: 'Akshar', var(--font-s); font-size: 16px; font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+.nb-banner .an-leg { font-size: 1.5em; line-height: 1; font-weight: 700; font-synthesis: weight; -webkit-text-stroke: 0.02em currentColor; }
+.news-board .nb-date { top: 42px; }
+.news-board .nb-overlay { padding-top: max(12%, 52px); }
