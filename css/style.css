@@ -2651,11 +2651,14 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 .tr-bar { position: fixed; z-index: 600; display: flex; align-items: center; gap: 8px; padding: 7px 9px;
   background: var(--bg); border: 1px solid var(--divider); border-radius: 16px; box-shadow: 0 8px 24px var(--shadow-lg, rgba(0,0,0,.25)); }
 .tr-bar[hidden] { display: none; }
-.tr-bar .neu-btn { width: 38px; height: 38px; font-size: 0.95rem; font-weight: 800; flex-shrink: 0; }
+.tr-bar .neu-btn { --neu-r: 10px; width: 38px; height: 38px; font-family: 'Siddhanta', var(--font); font-size: 1.05rem; font-weight: 700; flex-shrink: 0; }   /* हल्का राउन्ड कुना भएको चतुर्भुज, सिद्धान्त फन्ट */
+.tr-grip { width: 14px; min-height: 30px; align-self: stretch; flex-shrink: 0; cursor: grab; touch-action: none; opacity: .75;
+  background: radial-gradient(circle, var(--text-3) 1.5px, transparent 1.8px) 0 0 / 7px 8px; }
+.tr-grip:active { cursor: grabbing; }
 .tr-sep { width: 1px; align-self: stretch; background: var(--divider); margin: 2px 0; }
-.tr-ico-fc { border-bottom: 3px solid #F44336; line-height: 1.15; padding: 0 1px; }
+.tr-ico-fc { font-family: 'Siddhanta', var(--font); border-bottom: 3px solid #F44336; line-height: 1.15; padding: 0 1px; }
 .tr-ico-hl { background: #FDD83599; border-radius: 3px; padding: 0 4px; line-height: 1.2; }
-.tr-sw { width: 28px; height: 28px; border-radius: 50%; padding: 0; cursor: pointer; flex-shrink: 0; border: 2px solid var(--surface-opaque, #fff);
+.tr-sw { width: 28px; height: 28px; border-radius: 8px; padding: 0; cursor: pointer; flex-shrink: 0; border: 2px solid var(--surface-opaque, #fff);
   box-shadow: 0 0 0 1px var(--divider), 0 2px 5px var(--shadow); -webkit-tap-highlight-color: transparent; }
 .tr-sw:active { transform: scale(0.88); }
 .usr-mk { border-radius: 3px; }

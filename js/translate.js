@@ -21,7 +21,8 @@
   const SEL = '.ch-read-content';
 
   let cur = { text: '', tl: 'ne', el: null, key: '', s: 0, e: 0 };
-  let bar = null, timer = 0, raf = 0;
+  let bar = null, timer = 0, raf = 0, drag = null, lastTap = 0, userPos = null;
+  try { userPos = JSON.parse(localStorage.getItem('sp_trbar_pos') || 'null'); } catch (e) {}   // पट्टी सारेको ठाउँ सम्झने
 
   /* ── select गरिएको पाठ (अध्यायको पाठ भित्र मात्र) ── */
   function selInfo() {
@@ -47,14 +48,15 @@
   /* ── तैरिने पट्टी (zipper-बटन .neu-btn जस्तै; बोर्डर थिम अनुसार) ── */
   const PAL = ['#F44336', '#FB8C00', '#FBC02D', '#4CAF50', '#2196F3', '#9C27B0'];
   let view = 'main';   // 'main' | 'fc' (अक्षरको रङ) | 'hl' (हाइलाइट)
-  const nb = (attrs, title, html) => `<button type="button" class="neu-btn neu-btn--round" ${attrs} title="${title}" aria-label="${title}">${html}</button>`;
+  const nb = (attrs, title, html) => `<button type="button" class="neu-btn" ${attrs} title="${title}" aria-label="${title}">${html}</button>`;
   function paintBar() {
     const b = ensureBar();
+    const grip = '<span class="tr-grip" title="सार्न तान्नुस् (दुई पटक थिच्दा पुरानै ठाउँमा)" aria-label="पट्टी सार्नुस्"></span>';
     if (view === 'main') {
-      b.innerHTML = nb('data-tl="ne"', 'नेपालीमा अनुवाद', 'ने') + nb('data-tl="en"', 'English मा अनुवाद', 'अं') + nb('data-tl="sa"', 'संस्कृतमा अनुवाद', 'सं') +
+      b.innerHTML = grip + nb('data-tl="ne"', 'नेपालीमा अनुवाद', 'ने') + nb('data-tl="en"', 'English मा अनुवाद', 'अं') + nb('data-tl="sa"', 'संस्कृतमा अनुवाद', 'सं') +
         (cur.el && cur.key ? '<span class="tr-sep"></span>' + nb('data-mk="fc"', 'अक्षर रङ्गिन बनाउने', '<span class="tr-ico-fc">अ</span>') + nb('data-mk="hl"', 'हाइलाइट गर्ने', '<span class="tr-ico-hl">अ</span>') : '');
     } else {
-      b.innerHTML = nb('data-back="1"', 'फर्कनुहोस्', '‹') +
+      b.innerHTML = grip + nb('data-back="1"', 'फर्कनुहोस्', '‹') +
         PAL.map(c => `<button type="button" class="tr-sw" data-c="${c}" style="background:${c}" title="${view === 'fc' ? 'अक्षरको रङ' : 'हाइलाइट'}" aria-label="${c}"></button>`).join('') +
         nb('data-clear="1"', 'रङ/हाइलाइट हटाउने', '⌫');
     }
@@ -63,7 +65,35 @@
     if (bar) return bar;
     bar = document.createElement('div');
     bar.id = 'trBar'; bar.className = 'tr-bar'; bar.hidden = true;
-    bar.addEventListener('pointerdown', e => e.preventDefault());      // select हराउन नदिने
+    bar.addEventListener('pointerdown', e => {
+      e.preventDefault();                                              // select हराउन नदिने
+      const g = e.target.closest && e.target.closest('.tr-grip'); if (!g) return;
+      const r = bar.getBoundingClientRect();
+      drag = { dx: e.clientX - r.left, dy: e.clientY - r.top, id: e.pointerId, moved: false };
+      try { g.setPointerCapture(e.pointerId); } catch (x) {}
+    });
+    bar.addEventListener('pointermove', e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      drag.moved = true;
+      const bw = bar.offsetWidth, bh = bar.offsetHeight;
+      const x = Math.max(4, Math.min(innerWidth - bw - 4, e.clientX - drag.dx));
+      const y = Math.max(4, Math.min(innerHeight - bh - 4, e.clientY - drag.dy));
+      bar.style.left = x + 'px'; bar.style.top = y + 'px';
+      const fw = Math.max(1, innerWidth - bw - 8), fh = Math.max(1, innerHeight - bh - 8);
+      userPos = { fx: (x - 4) / fw, fy: (y - 4) / fh };
+    });
+    const endDrag = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (drag.moved) { try { localStorage.setItem('sp_trbar_pos', JSON.stringify(userPos)); } catch (x) {} }
+      else {                                                           // दुई पटक छिटो थिच्दा: आफैं ठाउँ (select को नजिक) मा फर्कने
+        const now = Date.now();
+        if (now - lastTap < 400) { userPos = null; try { localStorage.removeItem('sp_trbar_pos'); } catch (x) {} place(); }
+        lastTap = now;
+      }
+      drag = null;
+    };
+    bar.addEventListener('pointerup', endDrag);
+    bar.addEventListener('pointercancel', endDrag);
     bar.addEventListener('mousedown', e => e.preventDefault());
     bar.addEventListener('click', e => {
       const t = e.target.closest('button'); if (!t) return;
@@ -88,6 +118,11 @@
     b.hidden = false;
     const bw = b.offsetWidth, bh = b.offsetHeight, vw = innerWidth, vh = innerHeight;
     const hdr = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hdr-h'), 10) || 64;
+    if (userPos) {                                                     // प्रयोगकर्ताले सारेको ठाउँमा
+      b.style.left = (4 + userPos.fx * Math.max(0, vw - bw - 8)) + 'px';
+      b.style.top = (4 + userPos.fy * Math.max(0, vh - bh - 8)) + 'px';
+      return;
+    }
     let top = info.rect.bottom + 16;                                   // फोनको आफ्नै select-मेनु सामान्यतया माथि आउँछ, त्यसैले तल
     if (top + bh > vh - 8) top = info.rect.top - bh - 16;
     top = Math.max(hdr + 8, Math.min(vh - bh - 8, top));
