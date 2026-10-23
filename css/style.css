@@ -2625,3 +2625,10 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
   background: var(--bg) !important; color: var(--accent); font-weight: 700;
   box-shadow: inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 14px var(--shadow) !important;
 }
+
+/* ☰ मेनुको माथि: "अध्यायहरू" शीर्षक + ✕ बन्द बटन (पप-अपको जस्तै) — भाग छोएपछि मेनु आफैं बन्द हुँदैन */
+.ch-jump-top { position: sticky; top: 0; z-index: 8; display: flex; align-items: center; justify-content: space-between;
+  background: var(--bg); padding: 2px 0 4px; }
+.ch-jump-top .ch-jump-lbl { padding: 4px 10px; }
+.ch-jump-top .m-x { width: 34px; height: 34px; margin: 0; flex-shrink: 0; }
+.ch-jump-menu .ch-jm-row.exp { top: 40px; }

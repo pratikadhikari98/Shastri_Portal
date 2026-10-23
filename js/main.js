@@ -1295,7 +1295,7 @@ function chShowMenu(bookId, idx, expK) {
   const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (!menu) return;
   const chs = App.chaptersCache[bookId] || [];
   const adm = !!App.isAdmin;
-  let html = '<div class="ch-jump-lbl">अध्यायहरू</div>';
+  let html = `<div class="ch-jump-top"><span class="ch-jump-lbl">अध्यायहरू</span><button type="button" class="m-x" aria-label="बन्द" onclick="chCloseMenu('${bookId}',${idx})">✕</button></div>`;
   chs.forEach((ch, k) => {
     const bm = App.chapterBookmarks.includes(bookId + '::' + k);
     html += `<div class="ch-jm-row${k === idx ? ' cur' : ''}${k === expK ? ' exp' : ''}">
@@ -1360,13 +1360,23 @@ function chGoHead(bookId, idx, k) {
   const c = _chContent(bookId, idx); if (!c) return;
   const h = c.querySelectorAll('h1,h2,h3,h4,h5')[k]; if (!h) return;
   _chScrollTo(h.getBoundingClientRect().top + window.scrollY - _chOff(), true);
-  const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (menu) menu.hidden = true;
+  /* मेनु बन्द हुँदैन — छोएको भाग तुरुन्तै दबिएको देखिन्छ; बन्द गर्न माथिको ✕ थिच्ने */
+  const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`);
+  if (menu) {
+    menu._cur = k; menu._hold = Date.now() + 900;   // स्क्रोल हुँदा बीचका भाग झिलमिल नहोस्
+    menu.querySelectorAll('.ch-jump-h').forEach((b, n) => b.classList.toggle('on', n === k));
+  }
 }
 window.chGoHead = chGoHead;
+function chCloseMenu(bookId, idx) {
+  const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (menu) menu.hidden = true;
+}
+window.chCloseMenu = chCloseMenu;
 /* ☰ मेनुमा अहिले पढिरहेको भाग (शीर्षक) दबिएको (inset) देखाउने — अर्को भाग पढ्दा त्यो दबिन्छ, अघिल्लो उठ्छ */
 function chMarkCurPart(item) {
   const menu = item && item.querySelector('.ch-jump-menu');
   if (!menu || menu.hidden) return;
+  if (menu._hold && Date.now() < menu._hold) return;
   const p = item.id.lastIndexOf('-');
   const idx = parseInt(item.id.slice(p + 1), 10);
   if (menu.dataset.exp !== String(idx)) return;   // यही अध्यायका भाग देखिएका बेला मात्र
