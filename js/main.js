@@ -1320,6 +1320,8 @@ function chShowMenu(bookId, idx, expK) {
     menu.querySelectorAll('.ch-jump-h').forEach((b, n) => { b.textContent = hs[n].textContent.trim().slice(0, 80) || ('भाग ' + (n + 1)); });
   }
   menu.hidden = false;
+  menu._cur = null;
+  chMarkCurPart(menu.closest('.chapter-item'));   // अहिले पढिरहेको भाग दबिएको देखिने
   if (!menu._lock) {   // मेनु स्क्रोल गर्दा पछाडिको अध्याय नसर्ने
     menu._lock = true;
     menu.addEventListener('touchmove', ev => { if (menu.scrollHeight <= menu.clientHeight + 1) ev.preventDefault(); }, { passive: false });
@@ -1361,6 +1363,28 @@ function chGoHead(bookId, idx, k) {
   const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`); if (menu) menu.hidden = true;
 }
 window.chGoHead = chGoHead;
+/* ☰ मेनुमा अहिले पढिरहेको भाग (शीर्षक) दबिएको (inset) देखाउने — अर्को भाग पढ्दा त्यो दबिन्छ, अघिल्लो उठ्छ */
+function chMarkCurPart(item) {
+  const menu = item && item.querySelector('.ch-jump-menu');
+  if (!menu || menu.hidden) return;
+  const p = item.id.lastIndexOf('-');
+  const idx = parseInt(item.id.slice(p + 1), 10);
+  if (menu.dataset.exp !== String(idx)) return;   // यही अध्यायका भाग देखिएका बेला मात्र
+  const hs = _chHeads(item.id.slice(4, p), idx);
+  const items = menu.querySelectorAll('.ch-jump-h');
+  if (!hs.length || items.length !== hs.length) return;
+  const off = _chOff();
+  let cur = -1;
+  hs.forEach((h, n) => { if (h.getBoundingClientRect().top <= off + 8) cur = n; });
+  if (menu._cur === cur) return;
+  menu._cur = cur;
+  items.forEach((b, n) => b.classList.toggle('on', n === cur));
+  if (cur >= 0) {   // दबिएको भाग मेनुभित्र देखिने ठाउँमा ल्याउने
+    const mb = menu.getBoundingClientRect(), bb = items[cur].getBoundingClientRect();
+    if (bb.top < mb.top + 60 || bb.bottom > mb.bottom) menu.scrollTop += bb.top - mb.top - 70;
+  }
+}
+window.chMarkCurPart = chMarkCurPart;
 
 /* ════════════════════════════════════
    अध्याय पढ्दा कति बाँकी छ — पातलो progress bar
@@ -1385,6 +1409,7 @@ function initChapterProgress() {
       const mx = rect.height - window.innerHeight + _chOff();
       zip.value = mx > 0 ? Math.max(0, Math.min(1, (_chOff() - rect.top) / mx)) * 100 : 0;
     }
+    chMarkCurPart(openItem);
     const pctEl = openItem.querySelector('.ch-rd-pct');
     if (pctEl) pctEl.textContent = '· ' + Math.round(progress * 100) + '% पढियो';
   }

@@ -1346,7 +1346,7 @@ input[type=range].dm-slider {
 .ch-read-content .highlight { background:rgba(255,220,80,0.25); padding:1px 4px; border-radius:4px; }
 
 .ch-read-content hr {
-  border:none; border-top:2px dashed var(--border); margin:20px 0;
+  border:none; border-top:2px solid var(--border); margin:20px 0;   /* सीधा (ठोस) लाइन */
 }
 
 /* थप बक्स feature (question/tip/note/warning/info/example) */
@@ -2618,3 +2618,10 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
    किनकि .chapter-item को content-visibility:auto ले paint-containment (box बाहिर नदेखाउने) लगाउँछ।
    खुला अध्यायमा यो हटाइयो (बन्द अध्याय पहिले जस्तै) */
 .chapter-item.open { content-visibility: visible; contain: none; }
+
+/* ☰ मेनु: अहिले पढिरहेको भाग दबिएको (inset) देखिने */
+.ch-jump-item.ch-jump-h { transition: box-shadow 0.2s ease-out, color 0.2s; }
+.ch-jump-item.ch-jump-h.on {
+  background: var(--bg) !important; color: var(--accent); font-weight: 700;
+  box-shadow: inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 14px var(--shadow) !important;
+}
