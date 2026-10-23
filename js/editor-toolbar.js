@@ -770,8 +770,8 @@ function renderMdToolbar(textareaId, opts = {}) {
     ${btn('hr', 'भाग छुट्याउने रेखा', `mdInsertBlock('${id}','\\n---\\n')`)}
     ${sep}
     ${btn('box', 'सूचना/सुझाव बक्स', `mdInsertBox('${id}',this)`, '', 'tb-btn-box')}
-    ${btn('table', 'तालिका', `mdInsertTable('${id}')`)}
-    <button type="button" class="dxtb-btn dxtb-text" title="तालिकाको पङ्क्ति/स्तम्भ थप्ने वा हटाउने (तालिकाको कक्षमा कर्सर राखेर)" aria-label="तालिका सम्पादन" onmousedown="event.preventDefault()" onclick="mdTableMenu('${id}')"><span class="dxtb-lbl" style="font-size:.78rem;font-weight:700">⊞ ±</span></button>
+    ${btn('table', 'तालिका (कर्सर तालिकाभित्र भए दबिएको देखिन्छ)', `mdInsertTable('${id}')`, 'tbl')}
+    <button type="button" class="dxtb-btn dxtb-text" title="तालिकाको पङ्क्ति/स्तम्भ थप्ने वा हटाउने (तालिकाको कक्षमा कर्सर राखेर)" aria-label="तालिका सम्पादन" onmousedown="event.preventDefault()" onclick="mdTableMenu('${id}')" data-ta="${id}" data-cmd="tbl" aria-pressed="false"><span class="dxtb-lbl" style="font-size:.78rem;font-weight:700">⊞ ±</span></button>
     ${btn('photo', 'कर्सर भएको ठाउँमा फोटो अपलोड', `mdUploadImage('${id}')`, '', 'tb-btn-photo')}
     ${btn('pdf', 'PDF अपलोड (पृष्ठहरू अध्यायभित्र चित्र जस्तै देखिन्छन्)', `mdUploadPdf('${id}')`)}
     ${btn('link', 'इन्टरनेटको फोटो (URL)', `mdInsertImage('${id}')`)}

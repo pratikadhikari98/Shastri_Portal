@@ -329,6 +329,7 @@
       hlc: hlAny && hlAny.getAttribute('data-c') ? hlAny.getAttribute('data-c') : null,
       fc: (find('.rte-fc') || null) && find('.rte-fc').getAttribute('data-c'),
       h1: !!find('h1'), h2: !!find('h2'), ul: !!find('li'),
+      tbl: !!up(range.startContainer, 'td,th'),   // कर्सर तालिकाभित्र छ — तालिका बटन दबिएको देखिने
       u: uu, s: ss, hd: hb ? +hb.tagName[1] : 0,
       alL: al === 'left', alC: al === 'center', alR: al === 'right', alJ: al === 'justify'
     };

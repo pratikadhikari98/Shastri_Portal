@@ -2635,3 +2635,10 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 
 /* अक्षरको आकार (सम्पादकभित्र) — {{150%:...}} */
 .rte .rte-fs { line-height: 1.25; }
+
+/* कर्सर तालिकाभित्र हुँदा तालिका बटनहरू स्पष्ट दबिएको (भित्र गएको) देखिने */
+.dxtb-btn[data-cmd="tbl"].on {
+  background: rgba(51,122,183,.16); color: #337ab7;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,.28), inset 0 -1px 2px rgba(255,255,255,.5);
+  transform: translateY(1px);
+}
