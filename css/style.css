@@ -2597,7 +2597,7 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
   position: relative; display: flex; align-items: center; justify-content: center;
   margin: 0 16px 10px;   /* दुवै छेउ बोर्डसँग बराबर, तल १०px खाली — बोर्ड नछुने */
   height: 34px; line-height: 1;
-  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  background: linear-gradient(90deg, #6BB6EE, #4BA3E3);   /* हेडरको जस्तै हल्का नीलो */
   color: #fff; font-family: 'Akshar', var(--font-s); font-size: 16px; font-weight: 700;
   text-shadow: 0 1px 3px rgba(0,0,0,0.35);
   pointer-events: none;
