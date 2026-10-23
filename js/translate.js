@@ -1,8 +1,9 @@
 /* ================================================
-   शास्त्री पोर्टल — अध्यायको पाठ अनुवाद (नेपाली / English / संस्कृत)
+   शास्त्री पोर्टल — अध्यायको पाठ select गर्दा आउने पट्टी
    ================================================
-   अध्यायको पाठ होल्ड/select गर्दा तल सानो पट्टी आउँछ: [नेपाली] [English] [संस्कृत]।
-   थिचेपछि तलबाट पाटी आउँछ र त्यसमा अनुवाद देखिन्छ।
+   अध्यायको पाठ होल्ड/select गर्दा zipper-बटन जस्तै पट्टी आउँछ:
+     [ने] [अं] [सं]  → नेपाली / English / संस्कृतमा अनुवाद (तलबाट पाटी)
+     [अ̲] [अ-हाइलाइट] → छानेको पाठ रङ्गिन वा हाइलाइट (यही फोनमा सुरक्षित, अध्याय फेरि खोल्दा पनि रहन्छ)
 
    अहिले: Google Translate को निःशुल्क (अनौपचारिक) endpoint — key नचाहिने तर Google ले
           कुनै दिन बन्द/सीमित गर्न सक्छ।
@@ -19,7 +20,7 @@
   const MAXLEN = 1000;
   const SEL = '.ch-read-content';
 
-  let cur = { text: '', tl: 'ne' };
+  let cur = { text: '', tl: 'ne', el: null, key: '', s: 0, e: 0 };
   let bar = null, timer = 0, raf = 0;
 
   /* ── select गरिएको पाठ (अध्यायको पाठ भित्र मात्र) ── */
@@ -32,33 +33,59 @@
     if (!ra || ra !== rf || ra.closest('.rte')) return null;
     const text = s.toString().replace(/\s+/g, ' ').trim();
     if (!text) return null;
-    const rect = s.getRangeAt(0).getBoundingClientRect();
+    const rg = s.getRangeAt(0);
+    const rect = rg.getBoundingClientRect();
     if (!rect || (!rect.width && !rect.height)) return null;
-    return { text, rect };
+    const ci = ra.closest('.chapter-item');                            // रङ/हाइलाइट: अध्यायको पाठमा मात्र (feed आदिमा होइन)
+    const key = ci && ci.id ? ci.id : '';
+    const off = (n, o) => { const r = document.createRange(); r.setStart(ra, 0); r.setEnd(n, o); return r.toString().length; };
+    let st = 0, en = 0;
+    if (key) { try { st = off(rg.startContainer, rg.startOffset); en = off(rg.endContainer, rg.endOffset); } catch (e) { st = en = 0; } }
+    return { text, rect, el: ra, key: key && en > st ? key : '', s: st, e: en };
   }
 
-  /* ── तैरिने पट्टी ── */
+  /* ── तैरिने पट्टी (zipper-बटन .neu-btn जस्तै; बोर्डर थिम अनुसार) ── */
+  const PAL = ['#F44336', '#FB8C00', '#FBC02D', '#4CAF50', '#2196F3', '#9C27B0'];
+  let view = 'main';   // 'main' | 'fc' (अक्षरको रङ) | 'hl' (हाइलाइट)
+  const nb = (attrs, title, html) => `<button type="button" class="neu-btn neu-btn--round" ${attrs} title="${title}" aria-label="${title}">${html}</button>`;
+  function paintBar() {
+    const b = ensureBar();
+    if (view === 'main') {
+      b.innerHTML = nb('data-tl="ne"', 'नेपालीमा अनुवाद', 'ने') + nb('data-tl="en"', 'English मा अनुवाद', 'अं') + nb('data-tl="sa"', 'संस्कृतमा अनुवाद', 'सं') +
+        (cur.el && cur.key ? '<span class="tr-sep"></span>' + nb('data-mk="fc"', 'अक्षर रङ्गिन बनाउने', '<span class="tr-ico-fc">अ</span>') + nb('data-mk="hl"', 'हाइलाइट गर्ने', '<span class="tr-ico-hl">अ</span>') : '');
+    } else {
+      b.innerHTML = nb('data-back="1"', 'फर्कनुहोस्', '‹') +
+        PAL.map(c => `<button type="button" class="tr-sw" data-c="${c}" style="background:${c}" title="${view === 'fc' ? 'अक्षरको रङ' : 'हाइलाइट'}" aria-label="${c}"></button>`).join('') +
+        nb('data-clear="1"', 'रङ/हाइलाइट हटाउने', '⌫');
+    }
+  }
   function ensureBar() {
     if (bar) return bar;
     bar = document.createElement('div');
     bar.id = 'trBar'; bar.className = 'tr-bar'; bar.hidden = true;
-    bar.innerHTML = '<span class="tr-bar-ico">🌐</span>' + LANGS.map(l => `<button type="button" data-tl="${l.c}">${l.n}</button>`).join('');
     bar.addEventListener('pointerdown', e => e.preventDefault());      // select हराउन नदिने
     bar.addEventListener('mousedown', e => e.preventDefault());
     bar.addEventListener('click', e => {
-      const b = e.target.closest('button[data-tl]'); if (!b) return;
-      const info = selInfo(); if (info) cur.text = info.text;
-      if (cur.text) open(b.dataset.tl);
+      const t = e.target.closest('button'); if (!t) return;
+      const info = selInfo(); if (info) { cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e; }
+      if (t.dataset.tl) { if (cur.text) open(t.dataset.tl); return; }
+      if (t.dataset.mk) { view = t.dataset.mk; paintBar(); return; }
+      if (t.dataset.back) { view = 'main'; paintBar(); return; }
+      if (t.dataset.c) { addMark(view, t.dataset.c); return; }
+      if (t.dataset.clear) { clearMarks(); }
     });
     document.body.appendChild(bar);
     return bar;
   }
-  function hide() { if (bar) bar.hidden = true; }
+  function hide() { if (bar) { bar.hidden = true; view = 'main'; } }
   function place() {
     const info = selInfo();
     if (!info) { hide(); return; }
-    cur.text = info.text;
-    const b = ensureBar(); b.hidden = false;
+    const had = cur.el !== info.el || !!cur.key !== !!info.key;
+    cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e;
+    const b = ensureBar();
+    if (b.hidden || had || !b.firstChild) { if (b.hidden) view = 'main'; paintBar(); }
+    b.hidden = false;
     const bw = b.offsetWidth, bh = b.offsetHeight, vw = innerWidth, vh = innerHeight;
     const hdr = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hdr-h'), 10) || 64;
     let top = info.rect.bottom + 16;                                   // फोनको आफ्नै select-मेनु सामान्यतया माथि आउँछ, त्यसैले तल
@@ -151,4 +178,86 @@
       if (navigator.clipboard && txt) navigator.clipboard.writeText(txt).then(() => { if (typeof toast === 'function') toast('कपी भयो ✓'); });
     }
   });
+
+  /* ── रङ्गिन अक्षर / हाइलाइट (व्यक्तिगत, यही फोनमा) ── */
+  const MK = 'sp_marks';
+  let store = null;
+  const loadMarks = () => { if (!store) { try { store = JSON.parse(localStorage.getItem(MK) || '{}'); } catch (e) { store = {}; } } return store; };
+  const saveMarks = () => { try { localStorage.setItem(MK, JSON.stringify(store)); } catch (e) {} };
+  function unwrapAll(root) {
+    root.querySelectorAll('.usr-mk').forEach(sp => sp.replaceWith(...sp.childNodes));
+    root.normalize();
+  }
+  function applyOne(root, m) {
+    const full = root.textContent;
+    let s = m.s, e = m.e;
+    if (full.slice(s, e) !== m.t) {                                    // अध्याय सम्पादन भएछ — नजिकै उही पाठ खोज्ने
+      const i = full.indexOf(m.t, Math.max(0, s - 300));
+      if (i < 0) return 0;
+      s = i; e = i + m.t.length;
+    }
+    const nodes = []; let pos = 0;
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let n;
+    while ((n = w.nextNode())) { const l = n.nodeValue.length; nodes.push([n, pos, pos + l]); pos += l; }
+    let did = 0;
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const [nd, a, b] = nodes[i]; const x = Math.max(s, a), y = Math.min(e, b);
+      if (x >= y) continue;
+      const r = document.createRange(); r.setStart(nd, x - a); r.setEnd(nd, y - a);
+      const sp = document.createElement('span');
+      sp.className = 'usr-mk usr-' + m.k;
+      sp.style.cssText = m.k === 'hl'
+        ? `background:${m.c}33;color:${m.c};box-shadow:inset 0 -2px 0 ${m.c}`
+        : `color:${m.c};font-weight:600`;
+      r.surroundContents(sp); did++;
+    }
+    return did;
+  }
+  function applyAll(el) {
+    const key = (el.closest('.chapter-item') || {}).id; if (!key) return;
+    const list = loadMarks()[key] || [];
+    unwrapAll(el);
+    let ok = 0; list.forEach(m => { ok += applyOne(el, m); });
+    el._usrFail = ok ? null : el.textContent.length;
+  }
+  function cut(list, s, e, kind, text) {                               // [s,e) को भाग हटाउने (kind=null भए दुवै थोक)
+    const out = [];
+    list.forEach(m => {
+      if ((kind && m.k !== kind) || m.e <= s || m.s >= e) { out.push(m); return; }
+      if (m.s < s) out.push(Object.assign({}, m, { e: s, t: text.slice(m.s, s) }));
+      if (m.e > e) out.push(Object.assign({}, m, { s: e, t: text.slice(e, m.e) }));
+    });
+    return out;
+  }
+  function addMark(kind, color) {
+    if (!cur.el || !cur.key || cur.e <= cur.s) return;
+    const st = loadMarks(), text = cur.el.textContent;
+    const list = cut(st[cur.key] || [], cur.s, cur.e, kind, text);
+    list.push({ s: cur.s, e: cur.e, t: text.slice(cur.s, cur.e), k: kind, c: color });
+    st[cur.key] = list; saveMarks();
+    applyAll(cur.el); done();
+  }
+  function clearMarks() {
+    if (!cur.el || !cur.key) return;
+    const st = loadMarks(), text = cur.el.textContent;
+    st[cur.key] = cut(st[cur.key] || [], cur.s, cur.e, null, text);
+    if (!st[cur.key].length) delete st[cur.key];
+    saveMarks(); applyAll(cur.el); done();
+  }
+  function done() { const s = getSelection(); if (s) s.removeAllRanges(); hide(); }
+
+  /* अध्याय फेरि बन्दा/खुल्दा (दोहोरो render) मा रङ/हाइलाइट फेरि लगाउने */
+  let mto = 0;
+  function sweep() {
+    const st = loadMarks();
+    document.querySelectorAll('.chapter-item .ch-read-content').forEach(el => {
+      const key = (el.closest('.chapter-item') || {}).id;
+      if (!key || !(st[key] && st[key].length)) return;
+      if (el.querySelector('.usr-mk')) return;
+      if (el._usrFail === el.textContent.length) return;
+      applyAll(el);
+    });
+  }
+  new MutationObserver(() => { clearTimeout(mto); mto = setTimeout(sweep, 250); }).observe(document.body, { childList: true, subtree: true });
+  setTimeout(sweep, 600);
 })();

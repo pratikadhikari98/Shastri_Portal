@@ -2528,7 +2528,7 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* ═══ नीलो बोर्डर — कार्ड र आइकनमा (३ डट्स मेनुबाट चालु/बन्द). outline प्रयोग: ठाउँ/छाया बिगार्दैन ═══ */
 .borders-on .year-card, .borders-on .book-row, .borders-on .book-card, .borders-on .info-card, .borders-on .note-card,
 .borders-on .sett-group, .borders-on .copyright-block, .borders-on .creator-block, .borders-on .contrib-block,
-.borders-on .hist-item, .borders-on .form-panel, .borders-on .ticker-bar, .borders-on .news-board, .borders-on .modal-sheet,
+.borders-on .hist-item, .borders-on .form-panel, .borders-on .ticker-bar, .borders-on .tr-bar, .borders-on .news-board, .borders-on .modal-sheet,
 .borders-on .neu-btn, .borders-on .hdr-btn, .borders-on .back-btn, .borders-on .subj-tab-ico, .borders-on .book-row-cover,
 .borders-on .book-row-info, .borders-on .yc-badge, .borders-on .yc-arrow, .borders-on .sett-ico, .borders-on .subj-mgr-ico,
 .borders-on .dm-item-ico, .borders-on .nav-fab-item, .borders-on .nav-fab-ico, .borders-on .m-x, .borders-on .ch-list {
@@ -2544,12 +2544,12 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 #borderToggle { display: flex; align-items: center; gap: 10px; }
 
 /* बोर्डर: इन्द्रेणी — हरेक कार्ड/आइकनको बोर्डर क्रमैसँग फरक रङमा */
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+1) { --bd-color: #2878D8; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+2) { --bd-color: #D9468F; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+3) { --bd-color: #2E9E5A; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+4) { --bd-color: #F08A24; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+5) { --bd-color: #7B4FD6; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+6) { --bd-color: #14A3A0; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+1) { --bd-color: #2878D8; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+2) { --bd-color: #D9468F; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+3) { --bd-color: #2E9E5A; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+4) { --bd-color: #F08A24; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+5) { --bd-color: #7B4FD6; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+6) { --bd-color: #14A3A0; }
 /* बोर्डरको रङ छान्ने चिप */
 .bd-chips { display: flex; flex-wrap: wrap; gap: 10px; padding: 6px 14px 10px; }
 .bc-chip { width: 34px; height: 34px; border-radius: 11px; border: 2px solid var(--divider); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
@@ -2560,7 +2560,7 @@ html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-
 .bc-rainbow { background: conic-gradient(#2878D8, #D9468F, #F08A24, #2E9E5A, #7B4FD6, #14A3A0, #2878D8); }
 
 /* ═══ एउटै बोर्डरमा धेरै रङ (gradient बोर्डर) — पातलो १px ═══ */
-html.borders-on.bd-grad-on :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.modal-sheet,.ch-list) {
+html.borders-on.bd-grad-on :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.modal-sheet,.ch-list) {
   outline: none !important; border: 1px solid transparent !important;
   background: linear-gradient(var(--surface-opaque), var(--surface-opaque)) padding-box, var(--bd-grad) border-box !important;
 }
@@ -2647,21 +2647,28 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 .mdtbl-info.flash { animation: mdtblFlash 0.9s ease-out; }
 @keyframes mdtblFlash { 0% { background: rgba(46,158,90,.30); } 100% { background: var(--surface-b); } }
 
-/* ═══ अध्यायको पाठ अनुवाद (translate.js) ═══ */
-.tr-bar { position: fixed; z-index: 600; display: flex; align-items: center; gap: 6px; padding: 6px 8px;
-  background: var(--bg); border: 1px solid var(--accent); border-radius: 14px; box-shadow: 0 8px 24px var(--shadow-lg, rgba(0,0,0,.25)); }
+/* ═══ अध्यायको पाठ select पट्टी: अनुवाद + रङ/हाइलाइट (translate.js) — बटन zipper (.neu-btn) जस्तै, बोर्डर थिम अनुसार ═══ */
+.tr-bar { position: fixed; z-index: 600; display: flex; align-items: center; gap: 8px; padding: 7px 9px;
+  background: var(--bg); border: 1px solid var(--divider); border-radius: 16px; box-shadow: 0 8px 24px var(--shadow-lg, rgba(0,0,0,.25)); }
 .tr-bar[hidden] { display: none; }
-.tr-bar-ico { font-size: 1rem; line-height: 1; }
-.tr-bar button, .tr-tab { padding: 7px 12px; border-radius: 999px; border: 1.5px solid var(--border); background: var(--surface-b);
-  color: var(--text-2); font-family: var(--font); font-size: 0.8rem; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.tr-bar button:active, .tr-tab:active { background: rgba(51,122,183,.16); color: #337ab7; box-shadow: inset 0 2px 6px rgba(0,0,0,.28); }
+.tr-bar .neu-btn { width: 38px; height: 38px; font-size: 0.95rem; font-weight: 800; flex-shrink: 0; }
+.tr-sep { width: 1px; align-self: stretch; background: var(--divider); margin: 2px 0; }
+.tr-ico-fc { border-bottom: 3px solid #F44336; line-height: 1.15; padding: 0 1px; }
+.tr-ico-hl { background: #FDD83599; border-radius: 3px; padding: 0 4px; line-height: 1.2; }
+.tr-sw { width: 28px; height: 28px; border-radius: 50%; padding: 0; cursor: pointer; flex-shrink: 0; border: 2px solid var(--surface-opaque, #fff);
+  box-shadow: 0 0 0 1px var(--divider), 0 2px 5px var(--shadow); -webkit-tap-highlight-color: transparent; }
+.tr-sw:active { transform: scale(0.88); }
+.usr-mk { border-radius: 3px; }
 .tr-tabs { display: flex; gap: 8px; margin: 6px 0 4px; flex-wrap: wrap; }
+.tr-tab { padding: 7px 14px; border-radius: 999px; border: 1.5px solid var(--divider); background: var(--surface-b);
+  color: var(--text-2); font-family: var(--font); font-size: 0.8rem; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tr-tab:active { box-shadow: inset 0 2px 6px rgba(0,0,0,.28); }
 .tr-tab.on { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
 .tr-lbl { font-size: 0.72rem; font-weight: 700; color: var(--text-3); margin: 12px 2px 4px; }
-.tr-src, .tr-dst { padding: 10px 12px; border-radius: 12px; background: var(--surface-b); border: 1px solid var(--border);
+.tr-src, .tr-dst { padding: 10px 12px; border-radius: 12px; background: var(--surface-b); border: 1px solid var(--divider);
   font-size: 0.92rem; line-height: 1.8; color: var(--text-1); max-height: 28vh; overflow: auto; white-space: pre-wrap; word-break: break-word; }
 .tr-src { color: var(--text-2); }
-.tr-dst { border-color: var(--accent); }
+.tr-dst { border-color: var(--bd-color, var(--accent)); }
 .tr-dst.loading { color: var(--text-3); }
 .tr-dst.err { color: #E0245E; border-color: #E0245E; }
 .tr-note { font-size: 0.72rem; color: var(--text-3); margin-top: 6px; }
