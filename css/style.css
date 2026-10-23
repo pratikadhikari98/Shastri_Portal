@@ -2613,3 +2613,8 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
   32% { transform: translateX(0.7px); } 40% { transform: translateX(-0.3px); }
 }
 @media (prefers-reduced-motion: reduce) { .nb-bell, .nb-clap { animation: none; } }
+
+/* ☰ मेनु कटिने समस्या: अध्याय एउटै/छोटो हुँदा खुला अध्यायको box बाहिर निस्कने मेनु कटिन्थ्यो —
+   किनकि .chapter-item को content-visibility:auto ले paint-containment (box बाहिर नदेखाउने) लगाउँछ।
+   खुला अध्यायमा यो हटाइयो (बन्द अध्याय पहिले जस्तै) */
+.chapter-item.open { content-visibility: visible; contain: none; }
