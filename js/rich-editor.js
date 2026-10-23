@@ -554,13 +554,18 @@
     root.querySelectorAll('font').forEach(f => { f.removeAttribute('face'); f.removeAttribute('size'); f.removeAttribute('color'); });
     root.querySelectorAll('span, h1,h2,h3,h4,h5,blockquote,ul,ol,li,div,p,b,i,u,s,strike,strong,em').forEach(x => {
       if (!x.hasAttribute('style') && !x.hasAttribute('align')) return;
-      if (x.classList.contains('rte-hl') || x.classList.contains('rte-fc') || x.classList.contains('rte-box') ||
+      if (x.classList.contains('rte-hl') || x.classList.contains('rte-fc') || x.classList.contains('rte-fs') || x.classList.contains('rte-box') ||
           x.classList.contains('rte-box-head') || x.closest('.rte-box-head')) return;
       if (x.hasAttribute('style')) {
         const al = x.getAttribute('data-al');
         if (al && al !== 'left') x.setAttribute('style', 'text-align:' + al); else x.removeAttribute('style');
       }
       if (x.hasAttribute('align')) x.removeAttribute('align');
+    });
+    // अक्षर-आकार (A+/A−) को style कहिल्यै नहरोस् — data-fs बाट सधैं मिलाइन्छ, ताकि लाइभ एडिटरमै ठूलो/सानो देखियोस्
+    root.querySelectorAll('.rte-fs').forEach(s => {
+      const f = parseInt(s.getAttribute('data-fs'), 10);
+      if (f && s.style.fontSize !== f + '%') s.style.fontSize = f + '%';
     });
   }
 
