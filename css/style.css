@@ -2584,17 +2584,18 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 [data-theme="dark"] .year-card .yc-title { color: var(--accent) !important; }
 
 
-/* ═══ Ananda बोल्ड — हेडरको "शास्त्री पोर्टल" (वर्ष-कार्डको "प्रथमः खण्डः" जस्तै थिम accent रङ) र समाचार-बोर्डको "सूचना पाटी" ═══ */
+/* ═══ Ananda बोल्ड — हेडरको "शास्त्री पोर्टल" (हल्का नीलो) र समाचार-बोर्डको "सूचना पाटी" ═══ */
 .logo-text .an-leg {
   font-size: 1.45em; line-height: 1; font-weight: 700; font-synthesis: weight;
   -webkit-text-stroke: 0.02em currentColor;
-  color: var(--accent);
+  color: #4BA3E3;   /* हल्का नीलो */
 }
 .logo-text:has(.an-leg) { text-shadow: none; }
 
 /* ब्ल्याकबोर्डको फोटोभन्दा माथि, दुवै कुना छुने पट्टी (फोटोको बाहिर, माथि) */
 .nb-banner {
   position: relative; display: flex; align-items: center; justify-content: center;
+  margin: 0 16px 10px;   /* दुवै छेउ बोर्डसँग बराबर, तल १०px खाली — बोर्ड नछुने */
   height: 34px; line-height: 1;
   background: linear-gradient(90deg, var(--accent), var(--accent-2));
   color: #fff; font-family: 'Akshar', var(--font-s); font-size: 16px; font-weight: 700;
@@ -2602,4 +2603,3 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
   pointer-events: none;
 }
 .nb-banner .an-leg { font-size: 1.5em; line-height: 1; font-weight: 700; font-synthesis: weight; -webkit-text-stroke: 0.02em currentColor; }
-.news-board .nb-overlay { top: 34px; }   /* समाचारको पाठ फोटोमा मात्र, पट्टीमाथि नपुगोस् */
