@@ -1,7 +1,7 @@
 // शास्त्री पोर्टल — Service Worker v25
 // ⚡ Speed: app shell/फन्ट/फोटो = STALE-WHILE-REVALIDATE (cache बाट तुरुन्तै, पछाडि ताजा तान्ने)
 //    data/* = network-first तर ढिलो नेटवर्कमा २.५s पछि cache। कोड अपडेट गर्दा APP_CACHE को नम्बर बढाउनुस्।
-const APP_CACHE      = 'shastri-app-v129';     // App shell (auto)
+const APP_CACHE      = 'shastri-app-v130';     // App shell (auto)
 const OFFLINE_CACHE  = 'shastri-offline-v2';  // User-triggered "Save for offline" content
 const DATA_CACHE     = 'shastri-data-v2';     // data/* (अध्याय आदि) — app version बदलिँदा पनि मेटिँदैन
 

@@ -475,9 +475,10 @@ function mdTableMenu(id) {
   if (!cell) { toast('⚠️ पहिले तालिकाको कुनै कक्षमा कर्सर राख्नुस्'); return; }
   document.getElementById('mdTblSheet')?.remove();
   const sheet = document.createElement('div'); sheet.id = 'mdTblSheet'; sheet.className = 'mdimg-back';
-  const b = (op, label) => `<button type="button" class="mdimg-chip" onmousedown="event.preventDefault()" onclick="mdTableDo('${op}')">${label}</button>`;
+  const b = (op, label) => `<button type="button" class="mdimg-chip" onmousedown="event.preventDefault()" onclick="mdTableDo('${op}',this)">${label}</button>`;
   sheet.innerHTML = `<div class="mdimg-card">
       <div class="mdimg-title">📊 तालिका सम्पादन</div>
+      <div class="mdtbl-info" id="mdTblInfo"></div>
       <div class="mdimg-lbl">पङ्क्ति (आडो)</div>
       <div class="mdimg-row">${b('rowAbove', '➕ माथि')}${b('rowBelow', '➕ तल')}${b('delRow', '🗑 यो पङ्क्ति')}</div>
       <div class="mdimg-lbl">स्तम्भ (ठाडो)</div>
@@ -489,16 +490,38 @@ function mdTableMenu(id) {
   sheet.addEventListener('click', e => { if (e.target === sheet) mdTableClose(); });
   document.body.appendChild(sheet);
   window._mdTblCtx = { id, cell };
+  _mdTblInfo(cell);
 }
 window.mdTableMenu = mdTableMenu;
-function mdTableDo(op) {
+/* तालिकामा अहिले कति पङ्क्ति × स्तम्भ — थपियो/हटियो भनेर आँखाले देख्न (पाटीले तालिका छोप्छ) */
+function _mdTblSize(cell) {
+  const tb = cell && cell.closest ? cell.closest('table') : null;
+  return tb && tb.rows.length ? { r: tb.rows.length, c: tb.rows[0].cells.length } : null;
+}
+function _mdTblInfo(cell, flash) {
+  const el = document.getElementById('mdTblInfo'); if (!el) return;
+  const s = _mdTblSize(cell); if (!s) { el.textContent = ''; return; }
+  el.innerHTML = `अहिले तालिका: <b>${s.r} पङ्क्ति × ${s.c} स्तम्भ</b> <span class="mdtbl-hd">(शीर्षकसहित)</span>`;
+  if (flash) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); }
+}
+function mdTableDo(op, btnEl) {
   const c = window._mdTblCtx; if (!c) return;
   const R = window.RTE && RTE.get(c.id); if (!R) return;
+  const before = _mdTblSize(c.cell);
   const nc = R.tableOp(op, c.cell);
-  if (op === 'delTable' || !nc) { mdTableClose(); return; }
+  if (op === 'delTable' || !nc) { toast('✓ तालिका हटाइयो'); mdTableClose(); return; }
   c.cell = nc;
-  if (op.startsWith('del')) mdTableClose();   // हटाएपछि बन्द; थप्दा खुला रहन्छ (धेरै थप्न मिल्ने)
-  else toast('✓ थपियो');
+  const after = _mdTblSize(nc);
+  const changed = !before || !after || before.r !== after.r || before.c !== after.c;
+  _mdTblInfo(nc, changed);
+  if (btnEl) {   // बटन केहीबेर दबिएको देखिने + के भयो लेखिने
+    if (!btnEl.dataset.orig) btnEl.dataset.orig = btnEl.innerHTML;
+    btnEl.classList.remove('pressed', 'nope'); void btnEl.offsetWidth;
+    btnEl.classList.add(changed ? 'pressed' : 'nope');
+    btnEl.textContent = changed ? (op.startsWith('del') ? '✓ हट्यो' : '✓ थपियो') : '✕ भएन';
+    clearTimeout(btnEl._t);
+    btnEl._t = setTimeout(() => { btnEl.innerHTML = btnEl.dataset.orig; btnEl.classList.remove('pressed', 'nope'); }, 1000);
+  }
 }
 window.mdTableDo = mdTableDo;
 function mdTableClose() { document.getElementById('mdTblSheet')?.remove(); window._mdTblCtx = null; }
