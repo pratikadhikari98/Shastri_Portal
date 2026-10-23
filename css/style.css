@@ -2584,22 +2584,30 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 [data-theme="dark"] .year-card .yc-title { color: var(--accent) !important; }
 
 
-/* ═══ Ananda बोल्ड — हेडरको "शास्त्री पोर्टल" (हल्का नीलो) र समाचार-बोर्डको "सूचना पाटी" ═══ */
+/* ═══ Haha फन्ट — हेडरको "शास्त्री पोर्टल" र समाचार-बोर्डको "सूचना पाटी" ═══
+   Haha पनि Ananda जस्तै पुरानो (Preeti ढाँचाको) फन्ट हो; लोड नभए Ananda मै देखिन्छ (उही ढाँचा) */
+@font-face {
+  font-family: 'HahaFont';
+  src: url('../fonts/Haha_Regular.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
 .logo-text .an-leg {
-  font-size: 1.45em; line-height: 1; font-weight: 700; font-synthesis: weight;
-  -webkit-text-stroke: 0.02em currentColor;
+  font-family: 'HahaFont', 'AnandaRound', var(--font-s), sans-serif;
+  font-size: 1.5em; line-height: 1; font-weight: 400; font-synthesis: none;
+  -webkit-text-stroke: 0.012em currentColor;
   color: #4BA3E3;   /* हल्का नीलो */
 }
 .logo-text:has(.an-leg) { text-shadow: none; }
 
-/* ब्ल्याकबोर्डको फोटोभन्दा माथि, दुवै कुना छुने पट्टी (फोटोको बाहिर, माथि) */
+/* ब्ल्याकबोर्डको फोटोभन्दा माथि पट्टी — अध्यायको zipper-पट्टी (.ch-jump) जस्तै: दुवै छेउ छुने, पृष्ठकै रङ, तल रेखा र छाया */
 .nb-banner {
   position: relative; display: flex; align-items: center; justify-content: center;
-  margin: 0 16px 10px;   /* दुवै छेउ बोर्डसँग बराबर, तल १०px खाली — बोर्ड नछुने */
-  height: 34px; line-height: 1;
-  background: linear-gradient(90deg, #6BB6EE, #4BA3E3);   /* हेडरको जस्तै हल्का नीलो */
-  color: #fff; font-family: 'Akshar', var(--font-s); font-size: 16px; font-weight: 700;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.35);
-  pointer-events: none;
+  margin: 0 0 12px; padding: 8px 12px; box-sizing: border-box; min-height: 44px; line-height: 1;
+  background: var(--bg); border-bottom: 1px solid var(--divider); box-shadow: 0 4px 12px var(--shadow);
+  color: #4BA3E3; pointer-events: none;
 }
-.nb-banner .an-leg { font-size: 1.5em; line-height: 1; font-weight: 700; font-synthesis: weight; -webkit-text-stroke: 0.02em currentColor; }
+.nb-banner .an-leg {
+  font-family: 'HahaFont', 'AnandaRound', var(--font-s), sans-serif;
+  font-size: 1.7rem; line-height: 1; font-weight: 400; font-synthesis: none;
+  -webkit-text-stroke: 0.012em currentColor; color: #4BA3E3;
+}
