@@ -53,8 +53,11 @@
     const b = ensureBar();
     const grip = '<span class="tr-grip" title="सार्न तान्नुस् (दुई पटक थिच्दा पुरानै ठाउँमा)" aria-label="पट्टी सार्नुस्"></span>';
     if (view === 'main') {
-      b.innerHTML = grip + nb('data-tl="ne"', 'नेपालीमा अनुवाद', 'ने') + nb('data-tl="en"', 'English मा अनुवाद', 'अं') + nb('data-tl="sa"', 'संस्कृतमा अनुवाद', 'सं') +
-        (cur.el && cur.key ? '<span class="tr-sep"></span>' + nb('data-mk="fc"', 'अक्षर रङ्गिन बनाउने', '<span class="tr-ico-fc">अ</span>') + nb('data-mk="hl"', 'हाइलाइट गर्ने', '<span class="tr-ico-hl">अ</span>') : '');
+      const ICO_COPY = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>';
+      b.innerHTML = grip +
+        '<div class="tr-grp">' + nb('data-tl="ne"', 'नेपालीमा अनुवाद', 'ने') + nb('data-tl="en"', 'English मा अनुवाद', 'अं') + nb('data-tl="sa"', 'संस्कृतमा अनुवाद', 'सं') + '</div>' +
+        (cur.el && cur.key ? '<div class="tr-grp">' + nb('data-mk="fc"', 'अक्षर रङ्गिन बनाउने', '<span class="tr-ico-fc">अ</span>') + nb('data-mk="hl"', 'हाइलाइट गर्ने', '<span class="tr-ico-hl">अ</span>') + '</div>' : '') +
+        '<div class="tr-grp">' + nb('data-act="copy"', 'कपी गर्ने', ICO_COPY) + nb('data-act="all"', 'सबै पाठ छान्ने', 'सब') + '</div>';
     } else {
       b.innerHTML = grip + nb('data-back="1"', 'फर्कनुहोस्', '‹') +
         PAL.map(c => `<button type="button" class="tr-sw" data-c="${c}" style="background:${c}" title="${view === 'fc' ? 'अक्षरको रङ' : 'हाइलाइट'}" aria-label="${c}"></button>`).join('') +
@@ -99,6 +102,8 @@
       const t = e.target.closest('button'); if (!t) return;
       const info = selInfo(); if (info) { cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e; }
       if (t.dataset.tl) { if (cur.text) open(t.dataset.tl); return; }
+      if (t.dataset.act === 'copy') { copySel(); return; }
+      if (t.dataset.act === 'all') { selectAll(); return; }
       if (t.dataset.mk) { view = t.dataset.mk; paintBar(); return; }
       if (t.dataset.back) { view = 'main'; paintBar(); return; }
       if (t.dataset.c) { addMark(view, t.dataset.c); return; }
@@ -223,6 +228,20 @@
     const t = e.target && (e.target.nodeType === 3 ? e.target.parentElement : e.target);
     if (touchNow && t && t.closest && t.closest('.chapter-item .ch-read-content')) e.preventDefault();
   }, true);
+
+  /* ── कपी / सबै छान्ने (फोनको आफ्नै मेनु रोकिएकाले पट्टीमै) ── */
+  function copySel() {
+    const s = getSelection(); const txt = s ? s.toString() : '';
+    if (!txt) return;
+    const ok = () => { if (typeof toast === 'function') toast('कपी भयो ✓'); };
+    const old = () => { try { if (document.execCommand('copy')) ok(); } catch (e) {} };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, old); else old();
+  }
+  function selectAll() {
+    if (!cur.el) return;
+    const s = getSelection(), r = document.createRange();
+    r.selectNodeContents(cur.el); s.removeAllRanges(); s.addRange(r);   // selectionchange ले पट्टी फेरि ठाउँमा ल्याउँछ
+  }
 
   /* ── रङ्गिन अक्षर / हाइलाइट (व्यक्तिगत, यही फोनमा) ── */
   const MK = 'sp_marks';

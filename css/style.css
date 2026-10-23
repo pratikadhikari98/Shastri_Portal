@@ -2648,10 +2648,10 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 @keyframes mdtblFlash { 0% { background: rgba(46,158,90,.30); } 100% { background: var(--surface-b); } }
 
 /* ═══ अध्यायको पाठ select पट्टी: अनुवाद + रङ/हाइलाइट (translate.js) — बटन zipper (.neu-btn) जस्तै, बोर्डर थिम अनुसार ═══ */
-.tr-bar { position: fixed; z-index: 600; display: flex; align-items: center; gap: 8px; padding: 7px 9px;
+.tr-bar { position: fixed; z-index: 600; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 8px; padding: 7px 9px; max-width: calc(100vw - 16px); box-sizing: border-box;
   background: var(--bg); border: 1px solid var(--divider); border-radius: 16px; box-shadow: 0 8px 24px var(--shadow-lg, rgba(0,0,0,.25)); }
 .tr-bar[hidden] { display: none; }
-.tr-bar .neu-btn { --neu-r: 10px; width: 38px; height: 38px; font-family: 'Siddhanta', var(--font); font-size: 1.05rem; font-weight: 700; flex-shrink: 0; }   /* हल्का राउन्ड कुना भएको चतुर्भुज, सिद्धान्त फन्ट */
+.tr-bar .neu-btn { --neu-r: 10px; width: 36px; height: 36px; font-family: 'Siddhanta', var(--font); font-size: 1.05rem; font-weight: 700; flex-shrink: 0; }   /* हल्का राउन्ड कुना भएको चतुर्भुज, सिद्धान्त फन्ट */
 .tr-grip { width: 14px; min-height: 30px; align-self: stretch; flex-shrink: 0; cursor: grab; touch-action: none; opacity: .75;
   background: radial-gradient(circle, var(--text-3) 1.5px, transparent 1.8px) 0 0 / 7px 8px; }
 .tr-grip:active { cursor: grabbing; }
@@ -2678,3 +2678,7 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 
 /* फोनको आफ्नै select/callout मेनु नआओस् (iOS: -webkit-touch-callout; Android: translate.js मा contextmenu रोकिएको) */
 .chapter-item .ch-read-content { -webkit-touch-callout: none; }
+
+/* पट्टीका समूह (अनुवाद | रङ/हाइलाइट | कपी/सबै) — सानो स्क्रिनमा समूह नै तल सर्छ */
+.tr-grp { display: flex; align-items: center; gap: 6px; }
+.tr-grp + .tr-grp { border-left: 1px solid var(--divider); padding-left: 8px; }
