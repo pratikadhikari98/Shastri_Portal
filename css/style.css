@@ -2675,3 +2675,6 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
 .tr-dst.loading { color: var(--text-3); }
 .tr-dst.err { color: #E0245E; border-color: #E0245E; }
 .tr-note { font-size: 0.72rem; color: var(--text-3); margin-top: 6px; }
+
+/* फोनको आफ्नै select/callout मेनु नआओस् (iOS: -webkit-touch-callout; Android: translate.js मा contextmenu रोकिएको) */
+.chapter-item .ch-read-content { -webkit-touch-callout: none; }

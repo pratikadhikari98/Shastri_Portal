@@ -214,6 +214,16 @@
     }
   });
 
+  /* ── फोनको आफ्नै select-मेनु (Copy / Select all / Web search / Share) रोक्ने प्रयास ──
+     अध्यायको पाठमा औँलाले होल्ड गर्दा आउने contextmenu रोकिन्छ (माउस/दायाँ क्लिक र किबोर्डको Ctrl+C पहिले जस्तै चल्छ)।
+     नोट: यो ब्राउजरले मान्ने कुरा हो — केही ब्राउजर/फोनमा मेनु तैपनि आउन सक्छ। */
+  let touchNow = false;
+  document.addEventListener('pointerdown', e => { touchNow = e.pointerType === 'touch'; }, true);
+  document.addEventListener('contextmenu', e => {
+    const t = e.target && (e.target.nodeType === 3 ? e.target.parentElement : e.target);
+    if (touchNow && t && t.closest && t.closest('.chapter-item .ch-read-content')) e.preventDefault();
+  }, true);
+
   /* ── रङ्गिन अक्षर / हाइलाइट (व्यक्तिगत, यही फोनमा) ── */
   const MK = 'sp_marks';
   let store = null;
