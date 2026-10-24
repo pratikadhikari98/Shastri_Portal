@@ -2682,3 +2682,12 @@ html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-r
   white-space: pre-wrap; word-break: break-word; -webkit-overflow-scrolling: touch; }
 .tr-out-b.loading { color: var(--text-3); }
 .tr-out-b.err { color: #E0245E; }
+
+/* छुने स्क्रिनमा आफ्नै select: फोनको select-मेनु नआउन user-select बन्द; आफ्नै highlight र थोप्ला (handle) */
+html.tr-cust .chapter-item .ch-read-content { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+::highlight(trsel) { background-color: rgba(66, 133, 244, .30); color: inherit; }
+.tr-hdl { position: fixed; z-index: 590; width: 36px; height: 44px; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.tr-hdl[hidden] { display: none; }
+.tr-hdl::before { content: ''; position: absolute; left: 50%; top: 0; width: 2px; height: 10px; margin-left: -1px; background: var(--accent); }
+.tr-hdl::after { content: ''; position: absolute; left: 50%; top: 9px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%;
+  background: var(--accent); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); box-sizing: border-box; }
