@@ -617,6 +617,27 @@
     sp.setAttribute('style', nw.getAttribute('style') || ''); if (!nw.getAttribute('style')) sp.removeAttribute('style');
   }
 
+  /* अवस्थित रङ/हाइलाइट/आकार span भित्रको केही भाग मात्र छानिँदा: span लाई [अघि | छानिएको | पछि] मा चिर्ने,
+     ताकि बदलाव छानिएको भागमा मात्र लागोस् (पहिले पूरै span फेरिन्थ्यो र पूरै छानिन्थ्यो) */
+  function isolateInSpan(sp, r) {
+    const post = document.createRange(); post.setStart(r.endContainer, r.endOffset); post.setEnd(sp, sp.childNodes.length);
+    const postFrag = post.collapsed ? null : post.extractContents();
+    const selFrag = r.extractContents();
+    const mid = sp.cloneNode(false); mid.appendChild(selFrag);
+    let tail = null;
+    if (postFrag && postFrag.textContent) { tail = sp.cloneNode(false); tail.appendChild(postFrag); }
+    sp.after(mid); if (tail) mid.after(tail);
+    if (!sp.textContent) sp.remove();
+    return mid;
+  }
+  const sameMark = (a, b) => a && b && a.nodeType === 1 && b.nodeType === 1 && a.className === b.className &&
+    (a.getAttribute('data-c') || '') === (b.getAttribute('data-c') || '') && (a.getAttribute('data-fs') || '') === (b.getAttribute('data-fs') || '');
+  function mergeAdjacent(el) {                        // बराबर रङ/आकारका छेउछाउका span जोड्ने
+    while (el.nextSibling && sameMark(el, el.nextSibling)) { const n = el.nextSibling; while (n.firstChild) el.appendChild(n.firstChild); n.remove(); }
+    while (el.previousSibling && sameMark(el.previousSibling, el)) { const p = el.previousSibling; while (el.firstChild) p.appendChild(el.firstChild); el.remove(); el = p; }
+    return el;
+  }
+
   /* चुनिएको अक्षरमा हाइलाइट/रंग (हाम्रै DOM काम — बोल्ड/छड्के सँग मिलाएर पनि चल्छ) */
   function applyMark(inst, kind, color) {
     const sel = getSelection(); if (!sel.rangeCount) return;
@@ -630,22 +651,34 @@
     }
     const segs = segments(inst, range);
     const ancOf = r => { const a = r.commonAncestorContainer; const e = a.nodeType === 3 ? a.parentElement : a; const sp = e && e.closest ? e.closest(MARK[kind]) : null; return sp && inst.el.contains(sp) ? sp : null; };
-    let first = null, last = null;
+    const remove = kind === 'fs' && color === '100';                // १००% = आकार हटाउने
+    const AT = kind === 'fs' ? 'data-fs' : 'data-c';
+    let selRange = null;
     if (segs.length && segs.every(ancOf)) {
-      const spans = [...new Set(segs.map(ancOf))];
-      const AT = kind === 'fs' ? 'data-fs' : 'data-c';
-      const same = spans.every(sp => (sp.getAttribute(AT) || '') === (color || ''));
-      spans.forEach(sp => { if (same) sp.replaceWith(...sp.childNodes); else { recolor(sp, kind, color); first = first || sp; last = sp; } });
+      /* छानिएको भाग पूरै अवस्थित span भित्र — span चिरेर छानिएको भागमा मात्र बदल्ने */
+      const picked = segs.slice().reverse().map(sg => isolateInSpan(ancOf(sg), sg));
+      const same = remove || picked.every(p => (p.getAttribute(AT) || '') === (color || ''));
+      let a = null, b = null;
+      picked.slice().reverse().forEach(p => {
+        if (same) {
+          const f = p.firstChild, l = p.lastChild; p.replaceWith(...p.childNodes);
+          a = a || f; b = l;                                         // हटाइएपछि छानिएको पाठको सुरु/अन्त्य
+        } else { const f = p.firstChild, l = p.lastChild; recolor(p, kind, color); mergeAdjacent(p); a = a || f; b = l; }   // छानिएको पाठको सुरु/अन्त्यका node (span जोडिँदा पनि सुरक्षित)
+      });
+      if (a && b) { selRange = document.createRange(); selRange.setStartBefore(a); selRange.setEndAfter(b); }
     } else {
-      for (const r of segs.slice().reverse()) {
-        const frag = r.extractContents();
+      let first = null, last = null;
+      for (const rg of segs.slice().reverse()) {
+        const frag = rg.extractContents();
         frag.querySelectorAll(MARK[kind]).forEach(x => x.replaceWith(...x.childNodes));
-        const sp = makeSpan(kind, color); sp.appendChild(frag); r.insertNode(sp);
+        if (remove) { const f = frag.firstChild, l = frag.lastChild; rg.insertNode(frag); last = last || l; first = f; continue; }
+        const sp = makeSpan(kind, color); sp.appendChild(frag); rg.insertNode(sp);
         last = last || sp; first = sp;
       }
+      if (first && last) { selRange = document.createRange(); selRange.setStartBefore(first); selRange.setEndAfter(last); }
     }
+    if (selRange) { sel.removeAllRanges(); sel.addRange(selRange); }   // normalize भन्दा पहिले (जीवित range ले आफैं मिल्छ)
     inst.el.normalize();
-    if (first && last) { const r = document.createRange(); r.setStartBefore(first); r.setEndAfter(last); sel.removeAllRanges(); sel.addRange(r); }
     inst.commit();
   }
 
@@ -711,10 +744,6 @@
     let i = 0, best = 1e9;
     SIZE_STEPS.forEach((v, k) => { const d = Math.abs(v - cur); if (d < best) { best = d; i = k; } });
     const nxt = SIZE_STEPS[Math.max(0, Math.min(SIZE_STEPS.length - 1, i + (dir > 0 ? 1 : -1)))];
-    if (nxt === 100) {   // सामान्य आकारमा फर्कने
-      inst.el.querySelectorAll('.rte-fs').forEach(s => { if (range.intersectsNode(s)) s.replaceWith(...s.childNodes); });
-      inst.el.normalize(); inst.commit(); return;
-    }
     applyMark(inst, 'fs', String(nxt));
   }
 
