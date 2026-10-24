@@ -31,7 +31,37 @@
   if (CUST) document.documentElement.classList.add('tr-cust');
   let cs = null, hdls = null, lp = null;                               // cs = आफ्नै छानिएको Range
   const DELIM = /[\s\u0964\u0965,;:.!?()\[\]{}"'“”‘’<>|\/\\]/;
+  /* औँला मुनिको अक्षर ठ्याक्कै चिन्ने: हरेक अक्षरको ठाउँ (rect) हेरेर नजिकको अक्षर। फोनको
+     caretRangeFromPoint user-select बन्द हुँदा गलत ठाउँ दिन सक्ने भएकाले यो पहिलो, त्यो पछि (fallback) */
+  function hitText(x, y) {
+    const el = document.elementFromPoint(x, y);
+    const root = el && el.closest ? el.closest(SEL) : null;
+    if (!root || el === root) return null;
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), r = document.createRange();
+    let best = null, bestD = 1e9, n;
+    while ((n = w.nextNode())) {
+      const t = n.nodeValue; if (!t.trim()) continue;
+      r.selectNodeContents(n);
+      const bb = r.getBoundingClientRect();
+      if (bb && (y < bb.top - 30 || y > bb.bottom + 30)) continue;     // अर्कै ठाउँको पाठ छोड्ने
+      for (let i = 0; i < t.length; i++) {
+        r.setStart(n, i); r.setEnd(n, i + 1);
+        const rs = r.getClientRects();
+        for (let k = 0; k < rs.length; k++) {
+          const q = rs[k]; if (!q.width && !q.height) continue;
+          const dx = x < q.left ? q.left - x : x > q.right ? x - q.right : 0;
+          const dy = y < q.top ? q.top - y : y > q.bottom ? y - q.bottom : 0;
+          const d = dy * 3 + dx;                                       // उही लाइनलाई प्राथमिकता
+          if (d < bestD) { bestD = d; best = { n, o: x > (q.left + q.right) / 2 ? i + 1 : i }; }
+        }
+        if (bestD === 0) break;
+      }
+      if (bestD === 0) break;
+    }
+    return best && bestD < 60 ? best : null;
+  }
   function caretAt(x, y) {
+    const h = hitText(x, y); if (h) return h;
     let n = null, o = 0;
     if (document.caretPositionFromPoint) { const p = document.caretPositionFromPoint(x, y); if (p) { n = p.offsetNode; o = p.offset; } }
     else if (document.caretRangeFromPoint) { const r = document.caretRangeFromPoint(x, y); if (r) { n = r.startContainer; o = r.startOffset; } }
@@ -58,15 +88,17 @@
     if (hdls) return hdls;
     hdls = [0, 1].map(i => {
       const h = document.createElement('div'); h.className = 'tr-hdl'; h.hidden = true; document.body.appendChild(h);
-      let id = null, fixed = null;
+      let id = null, fixed = null, grab = { dx: 0, dy: 0 };
       h.addEventListener('pointerdown', e => {
         e.preventDefault(); e.stopPropagation(); id = e.pointerId;
         fixed = i === 0 ? { n: cs.endContainer, o: cs.endOffset } : { n: cs.startContainer, o: cs.startOffset };
+        const rs = cs.getClientRects(), q = i === 0 ? rs[0] : rs[rs.length - 1];     // औँलाले थोप्ला समातेको ठाउँ र अक्षर-लाइनबीचको दूरी सम्झने
+        if (q) grab = { dx: e.clientX - (i === 0 ? q.left : q.right), dy: e.clientY - (q.top + q.bottom) / 2 };
         try { h.setPointerCapture(id); } catch (x) {}
       });
       h.addEventListener('pointermove', e => {
         if (e.pointerId !== id || !cs || !fixed) return;
-        const c = caretAt(e.clientX, e.clientY - 24);                  // औँलाले छोपेकाले अलि माथिको अक्षर
+        const c = caretAt(e.clientX - grab.dx, e.clientY - grab.dy);   // थोप्ला तान्दा अक्षर जहाँ औँला त्यहीँ (उफ्रिने होइन)
         if (!c) return;
         const mv = document.createRange(); mv.setStart(c.n, c.o); mv.collapse(true);
         const fx = document.createRange(); fx.setStart(fixed.n, fixed.o); fx.collapse(true);
