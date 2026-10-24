@@ -2691,3 +2691,9 @@ html.tr-cust .chapter-item .ch-read-content { -webkit-user-select: none; user-se
 .tr-hdl::before { content: ''; position: absolute; left: 50%; top: 0; width: 2px; height: 10px; margin-left: -1px; background: var(--accent); }
 .tr-hdl::after { content: ''; position: absolute; left: 50%; top: 9px; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%;
   background: var(--accent); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); box-sizing: border-box; }
+
+/* admin सम्पादक (.rte): पाठकको अक्षर-सजावट (justify, hyphens, word-break) सम्पादनमा फोनको select-थोप्ला/शब्द-छनोट बिगार्न सक्ने —
+   त्यसैले सम्पादकमा सादा बनाइयो; भित्री scroll बाहिरको scroll सँग नजोडियोस् (select तान्दा दुवै नघुम्न) */
+.rte { text-align: left; -webkit-hyphens: manual; hyphens: manual; word-break: normal; overflow-wrap: break-word;
+  overscroll-behavior: contain; -webkit-touch-callout: default; touch-action: pan-y pinch-zoom; }
+.rte .rte-fs { line-height: inherit; }

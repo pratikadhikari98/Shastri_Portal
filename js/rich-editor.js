@@ -497,7 +497,12 @@
     });
 
     el.addEventListener('input', () => inst.markDirty());
-    el.addEventListener('blur', () => { cleanStyles(el); inst.flush(); });
+    /* focus छुट्टिँदा (फोनमा select-थोप्ला/मेनु आउँदा पनि blur हुन सक्छ) तुरुन्त DOM-सफाइ र भारी flush नगर्ने —
+       त्यसले चलिरहेको select बिगार्थ्यो; अलि पर्खेर, फेरि focus भइसकेको भए छोड्ने। (Commit ले ta.value पढ्दा बाँकी flush आफैं हुन्छ) */
+    el.addEventListener('blur', () => {
+      clearTimeout(inst._blurT);
+      inst._blurT = setTimeout(() => { if (document.activeElement === el) return; cleanStyles(el); inst.flush(); }, 450);
+    });
     el.addEventListener('keydown', e => onKey(inst, e));
     el.addEventListener('beforeinput', e => {
       if (e.inputType === 'insertParagraph') {            // मोबाइल किबोर्डको Enter — कक्षभित्र भए कक्षभित्रै नयाँ लाइन
