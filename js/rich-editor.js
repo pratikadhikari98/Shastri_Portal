@@ -979,11 +979,153 @@
     if (cut) { range.deleteContents(); inst.el.normalize(); inst.commit(); }
   }
 
+  /* ═════════ Google Docs / Word बाट paste — बोल्ड, छड्के, रेखा, रङ, हाइलाइट, शीर्षक, सूची, तालिका, पङ्क्ति-मिलान सहित ═════════
+     clipboard को HTML लाई हाम्रै एडिटरको ढाँचा (DOM) मा बदलेर, हाम्रै htmlToMd ले markdown बनाउने → pasteText ले राख्ने */
+  const RICH_SRC = /docs-internal-guid|urn:schemas-microsoft-com:office|name=["']?Generator["']?\s+content=["']?Microsoft Word|class=["']?Mso/i;
+  const SKIP_TAG = /^(SCRIPT|STYLE|META|LINK|TITLE|HEAD|COLGROUP|COL|NOSCRIPT|SVG|CANVAS)$/;
+  const BLOCK_TAG = /^(P|DIV|H[1-6]|UL|OL|LI|TABLE|THEAD|TBODY|TFOOT|TR|TD|TH|BLOCKQUOTE|PRE|HR|SECTION|ARTICLE|HEADER|FOOTER|FIGURE)$/;
+  function toHex(c) {
+    c = String(c || '').trim().toLowerCase(); if (!c || c === 'transparent' || c === 'inherit' || c === 'initial' || c === 'none') return null;
+    let m = c.match(/^#([0-9a-f]{3})$/); if (m) return '#' + m[1].split('').map(x => x + x).join('');
+    m = c.match(/^#([0-9a-f]{6})$/); if (m) return '#' + m[1];
+    m = c.match(/^rgba?\(\s*(\d+)[ ,]+(\d+)[ ,]+(\d+)(?:[ ,/]+([\d.]+))?\s*\)$/);
+    if (m) { if (m[4] !== undefined && parseFloat(m[4]) === 0) return null; return '#' + [m[1], m[2], m[3]].map(x => ('0' + Math.min(255, +x).toString(16)).slice(-2)).join(''); }
+    return null;
+  }
+  const lum = h => { const v = [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16)); return (0.299 * v[0] + 0.587 * v[1] + 0.114 * v[2]) / 255; };
+  function fmtFrom(el, f, inLink) {
+    const g = Object.assign({}, f), st = el.style || {}, tag = el.tagName;
+    if (tag === 'B' || tag === 'STRONG') g.b = true;
+    if (tag === 'I' || tag === 'EM') g.i = true;
+    if (tag === 'U') g.u = true;
+    if (tag === 'S' || tag === 'STRIKE' || tag === 'DEL') g.s = true;
+    const fw = String(st.fontWeight || '').toLowerCase();               // Docs को <b style="font-weight:normal"> बोल्ड होइन
+    if (fw) g.b = fw === 'bold' || fw === 'bolder' || parseInt(fw, 10) >= 600;
+    const fst = String(st.fontStyle || '').toLowerCase(); if (fst) g.i = fst === 'italic' || fst === 'oblique';
+    const td = (String(st.textDecorationLine || '') + ' ' + String(st.textDecoration || '')).toLowerCase().trim();
+    if (td) { g.u = /underline/.test(td) && !inLink; g.s = /line-through/.test(td); }
+    if (st.color) { const c = toHex(st.color); g.fc = c && lum(c) > 0.16 && lum(c) < 0.97 && !(inLink && c === '#1155cc') ? c : null; }
+    if (st.backgroundColor) { const c = toHex(st.backgroundColor); g.hl = c && lum(c) < 0.97 ? c : null; }
+    return g;
+  }
+  const wrapsOf = g => [g.b && { k: 'b' }, g.i && { k: 'i' }, g.u && { k: 'u' }, g.s && { k: 's' }, g.fc && { k: 'fc', c: g.fc }, g.hl && { k: 'hl', c: g.hl }].filter(Boolean);
+  const mkWrap = w => {
+    if (w.k === 'fc' || w.k === 'hl') { const s = document.createElement('span'); s.className = 'rte-' + w.k; s.setAttribute('data-c', w.c); return s; }
+    return document.createElement(w.k);
+  };
+  const sameWrap = (el, w) => el.nodeType === 1 && (w.k === 'fc' || w.k === 'hl' ? el.className === 'rte-' + w.k && el.getAttribute('data-c') === w.c : el.tagName === w.k.toUpperCase());
+  function putRun(par, ws, text) {              // बराबर ढाँचाका छेउछाउका टुक्रा एउटै बेरोमा जोड्ने (**अ****ब** नबनोस् भनेर)
+    if (!ws.length) { const l = par.lastChild; if (l && l.nodeType === 3) l.nodeValue += text; else par.appendChild(document.createTextNode(text)); return; }
+    const l = par.lastChild;
+    if (l && sameWrap(l, ws[0])) putRun(l, ws.slice(1), text);
+    else { const el = mkWrap(ws[0]); par.appendChild(el); putRun(el, ws.slice(1), text); }
+  }
+  function inlineInto(par, node, f, inLink, sep) {
+    for (const c of node.childNodes) {
+      if (c.nodeType === 3) { const t = c.nodeValue.replace(/[\s\u00a0]+/g, ' '); if (t) putRun(par, wrapsOf(f), t); continue; }
+      if (c.nodeType !== 1 || SKIP_TAG.test(c.tagName)) continue;
+      const tag = c.tagName;
+      if (tag === 'BR') { par.appendChild(document.createElement('br')); continue; }
+      if (tag === 'IMG') continue;
+      if (/^(UL|OL)$/.test(tag)) continue;                              // सूचीभित्रको सूची अलग ह्यान्डल हुन्छ
+      const link = inLink || tag === 'A', g = fmtFrom(c, f, link);
+      if (BLOCK_TAG.test(tag) && par.lastChild && !(par.lastChild.nodeType === 1 && par.lastChild.tagName === 'BR')) {
+        par.appendChild(sep === 'br' ? document.createElement('br') : document.createTextNode(' '));
+      }
+      inlineInto(par, c, g, link, sep);
+    }
+  }
+  function trimLine(el) {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let first = null, last = null, n;
+    while ((n = w.nextNode())) { if (!first) first = n; last = n; }
+    if (first) first.nodeValue = first.nodeValue.replace(/^\s+/, '');
+    if (last) last.nodeValue = last.nodeValue.replace(/\s+$/, '');
+    return el;
+  }
+  const hasContent = el => !!(el.textContent.trim() || el.querySelector('br,img'));
+  function foreignHtmlToMd(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const out = document.createElement('div');
+    const alignOf = el => { const a = String((el.style && el.style.textAlign) || el.getAttribute('align') || '').toLowerCase(); return a === 'center' || a === 'right' || a === 'justify' ? a : ''; };
+    const setAl = (el, al) => { if (al) el.setAttribute('data-al', al); return el; };
+    function listInto(list, f, container, ordered) {
+      let n = 0;
+      for (const li of list.children) {
+        if (li.tagName !== 'LI') continue;
+        n++;
+        const g = fmtFrom(li, f);
+        const t = document.createElement(ordered ? 'div' : 'li');
+        inlineInto(t, li, g, false, ' ');
+        if (hasContent(t)) { trimLine(t); if (ordered) t.insertBefore(document.createTextNode(n + '. '), t.firstChild); (ordered ? out : container).appendChild(t); }
+        li.querySelectorAll(':scope > ul, :scope > ol').forEach(sub => listInto(sub, g, container, sub.tagName === 'OL'));   // भित्री सूची समतल
+      }
+    }
+    function tableInto(tb, f) {
+      const rows = [...tb.querySelectorAll('tr')].filter(tr => tr.closest('table') === tb).map(tr => [...tr.children].filter(c => /^(TD|TH)$/.test(c.tagName)));
+      if (rows.length < 1) return;
+      const cols = Math.max(...rows.map(r => r.length)); if (!cols) return;
+      const wrap = document.createElement('div'); wrap.className = 'rte-tablewrap';
+      const t = document.createElement('table'), tbody = document.createElement('tbody'); t.appendChild(tbody);
+      const all = rows.length < 2 ? [rows[0], []] : rows;                   // एक पङ्क्ति मात्र भए खाली दोस्रो पङ्क्ति थप्ने (हाम्रो तालिकामा शीर्षक + डाटा चाहिन्छ)
+      all.forEach((cells, ri) => {
+        const tr = document.createElement('tr');
+        for (let i = 0; i < cols; i++) {
+          const cell = document.createElement(ri === 0 ? 'th' : 'td');
+          if (cells[i]) { inlineInto(cell, cells[i], fmtFrom(cells[i], f), false, 'br'); trimLine(cell); }
+          tr.appendChild(cell);
+        }
+        tbody.appendChild(tr);
+      });
+      wrap.appendChild(t); out.appendChild(wrap);
+    }
+    function blockInto(node, f, al) {
+      let line = null;
+      const flush = () => { if (line) { if (hasContent(line)) out.appendChild(trimLine(line)); else { line.innerHTML = '<br>'; out.appendChild(line); } line = null; } };
+      const ensure = () => { if (!line) line = setAl(document.createElement('div'), al); return line; };
+      for (const c of node.childNodes) {
+        if (c.nodeType === 3) { if (c.nodeValue.trim() || line) { const t = c.nodeValue.replace(/[\s\u00a0]+/g, ' '); if (t.trim() || line) putRun(ensure(), wrapsOf(f), t); } continue; }
+        if (c.nodeType !== 1 || SKIP_TAG.test(c.tagName)) continue;
+        const tag = c.tagName, link = tag === 'A', g = fmtFrom(c, f, link);
+        if (/^H[1-6]$/.test(tag)) {
+          flush();
+          const h = setAl(document.createElement('h' + Math.min(5, +tag[1])), alignOf(c) || al);
+          inlineInto(h, c, Object.assign({}, g, { b: false }), false, ' ');    // शीर्षक आफैं बोल्ड हुन्छ
+          if (hasContent(h)) out.appendChild(trimLine(h));
+        } else if (tag === 'UL' || tag === 'OL') {
+          flush();
+          const ul = document.createElement('ul'); listInto(c, g, ul, tag === 'OL');
+          if (ul.children.length) out.appendChild(ul);
+        } else if (tag === 'TABLE') { flush(); tableInto(c, g); }
+        else if (tag === 'HR') { flush(); out.appendChild(document.createElement('hr')); }
+        else if (tag === 'BLOCKQUOTE') {
+          flush();
+          const q = setAl(document.createElement('blockquote'), alignOf(c) || al); inlineInto(q, c, g, false, ' ');
+          if (hasContent(q)) out.appendChild(trimLine(q));
+        } else if (tag === 'BR') {
+          if (line) line.appendChild(document.createElement('br')); else { const d = document.createElement('div'); d.innerHTML = '<br>'; out.appendChild(d); }
+        } else if (tag === 'IMG') { /* चित्र छोडिन्छ */ }
+        else if (/^(P|DIV|SECTION|ARTICLE|HEADER|FOOTER|FIGURE|PRE|THEAD|TBODY|TFOOT|TR|TD|TH|LI)$/.test(tag)) { flush(); blockInto(c, g, alignOf(c) || al); }
+        else { const hasBlock = [...c.querySelectorAll('*')].some(x => BLOCK_TAG.test(x.tagName)); if (hasBlock) { flush(); blockInto(c, g, al); } else inlineInto(ensure(), { childNodes: [c] }, f, false, ' '); }
+      }
+      flush();
+    }
+    const body = doc.body || doc.documentElement;
+    blockInto(body, {}, '');
+    return htmlToMd(out).replace(/^\n+/, '');
+  }
+
   function onPaste(inst, e) {
     const cd = e.clipboardData; if (!cd) return;
     const f = [...(cd.files || [])].find(x => x.type.startsWith('image/'));
     if (f) { e.preventDefault(); if (typeof window.mdPasteImage === 'function') window.mdPasteImage(inst.id, f); return; }
     const mdText = cd.getData('application/x-rte-md');          // हाम्रै एडिटरबाट copy (बोल्ड/हाइलाइट सहित)
+    const richHtml = mdText ? '' : cd.getData('text/html');
+    if (richHtml && RICH_SRC.test(richHtml)) {                  // Google Docs / Word बाट — ढाँचासहित
+      try {
+        const md = foreignHtmlToMd(richHtml);
+        if (md && md.trim()) { e.preventDefault(); pasteText(inst, md, true); return; }
+      } catch (err) { console.error('rich paste', err); }       // बिग्रे सादा पाठमा खस्ने (तल)
+    }
     let text = mdText || cd.getData('text/plain');
     if (!text) { const h = cd.getData('text/html'); if (h) text = htmlToPlain(h); }
     if (!text) return;                       // खाली भए browser को आफ्नै व्यवहार
@@ -1009,7 +1151,7 @@
 
   window.RTE = {
     attach, get: id => INSTS.get(id) || null, has: id => INSTS.has(id),
-    mdToHtml, htmlToMd, inlineHtml,
+    mdToHtml, htmlToMd, inlineHtml, foreignHtmlToMd,
     fromTarget: el => { const r = el && el.closest && el.closest('.rte'); if (!r) return null; return INSTS.get(r.id.replace(/__rte$/, '')) || null; }
   };
 })();
