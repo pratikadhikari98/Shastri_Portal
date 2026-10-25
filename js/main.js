@@ -1662,7 +1662,7 @@ function initSearch() {
   if (btn && wrap) {
     btn.addEventListener('click', () => toggleSearchBar());
     document.addEventListener('click', e => {
-      if (wrap.classList.contains('open') && !e.target.closest('.search-wrap') && !e.target.closest('#searchBtn') && !e.target.closest('#navSearchBtn')) {
+      if (wrap.classList.contains('open') && !e.target.closest('.search-wrap') && !e.target.closest('#searchBtn') && !e.target.closest('#navSearchBtn') && !e.target.closest('#navFab')) {   // #navFab: तल तैरिने आइकनको खोज थिच्दा खुलेको बार आफैं नबन्द होस्
         wrap.classList.remove('open');
         drop?.classList.remove('open');
       }
@@ -1737,7 +1737,9 @@ function doSearch(q) {
         const plain = (ch.content || '').replace(/[#*_`>\-\[\]()]/g, ' ');
         const hay = `${ch.title||''} ${plain}`.toLowerCase();
         if (_fuzzyContains(hay, ql)) {
-          chapters.push({ bookId, bookTitle: loc.book.title, yearId: loc.yearId, chapterIdx: idx, chapterTitle: ch.title || `अध्याय ${idx+1}` });
+          const flat = plain.replace(/\s+/g, ' ').trim(), pi = flat.toLowerCase().indexOf(ql);   // मिलेको ठाउँको वरिपरिको अंश
+          const snip = pi >= 0 ? (pi > 28 ? '… ' : '') + flat.slice(Math.max(0, pi - 28), pi + ql.length + 56) + (flat.length > pi + ql.length + 56 ? ' …' : '') : '';
+          chapters.push({ bookId, bookTitle: loc.book.title, yearId: loc.yearId, chapterIdx: idx, chapterTitle: ch.title || `अध्याय ${idx+1}`, snip });
         }
       });
     }
@@ -1746,23 +1748,33 @@ function doSearch(q) {
   return { books: books.slice(0,6), chapters: chapters.slice(0,5) };
 }
 
+/* खोजेका शब्द नतिजामा बोल्ड र रङ्गीन देखाउने (HTML सुरक्षित) */
+function hlQ(text, q) {
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const t = String(text == null ? '' : text);
+  const words = [...new Set(String(q || '').trim().split(/\s+/).filter(Boolean))].sort((a, b) => b.length - a.length);
+  if (!words.length) return esc(t);
+  const re = new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
+  return t.split(re).map((p, i) => i % 2 ? '<mark class="s-hit">' + esc(p) + '</mark>' : esc(p)).join('');
+}
+
 function renderDrop(res,q) {
   const el=document.getElementById('sDrop');
   const books = res.books || [];
   const chapters = res.chapters || [];
-  if(!books.length && !chapters.length){el.innerHTML=`<div class="s-empty">🔍 "${q}" भेटिएन</div>`;return;}
+  if(!books.length && !chapters.length){el.innerHTML=`<div class="s-empty">🔍 "${hlQ(q, '')}" भेटिएन</div>`;return;}
   let html = books.map(({b,yr,key})=>{
     const s=SUBJ[key]||{short:'क',g:'#EEE,#CCC'};
     const[c1,c2]=s.g.split(',');
     return `<div class="s-row" onclick="openBookWithBreadcrumb('${b.id}',${yr.id});document.getElementById('sDrop').classList.remove('open')">
       <div class="s-ico2" style="background:linear-gradient(135deg,${c1},${c2})">${s.short}</div>
-      <div><div class="s-name">${b.title}</div><div class="s-sub">${yr.title} · ${b.author}</div></div>
+      <div><div class="s-name">${hlQ(b.title, q)}</div><div class="s-sub">${hlQ(yr.title, q)} · ${hlQ(b.author, q)}</div></div>
     </div>`;
   }).join('');
   if (chapters.length) {
     html += chapters.map(c => `<div class="s-row" onclick="openBookWithBreadcrumb('${c.bookId}',${c.yearId},${c.chapterIdx});document.getElementById('sDrop').classList.remove('open')">
       <div class="s-ico2" style="background:linear-gradient(135deg,#CCC,#AAA)">📖</div>
-      <div><div class="s-name">${c.chapterTitle}</div><div class="s-sub">📘 ${c.bookTitle}</div></div>
+      <div><div class="s-name">${hlQ(c.chapterTitle, q)}</div><div class="s-sub">📘 ${hlQ(c.bookTitle, q)}</div>${c.snip ? `<div class="s-snip">${hlQ(c.snip, q)}</div>` : ''}</div>
     </div>`).join('');
   }
   el.innerHTML = html;

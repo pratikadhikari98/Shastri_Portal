@@ -2697,3 +2697,7 @@ html.tr-cust .chapter-item .ch-read-content { -webkit-user-select: none; user-se
 .rte { text-align: left; -webkit-hyphens: manual; hyphens: manual; word-break: normal; overflow-wrap: break-word;
   overscroll-behavior: contain; -webkit-touch-callout: default; touch-action: pan-y pinch-zoom; }
 .rte .rte-fs { line-height: inherit; }
+
+/* खोज: मिलेका शब्द बोल्ड र रङ्गीन; अध्यायको पाठको अंश */
+.s-hit { background: transparent; color: var(--accent); font-weight: 800; border-radius: 3px; }
+.s-snip { font-size: 0.72rem; color: var(--text-2); margin-top: 3px; line-height: 1.5; max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
