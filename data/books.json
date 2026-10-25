@@ -210,10 +210,11 @@
         "vyakaran": [
           {
             "id": "vya2_1",
-            "author": "लेखकको नाम",
+            "title": "महाभाष्य",
+            "author": "तृतीय पत्र",
             "cover": "images/year2/vya1.jpg",
             "description": "द्वितीय वर्षको व्याकरण",
-            "title": "महाभाष्य",
+            "font": "siddhanta",
             "pdf": ""
           },
           {
