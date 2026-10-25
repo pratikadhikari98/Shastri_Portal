@@ -94,11 +94,13 @@
       "subjects": {
         "jyotish": [
           {
-            "cover": "images/year2/jyo1.jpg",
-            "description": "द्वितीय वर्षको ज्योतिष शास्त्र",
             "id": "jyo2_1",
-            "author": "लेखकको नाम",
-            "title": "ज्योतिष शास्त्र १"
+            "title": "ताजिक नीलकण्ठी",
+            "author": "तृतीय पत्र",
+            "cover": "",
+            "description": "द्वितीय वर्षको ज्योतिष शास्त्र",
+            "font": "siddhanta",
+            "pdf": ""
           },
           {
             "author": "लेखकको नाम",
