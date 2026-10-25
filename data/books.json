@@ -103,11 +103,13 @@
             "pdf": ""
           },
           {
-            "author": "लेखकको नाम",
-            "cover": "images/year2/jyo2.jpg",
+            "id": "jyo2_2",
+            "title": "केलरप्रश्नशास्त्र",
+            "author": "तृतीय पत्र",
+            "cover": "",
             "description": "द्वितीय वर्षको ज्योतिष शास्त्र",
-            "title": "ज्योतिष शास्त्र २",
-            "id": "jyo2_2"
+            "font": "siddhanta",
+            "pdf": ""
           }
         ],
         "nepali": [
