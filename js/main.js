@@ -1419,6 +1419,7 @@ function initChapterProgress() {
       const mx = rect.height - window.innerHeight + _chOff();
       zip.value = mx > 0 ? Math.max(0, Math.min(1, (_chOff() - rect.top) / mx)) * 100 : 0;
     }
+    docHiliteSync();
     chMarkCurPart(openItem);
     const pctEl = openItem.querySelector('.ch-rd-pct');
     if (pctEl) pctEl.textContent = '· ' + Math.round(progress * 100) + '% पढियो';
@@ -1674,15 +1675,16 @@ function initSearch() {
   inp.addEventListener('input',()=>{
     const q=inp.value.trim();
     clr.classList.toggle('show',q.length>0);
-    if(q.length<2){drop.classList.remove('open');return;}
+    if(q.length<2){drop.classList.remove('open'); App.docQ=''; docHiliteSync(); return;}
     clearTimeout(_searchDebounce);
     _searchDebounce = setTimeout(() => {
+      App.docQ = q; docHiliteSync();                                   // खुला अध्यायमा पनि शब्द रङ्गिन
       const res=doSearch(q);
       renderDrop(res,q);
       drop.classList.add('open');
     }, 140);
   });
-  clr.addEventListener('click',()=>{inp.value='';clr.classList.remove('show');drop.classList.remove('open');inp.focus();});
+  clr.addEventListener('click',()=>{inp.value='';clr.classList.remove('show');drop.classList.remove('open');App.docQ='';docHiliteSync();inp.focus();});
   document.addEventListener('click',e=>{if(!e.target.closest('.search-glass')) drop.classList.remove('open');});
 }
 
@@ -1757,6 +1759,44 @@ function hlQ(text, q) {
   const re = new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi');
   return t.split(re).map((p, i) => i % 2 ? '<mark class="s-hit">' + esc(p) + '</mark>' : esc(p)).join('');
 }
+
+/* ── अध्यायभित्र: खोजेका शब्द पाठमै बोल्ड + रङ्गीन (DOM को text node मात्र चिरेर — अरू कुरा नबिग्रने) ── */
+function _qRegex(q) {
+  const words = [...new Set(String(q || '').trim().split(/\s+/).filter(Boolean))].sort((a, b) => b.length - a.length);
+  return words.length ? new RegExp('(' + words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')', 'gi') : null;
+}
+function docHiliteClear(root) {
+  root.querySelectorAll('mark.s-hit-doc').forEach(m => m.replaceWith(...m.childNodes));
+  root.normalize();
+}
+function docHilite(root, q) {
+  const re = _qRegex(q); if (!re) return 0;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: n => n.parentElement && n.parentElement.closest('mark.s-hit-doc,script,style') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+  });
+  const nodes = []; let n;
+  while ((n = w.nextNode())) { re.lastIndex = 0; if (re.test(n.nodeValue)) nodes.push(n); }
+  let count = 0;
+  nodes.forEach(nd => {
+    const frag = document.createDocumentFragment();
+    nd.nodeValue.split(re).forEach((p, i) => {
+      if (!p) return;
+      if (i % 2) { const m = document.createElement('mark'); m.className = 's-hit s-hit-doc'; m.textContent = p; frag.appendChild(m); count++; }
+      else frag.appendChild(document.createTextNode(p));
+    });
+    nd.replaceWith(frag);
+  });
+  return count;
+}
+/* खुला अध्यायमा App.docQ को शब्द देखाउने/हटाउने (अध्याय फेरिँदा पनि मिलाउँछ) */
+function docHiliteSync() {
+  const q = String(App.docQ || '').trim();
+  const el = document.querySelector('.chapter-item.open .ch-read-content');
+  document.querySelectorAll('.ch-read-content[data-hq]').forEach(x => { if (x !== el || x.dataset.hq !== q) { docHiliteClear(x); delete x.dataset.hq; } });
+  if (!el || q.length < 2 || el.dataset.hq === q) return 0;
+  const n = docHilite(el, q); el.dataset.hq = q; return n;
+}
+window.docHiliteSync = docHiliteSync;
 
 function renderDrop(res,q) {
   const el=document.getElementById('sDrop');
@@ -1865,7 +1905,12 @@ function openBookWithBreadcrumb(bookId, yearId, chapterIdx) {
   if (typeof chapterIdx === 'number' && chapterIdx >= 0) {
     setTimeout(() => {
       const el = document.getElementById(`chi-${bookId}-${chapterIdx}`);
-      if (el) { toggleCh(bookId, chapterIdx); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      if (el) {
+        toggleCh(bookId, chapterIdx); el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(() => {                                              // खोजेको शब्द रङ्गिन बनाएर पहिलो शब्दमा पुर्‍याउने
+          if (docHiliteSync() || el.querySelector('mark.s-hit-doc')) { const m = el.querySelector('mark.s-hit-doc'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        }, 350);
+      }
     }, 450);
   }
 }

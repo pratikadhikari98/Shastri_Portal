@@ -2701,3 +2701,6 @@ html.tr-cust .chapter-item .ch-read-content { -webkit-user-select: none; user-se
 /* खोज: मिलेका शब्द बोल्ड र रङ्गीन; अध्यायको पाठको अंश */
 .s-hit { background: transparent; color: var(--accent); font-weight: 800; border-radius: 3px; }
 .s-snip { font-size: 0.72rem; color: var(--text-2); margin-top: 3px; line-height: 1.5; max-width: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* अध्यायको पाठभित्र खोजेको शब्द */
+mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-weight: 800; padding: 0 1px; border-radius: 3px; }
