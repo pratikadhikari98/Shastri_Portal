@@ -2704,3 +2704,7 @@ html.tr-cust .chapter-item .ch-read-content { -webkit-user-select: none; user-se
 
 /* अध्यायको पाठभित्र खोजेको शब्द */
 mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-weight: 800; padding: 0 1px; border-radius: 3px; }
+
+/* खोजका नतिजा (.s-drop) अध्यायको zipper-पट्टी / ट्याब / तलको मेनुभन्दा अघि देखिने: पहिले सबैको z-index १५० बराबर थियो, त्यसैले पछिको zipper-पट्टीले छोप्थ्यो.
+   हेडर (२००) भन्दा तल, पप-अप (२८०) र तैरिने बटन (२६०) भन्दा तल */
+.search-wrap { z-index: 199; }
