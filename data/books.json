@@ -9,11 +9,13 @@
         "sanskrit": [],
         "jyotish": [
           {
-            "title": "ज्योतिष शास्त्र १",
-            "author": "लेखकको नाम",
             "id": "jyo1_1",
+            "title": "बृहद्- जातकम्",
+            "author": "द्वितीय पत्र",
+            "cover": "images/year1/jyo1.jpg",
             "description": "प्रथम वर्षको ज्योतिष शास्त्र",
-            "cover": "images/year1/jyo1.jpg"
+            "font": "siddhanta",
+            "pdf": ""
           },
           {
             "title": "ज्योतिष शास्त्र २",
