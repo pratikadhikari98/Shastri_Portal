@@ -1648,6 +1648,7 @@ function toggleSearchBar() {
   if (willOpen) {
     window.scrollTo({ top: 0, behavior: 'smooth' }); // टाढा scroll भएको बेला पनि search bar देखियोस्
     setTimeout(() => inp?.focus(), 180);
+    setTimeout(() => ensureAllChaptersLoaded(), 600);   // खोज्ने तयारी: सबै अध्याय पृष्ठभूमिमा लोड
   } else { drop?.classList.remove('open'); inp?.blur(); }
 }
 window.toggleSearchBar = toggleSearchBar;
@@ -1679,9 +1680,9 @@ function initSearch() {
     clearTimeout(_searchDebounce);
     _searchDebounce = setTimeout(() => {
       App.docQ = q; docHiliteSync();                                   // खुला अध्यायमा पनि शब्द रङ्गिन
-      const res=doSearch(q);
-      renderDrop(res,q);
-      drop.classList.add('open');
+      const run = () => { if (inp.value.trim() !== q) return; renderDrop(doSearch(q), q); drop.classList.add('open'); };
+      run();
+      ensureAllChaptersLoaded(() => { clearTimeout(App._sRef); App._sRef = setTimeout(run, 250); });   // बाँकी किताबका अध्याय आउँदै गर्दा नतिजा ताजा हुँदै जाने
     }, 140);
   });
   clr.addEventListener('click',()=>{inp.value='';clr.classList.remove('show');drop.classList.remove('open');App.docQ='';docHiliteSync();inp.focus();});
@@ -1708,47 +1709,133 @@ function _fuzzyContains(haystack, needle) {
   if (haystack.includes(needle)) return true; // सबैभन्दा पहिले सिधा substring जाँच्ने — छिटो र सबैभन्दा सही
   if (needle.length < 3) return false; // धेरै छोटो शब्दमा fuzzy लगाउँदा अनावश्यक/गलत match बढ्छ
   const maxDist = needle.length <= 5 ? 1 : needle.length <= 9 ? 2 : 3;
-  const words = haystack.split(/\s+/);
-  for (const w of words) {
-    if (Math.abs(w.length - needle.length) > maxDist + 2) continue;
-    if (_editDistance(w, needle) <= maxDist) return true;
+  return _fuzzyWords(haystack.split(/\s+/), needle, maxDist);
+}
+/* edit-distance ≤ max? (छिटो: लम्बाइ फरक र पङ्क्ति-न्यूनतम हेरेर बीचमै छोड्ने) */
+const _dpA = new Int32Array(80), _dpB = new Int32Array(80);
+function _withinDist(a, b, max) {
+  const m = a.length, n = b.length;
+  if (Math.abs(m - n) > max || n > 70) return false;
+  let prev = _dpA, cur = _dpB;
+  for (let j = 0; j <= n; j++) prev[j] = j;
+  for (let i = 1; i <= m; i++) {
+    cur[0] = i; let mn = i; const ai = a.charCodeAt(i - 1);
+    for (let j = 1; j <= n; j++) {
+      const c = ai === b.charCodeAt(j - 1) ? prev[j - 1] : 1 + Math.min(prev[j], cur[j - 1], prev[j - 1]);
+      cur[j] = c; if (c < mn) mn = c;
+    }
+    if (mn > max) return false;
+    const t = prev; prev = cur; cur = t;
   }
+  return prev[n] <= max;
+}
+function _fuzzyWords(words, needle, maxDist) {
+  for (let i = 0; i < words.length; i++) { const w = words[i]; if (Math.abs(w.length - needle.length) <= maxDist && _withinDist(w, needle, maxDist)) return true; }
   return false;
 }
 
+/* ── खोज: सबै तिरबाट — किताब, सबै किताबका अध्याय (पाठसहित), समाचार, फिड, मेरा नोट ── */
+const _sIdx = new WeakMap();   // अध्याय → खोज्न सजिलो पाठ (अध्यायको असली डाटा नबिगार्न अलग राखिएको)
+function _plainMd(s) {         // markdown/रङ चिन्ह हटाएर सादा पाठ (रङको नाम "रातो" जस्ता चिन्ह खोजमा नमिलोस्)
+  return String(s || '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\{\{[^:{}\n]{1,24}:/g, ' ').replace(/\}\}/g, ' ')
+    .replace(/==(?:[^:=\n]{1,16}:)?/g, ' ')
+    .replace(/^\{:\w+\}/gm, '')
+    .replace(/[#*_`>\-\[\]()|~]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+function _chIdx(ch) {
+  let r = _sIdx.get(ch);
+  if (!r) { const plain = _plainMd(ch.content), title = _plainMd(ch.title); r = { plain, low: plain.toLowerCase(), tl: title.toLowerCase() }; _sIdx.set(ch, r); }
+  return r;
+}
+function _fuzzyIdx(ix, ql) {                                  // अध्यायको अनौठा शब्दहरूमा मात्र (एकपटक बनाएर राख्ने)
+  if (ql.length < 3) return false;
+  const maxDist = ql.length <= 5 ? 1 : ql.length <= 9 ? 2 : 3;
+  if (!ix.uw) ix.uw = [...new Set((ix.tl + ' ' + ix.low).split(' '))];
+  return _fuzzyWords(ix.uw, ql, maxDist);
+}
+const _hit = (h, ql, words) => h.includes(ql) || (words.length > 1 && words.every(w => h.includes(w)));
+function _snip(plain, low, ql, words) {                        // मिलेको ठाउँको वरिपरिको अंश
+  let pi = low.indexOf(ql), len = ql.length;
+  if (pi < 0) for (const w of words) { pi = low.indexOf(w); if (pi >= 0) { len = w.length; break; } }
+  if (pi < 0) return '';
+  return (pi > 28 ? '… ' : '') + plain.slice(Math.max(0, pi - 28), pi + len + 56) + (plain.length > pi + len + 56 ? ' …' : '');
+}
 function doSearch(q) {
-  if (!App.data) return { books: [], chapters: [] };
-  const ql = q.toLowerCase().trim();
+  const empty = { books: [], chapters: [], news: [], feed: [], notes: [], loading: null };
+  if (!App.data) return empty;
+  const ql = q.toLowerCase().trim(); if (!ql) return empty;
+  const words = ql.split(/\s+/).filter(Boolean);
   const books = [];
-
   App.data.years.forEach(yr => Object.entries(yr.subjects).forEach(([key, arr]) =>
     (arr||[]).forEach(b => {
-      const hay = `${b.title||''} ${b.author||''} ${yr.title||''}`.toLowerCase();
-      if (_fuzzyContains(hay, ql)) books.push({ b, yr, key });
+      const hay = `${b.title||''} ${b.author||''} ${yr.title||''} ${(SUBJ[key]||{}).label||''}`.toLowerCase();
+      if (_hit(hay, ql, words) || _fuzzyContains(hay, ql)) books.push({ b, yr, key });
     })
   ));
 
-  // अध्याय भित्रको टेक्स्ट — यो session मा पहिले नै खोलिएका (cache भएका) किताबहरूमा खोजिन्छ
+  // अध्यायभित्रको पाठ — सबै किताबका (पृष्ठभूमिमा लोड भएपछि सबै)। पहिले ठ्याक्कै मिल्ने, थोरै भए typo-सहने पनि
   const chapters = [];
   if (ql.length >= 2) {
-    for (const bookId in (App.chaptersCache || {})) {
-      const loc = findBookLocation(bookId);
-      if (!loc) continue;
-      const chs = App.chaptersCache[bookId] || [];
-      chs.forEach((ch, idx) => {
-        const plain = (ch.content || '').replace(/[#*_`>\-\[\]()]/g, ' ');
-        const hay = `${ch.title||''} ${plain}`.toLowerCase();
-        if (_fuzzyContains(hay, ql)) {
-          const flat = plain.replace(/\s+/g, ' ').trim(), pi = flat.toLowerCase().indexOf(ql);   // मिलेको ठाउँको वरिपरिको अंश
-          const snip = pi >= 0 ? (pi > 28 ? '… ' : '') + flat.slice(Math.max(0, pi - 28), pi + ql.length + 56) + (flat.length > pi + ql.length + 56 ? ' …' : '') : '';
-          chapters.push({ bookId, bookTitle: loc.book.title, yearId: loc.yearId, chapterIdx: idx, chapterTitle: ch.title || `अध्याय ${idx+1}`, snip });
-        }
-      });
-    }
+    const scan = fuzzy => {
+      for (const bookId in (App.chaptersCache || {})) {
+        const loc = findBookLocation(bookId); if (!loc) continue;
+        (App.chaptersCache[bookId] || []).forEach((ch, idx) => {
+          const ix = _chIdx(ch);
+          const tHit = _hit(ix.tl, ql, words), bHit = _hit(ix.low, ql, words);
+          if (!(tHit || bHit || (fuzzy && _fuzzyIdx(ix, ql)))) return;
+          if (chapters.some(c => c.bookId === bookId && c.chapterIdx === idx)) return;
+          chapters.push({ bookId, bookTitle: loc.book.title, yearId: loc.yearId, chapterIdx: idx, chapterTitle: ch.title || `अध्याय ${idx+1}`, rank: tHit ? 0 : 1, snip: _snip(ix.plain, ix.low, ql, words) });
+        });
+      }
+    };
+    scan(false);
+    if (chapters.length < 3 && ql.length >= 3) scan(true);
+    chapters.sort((x, y) => x.rank - y.rank);
   }
 
-  return { books: books.slice(0,6), chapters: chapters.slice(0,5) };
+  const side = (list, mk) => {
+    const out = [];
+    (list || []).forEach((n, i) => {
+      const t = _plainMd(n.title), c = _plainMd(n.content), low = (t + ' ' + c).toLowerCase();
+      if (_hit(low, ql, words) || (ql.length >= 3 && _fuzzyContains(low, ql))) out.push(mk(n, i, t, c));
+    });
+    return out;
+  };
+  const news  = side(App.data.news,  (n, i, t, c) => ({ i, title: t, date: n.date || '', snip: _snip(c, c.toLowerCase(), ql, words) }));
+  const feed  = side(App.feedPosts,  (n, i, t, c) => ({ i, title: t, date: n.date || '', snip: _snip(c, c.toLowerCase(), ql, words) }));
+  const notes = side(App.notes,      (n, i, t, c) => ({ id: n.id, title: t || 'नोट', date: n.date || '', snip: _snip(c, c.toLowerCase(), ql, words) }));
+
+  const st = App._chLoad;
+  return { books: books.slice(0, 6), chapters: chapters.slice(0, 12), news: news.slice(0, 4), feed: feed.slice(0, 4), notes: notes.slice(0, 4),
+           loading: st && st.running ? { done: st.done, total: st.total } : null };
 }
+
+/* सबै किताबका अध्याय पृष्ठभूमिमा लोड (एकपटक मात्र; लोड भएपछि App.chaptersCache मै रहन्छ) */
+function ensureAllChaptersLoaded(onProgress) {
+  if (!App.data) return Promise.resolve();
+  const st = App._chLoad = App._chLoad || { running: false, done: 0, total: 0, promise: null };
+  if (st.running) return st.promise;
+  const ids = [];
+  App.data.years.forEach(yr => Object.values(yr.subjects || {}).forEach(arr => (arr || []).forEach(b => { if (b && b.id) ids.push(b.id); })));
+  App.chaptersCache = App.chaptersCache || {};
+  const todo = ids.filter(id => !App.chaptersCache[id]);
+  if (!todo.length) return Promise.resolve();
+  st.running = true; st.total = ids.length; st.done = ids.length - todo.length;
+  let k = 0;
+  const worker = async () => {
+    while (k < todo.length) {
+      const id = todo[k++];
+      try { if (!App.chaptersCache[id]) { const r = await loadChaptersForBook(id); if (Array.isArray(r)) { App.chaptersCache[id] = r; r.forEach(_chIdx); } } } catch (e) { /* यो किताब छोडेर अगाडि */ }   // खोज्ने सूची अहिल्यै बनाउने (पहिलो खोज नअड्कियोस्)
+      st.done++; if (onProgress) onProgress();
+    }
+  };
+  st.promise = Promise.all([worker(), worker(), worker(), worker()]).then(() => { st.running = false; if (onProgress) onProgress(); });
+  return st.promise;
+}
+window.ensureAllChaptersLoaded = ensureAllChaptersLoaded;
 
 /* खोजेका शब्द नतिजामा बोल्ड र रङ्गीन देखाउने (HTML सुरक्षित) */
 function hlQ(text, q) {
@@ -1800,23 +1887,28 @@ window.docHiliteSync = docHiliteSync;
 
 function renderDrop(res,q) {
   const el=document.getElementById('sDrop');
-  const books = res.books || [];
-  const chapters = res.chapters || [];
-  if(!books.length && !chapters.length){el.innerHTML=`<div class="s-empty">🔍 "${hlQ(q, '')}" भेटिएन</div>`;return;}
-  let html = books.map(({b,yr,key})=>{
-    const s=SUBJ[key]||{short:'क',g:'#EEE,#CCC'};
-    const[c1,c2]=s.g.split(',');
-    return `<div class="s-row" onclick="openBookWithBreadcrumb('${b.id}',${yr.id});document.getElementById('sDrop').classList.remove('open')">
-      <div class="s-ico2" style="background:linear-gradient(135deg,${c1},${c2})">${s.short}</div>
-      <div><div class="s-name">${hlQ(b.title, q)}</div><div class="s-sub">${hlQ(yr.title, q)} · ${hlQ(b.author, q)}</div></div>
+  const books = res.books || [], chapters = res.chapters || [], news = res.news || [], feed = res.feed || [], notes = res.notes || [];
+  const close = "document.getElementById('sDrop').classList.remove('open')";
+  const load = res.loading ? `<div class="s-load">⏳ सबै किताबका अध्यायमा खोज्दैछ… ${res.loading.done}/${res.loading.total}</div>` : '';
+  const total = books.length + chapters.length + news.length + feed.length + notes.length;
+  if (!total) { el.innerHTML = load + `<div class="s-empty">🔍 "${hlQ(q, '')}" ${res.loading ? 'अहिलेसम्म भेटिएन' : 'भेटिएन'}</div>`; return; }
+  const row = (onclick, ico, name, sub, snip, bg) => `<div class="s-row" onclick="${onclick};${close}">
+      <div class="s-ico2" style="background:${bg || 'linear-gradient(135deg,#CCC,#AAA)'}">${ico}</div>
+      <div style="min-width:0"><div class="s-name">${hlQ(name, q)}</div>${sub ? `<div class="s-sub">${sub}</div>` : ''}${snip ? `<div class="s-snip">${hlQ(snip, q)}</div>` : ''}</div>
     </div>`;
+  let html = load;
+  if (books.length) html += '<div class="s-sec">📚 किताब</div>' + books.map(({b,yr,key})=>{
+    const s=SUBJ[key]||{short:'क',g:'#EEE,#CCC'}; const[c1,c2]=s.g.split(',');
+    return row(`openBookWithBreadcrumb('${b.id}',${yr.id})`, s.short, b.title, `${hlQ(yr.title, q)} · ${hlQ(b.author, q)}`, '', `linear-gradient(135deg,${c1},${c2})`);
   }).join('');
-  if (chapters.length) {
-    html += chapters.map(c => `<div class="s-row" onclick="openBookWithBreadcrumb('${c.bookId}',${c.yearId},${c.chapterIdx});document.getElementById('sDrop').classList.remove('open')">
-      <div class="s-ico2" style="background:linear-gradient(135deg,#CCC,#AAA)">📖</div>
-      <div><div class="s-name">${hlQ(c.chapterTitle, q)}</div><div class="s-sub">📘 ${hlQ(c.bookTitle, q)}</div>${c.snip ? `<div class="s-snip">${hlQ(c.snip, q)}</div>` : ''}</div>
-    </div>`).join('');
-  }
+  if (chapters.length) html += '<div class="s-sec">📖 अध्याय</div>' + chapters.map(c =>
+    row(`openBookWithBreadcrumb('${c.bookId}',${c.yearId},${c.chapterIdx})`, '📖', c.chapterTitle, '📘 ' + hlQ(c.bookTitle, q), c.snip)).join('');
+  if (news.length) html += '<div class="s-sec">📰 सूचना पाटी</div>' + news.map(n =>
+    row(`App.newsIdx=${n.i};openNewsCurrent()`, '📰', n.title || 'समाचार', n.date ? hlQ(n.date, q) : '', n.snip)).join('');
+  if (feed.length) html += '<div class="s-sec">🗞️ समाचार / फिड</div>' + feed.map(n =>
+    row(`go('news')`, '🗞️', n.title || 'पोस्ट', n.date ? hlQ(n.date, q) : '', n.snip)).join('');
+  if (notes.length) html += '<div class="s-sec">📝 मेरा नोट</div>' + notes.map(n =>
+    row(`editNote('${String(n.id).replace(/'/g, '')}')`, '📝', n.title, n.date ? hlQ(n.date, q) : '', n.snip)).join('');
   el.innerHTML = html;
 }
 

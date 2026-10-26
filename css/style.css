@@ -2708,3 +2708,8 @@ mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-
 /* खोजका नतिजा (.s-drop) अध्यायको zipper-पट्टी / ट्याब / तलको मेनुभन्दा अघि देखिने: पहिले सबैको z-index १५० बराबर थियो, त्यसैले पछिको zipper-पट्टीले छोप्थ्यो.
    हेडर (२००) भन्दा तल, पप-अप (२८०) र तैरिने बटन (२६०) भन्दा तल */
 .search-wrap { z-index: 199; }
+
+/* खोज: धेरै नतिजा हुँदा scroll, खण्ड-शीर्षक र लोड हुँदै गरेको सूचना */
+.s-drop { max-height: 64vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.s-sec { position: sticky; top: 0; z-index: 1; padding: 6px 14px; font-size: 0.7rem; font-weight: 800; color: var(--text-3); background: var(--surface-modal); border-bottom: 1px solid var(--divider); }
+.s-load { padding: 8px 14px; font-size: 0.74rem; color: var(--text-3); background: var(--surface-b); border-bottom: 1px solid var(--divider); }
