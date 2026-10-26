@@ -2848,3 +2848,58 @@ window.applyTheme=applyTheme;
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();
+
+
+/* ════════════════════════════════════
+   होममा तल तान्दा ताजा (refresh) — होम स्क्रोल नहुने भएकाले आफ्नै gesture
+   ════════════════════════════════════ */
+(function initPullRefresh() {
+  const THRESH = 70, MAX = 120;
+  let ind, ico, txt, startY = 0, pull = 0, active = false, busy = false;
+  const home = () => { const p = document.getElementById('p-home'); return p && p.classList.contains('on') ? p : null; };
+  function show(px) {
+    const k = Math.min(px / THRESH, 1);
+    ind.style.opacity = String(Math.min(k * 1.4, 1));
+    ind.style.transform = `translate(-50%, ${-70 + Math.min(px, MAX) * 0.9}px)`;
+  }
+  function hide() {
+    ind.classList.add('snap'); ind.style.opacity = '0'; ind.style.transform = 'translate(-50%, -70px)';
+    ind.classList.remove('ready', 'busy');
+  }
+  function setup() {
+    ind = document.getElementById('ptrInd'); ico = document.getElementById('ptrIco'); txt = document.getElementById('ptrTxt');
+    if (!ind) return;
+    document.addEventListener('touchstart', e => {
+      const p = home();
+      if (!p || busy || e.touches.length !== 1 || p.scrollTop > 0) { active = false; return; }
+      if (document.querySelector('.overlay.open, .modal-open')) { active = false; return; }
+      startY = e.touches[0].clientY; pull = 0; active = true; ind.classList.remove('snap');
+    }, { passive: true });
+    document.addEventListener('touchmove', e => {
+      if (!active) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0) { pull = 0; show(0); return; }
+      pull = dy * 0.55;                                   // तान्दा बिस्तारै कडा हुने
+      show(pull);
+      const ready = pull >= THRESH;
+      ind.classList.toggle('ready', ready);
+      txt.textContent = ready ? 'छोड्नुस् — ताजा गर्न' : 'तल तान्नुस्';
+      if (ico) ico.textContent = '↓';
+    }, { passive: true });
+    const end = async () => {
+      if (!active) return; active = false;
+      if (pull < THRESH) { hide(); return; }
+      busy = true; ind.classList.add('snap', 'busy'); ind.classList.remove('ready');
+      ind.style.opacity = '1'; ind.style.transform = 'translate(-50%, 8px)';
+      txt.textContent = 'ताजा हुँदैछ…'; if (ico) ico.textContent = '';
+      const t0 = Date.now();
+      try { if (typeof refreshDataInBackground === 'function') await refreshDataInBackground(); } catch (e) {}
+      const wait = 700 - (Date.now() - t0); if (wait > 0) await new Promise(r => setTimeout(r, wait));
+      hide(); busy = false;
+      if (typeof toast === 'function') toast('ताजा भयो ✓');
+    };
+    document.addEventListener('touchend', end, { passive: true });
+    document.addEventListener('touchcancel', () => { if (active) { active = false; hide(); } }, { passive: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup); else setup();
+})();

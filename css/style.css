@@ -2738,3 +2738,13 @@ body:has(#p-home.on) { padding-bottom: 0; height: 100vh; height: 100dvh; overflo
     -webkit-mask-composite: source-in; mask-composite: intersect; }
   .np-img { height: auto; aspect-ratio: 3 / 1; }
 }
+
+/* ═══ होममा तल तानेर ताजा गर्ने (स्क्रोल नहुने भएकाले आफ्नै gesture) ═══ */
+.ptr-ind { position: fixed; left: 50%; top: calc(var(--hdr-h, 62px) + 6px); z-index: 190; display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 20px;
+  background: var(--surface-high, var(--surface)); border: 1px solid var(--border); box-shadow: 0 6px 20px var(--shadow-lg, rgba(0,0,0,.18)); color: var(--text-2); font-size: .8rem; font-weight: 600;
+  opacity: 0; pointer-events: none; transform: translate(-50%, -70px); will-change: transform, opacity; }
+.ptr-ind.on { transition: none; }
+.ptr-ind.snap { transition: transform .25s var(--ease-out), opacity .25s var(--ease-out); }
+.ptr-ico { display: inline-block; width: 18px; height: 18px; line-height: 18px; text-align: center; font-weight: 800; color: var(--accent); transition: transform .2s; }
+.ptr-ind.ready .ptr-ico { transform: rotate(180deg); }
+.ptr-ind.busy .ptr-ico { width: 16px; height: 16px; line-height: 0; font-size: 0; border: 2.5px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
