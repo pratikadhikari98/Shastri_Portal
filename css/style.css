@@ -838,38 +838,6 @@ input[type=range].dm-slider {
 .dt-bs   { color: var(--accent); font-weight: 700; background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; }
 
 /* ═══════════════════════════════════
-   TICKER
-   ═══════════════════════════════════ */
-.ticker-bar {
-  margin: 10px 16px 4px;
-  background: var(--surface);
-   
-  border: 1px solid var(--surface-b);
-  border-radius: var(--r-sm);
-  box-shadow: 0 2px 12px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.35);  height: 36px; display: flex; align-items: center; gap: 10px; overflow: hidden; padding: 0 12px 0 8px;
-}
-.ticker-bar.hide { display: none; }
-.ticker-badge {
-  background: linear-gradient(135deg,#E53935,#FF6835);
-  color: white; font-size: 0.64rem; font-weight: 800; padding: 3px 8px;
-  border-radius: 20px; white-space: nowrap; flex-shrink: 0; letter-spacing: 0.5px;
-  box-shadow: 0 2px 6px rgba(229,57,53,0.3);
-}
-.ticker-inner-wrap { flex: 1; overflow: hidden; }
-.ticker-inner {
-  display: flex; gap: 48px; white-space: nowrap;
-  animation: tickRun 16s linear infinite;
-  font-size: 0.78rem; color: var(--text-2);
-}
-/* ट्याप गर्दा mobile ब्राउजरहरूमा :hover टाँसिएर ticker रोकिने समस्या हुन्थ्यो —
-   अब यो pause-on-hover केवल साँच्चैको माउस भएको device (desktop) मा मात्र लागू हुन्छ */
-@media (hover: hover) and (pointer: fine) {
-  .ticker-inner:hover { animation-play-state: paused; }
-}
-.t-item::before { content: ''; }
-@keyframes tickRun { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-
-/* ═══════════════════════════════════
    SEARCH
    ═══════════════════════════════════ */
 .search-wrap {
@@ -2528,7 +2496,7 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 /* ═══ नीलो बोर्डर — कार्ड र आइकनमा (३ डट्स मेनुबाट चालु/बन्द). outline प्रयोग: ठाउँ/छाया बिगार्दैन ═══ */
 .borders-on .year-card, .borders-on .book-row, .borders-on .book-card, .borders-on .info-card, .borders-on .note-card,
 .borders-on .sett-group, .borders-on .copyright-block, .borders-on .creator-block, .borders-on .contrib-block,
-.borders-on .hist-item, .borders-on .form-panel, .borders-on .ticker-bar, .borders-on .tr-bar, .borders-on .news-board, .borders-on .modal-sheet,
+.borders-on .hist-item, .borders-on .form-panel, .borders-on .tr-bar, .borders-on .news-board, .borders-on .modal-sheet,
 .borders-on .neu-btn, .borders-on .hdr-btn, .borders-on .back-btn, .borders-on .subj-tab-ico, .borders-on .book-row-cover,
 .borders-on .book-row-info, .borders-on .yc-badge, .borders-on .yc-arrow, .borders-on .sett-ico, .borders-on .subj-mgr-ico,
 .borders-on .dm-item-ico, .borders-on .nav-fab-item, .borders-on .nav-fab-ico, .borders-on .m-x, .borders-on .ch-list {
@@ -2544,12 +2512,12 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 #borderToggle { display: flex; align-items: center; gap: 10px; }
 
 /* बोर्डर: इन्द्रेणी — हरेक कार्ड/आइकनको बोर्डर क्रमैसँग फरक रङमा */
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+1) { --bd-color: #2878D8; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+2) { --bd-color: #D9468F; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+3) { --bd-color: #2E9E5A; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+4) { --bd-color: #F08A24; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+5) { --bd-color: #7B4FD6; }
-html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+6) { --bd-color: #14A3A0; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+1) { --bd-color: #2878D8; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+2) { --bd-color: #D9468F; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+3) { --bd-color: #2E9E5A; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+4) { --bd-color: #F08A24; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+5) { --bd-color: #7B4FD6; }
+html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.tr-bar,.news-board,.modal-sheet,.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-list):nth-child(6n+6) { --bd-color: #14A3A0; }
 /* बोर्डरको रङ छान्ने चिप */
 .bd-chips { display: flex; flex-wrap: wrap; gap: 10px; padding: 6px 14px 10px; }
 .bc-chip { width: 34px; height: 34px; border-radius: 11px; border: 2px solid var(--divider); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
@@ -2560,7 +2528,7 @@ html.bd-rainbow :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-
 .bc-rainbow { background: conic-gradient(#2878D8, #D9468F, #F08A24, #2E9E5A, #7B4FD6, #14A3A0, #2878D8); }
 
 /* ═══ एउटै बोर्डरमा धेरै रङ (gradient बोर्डर) — पातलो १px ═══ */
-html.borders-on.bd-grad-on :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.ticker-bar,.tr-bar,.modal-sheet,.ch-list) {
+html.borders-on.bd-grad-on :is(.year-card,.book-row,.book-card,.info-card,.note-card,.sett-group,.copyright-block,.creator-block,.contrib-block,.hist-item,.form-panel,.tr-bar,.modal-sheet,.ch-list) {
   outline: none !important; border: 1px solid transparent !important;
   background: linear-gradient(var(--surface-opaque), var(--surface-opaque)) padding-box, var(--bd-grad) border-box !important;
 }
@@ -2718,9 +2686,9 @@ mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-
 .nb-banner[hidden], .news-board[hidden] { display: none !important; }
 
 /* ═══ नेपालको skyline तस्बिर (होमको तल) + माथि एनिमेटेड बादल र चरा — दुवै कुना छुने ═══ */
-.np-scene { position: relative; width: 100%; margin: 18px 0 0; padding: 0; line-height: 0; overflow: hidden; pointer-events: none; user-select: none; -webkit-user-select: none;
+.np-scene { position: relative; width: 100%; margin: 0; padding: 0; line-height: 0; overflow: hidden; pointer-events: none; user-select: none; -webkit-user-select: none; flex: 0 0 auto;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%); mask-image: linear-gradient(to bottom, transparent 0, #000 9%); }
-.np-img { display: block; width: 100%; height: auto; min-height: 158px; object-fit: cover; object-position: 50% 100%; }  /* सानो स्क्रिनमा किनारा काटिएर बीचको स्तुप/हिमाल देखिने */
+.np-img { display: block; width: 100%; height: clamp(120px, 24vh, 48vw); height: clamp(120px, 24dvh, 48vw); object-fit: cover; object-position: 50% 100%; }  /* सानो स्क्रिनमा किनारा काटिएर बीचको स्तुप/हिमाल देखिने */
 .np-svg { position: absolute; inset: 0; width: 100%; height: 100%; }                  /* तस्बिरमाथिको बादल/चरा (तस्बिरसँग उही crop) */
 .np-cloud g { fill: #cfdff5; }
 .np-bw { fill: #1d3f73; }
@@ -2747,4 +2715,26 @@ mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-
 @keyframes npBGust { 0%, 62%, 100% { transform: translateY(0) rotate(0); } 70% { transform: translateY(-26px) rotate(-7deg); } 78% { transform: translateY(14px) rotate(6deg); } 88% { transform: translateY(-8px) rotate(-3deg); } }
 @keyframes npWind { 0%, 58% { opacity: 0; stroke-dashoffset: 700; } 66% { opacity: .85; } 80% { opacity: .7; stroke-dashoffset: 0; } 92%, 100% { opacity: 0; stroke-dashoffset: -700; } }
 .np-scene.np-paused * { animation-play-state: paused !important; }              /* स्क्रिनबाहिर हुँदा नचल्ने (ब्याट्री) */
-@media (prefers-reduced-motion: reduce) { .np-scene * { animation: none !important; } }
+/* कमजोर फोन (html.lite) वा Reduce-motion मा बादल/चरा नचल्ने — सबै एकै ठाउँमा थुप्रिनु भन्दा सफा तस्बिर मात्र */
+html.lite .np-svg { display: none; }
+@media (prefers-reduced-motion: reduce) { .np-svg { display: none; } }
+
+
+/* ═══ होम = एउटै स्क्रिनमा (स्क्रोल नगरी): वर्षका कार्ड बाँकी ठाउँमा खुम्चिन्छन्, तल skyline ═══ */
+body:has(#p-home.on) { padding-bottom: 0; height: 100vh; height: 100dvh; overflow: hidden; }
+#p-home.on { display: flex; flex-direction: column; height: calc(100vh - var(--hdr-h, 60px)); height: calc(100dvh - var(--hdr-h, 60px)); overflow-y: auto; overflow-x: hidden; }
+#p-home.on > .content:first-child { flex: 1 1 auto; width: 100%; display: flex; flex-direction: column; padding-bottom: 8px; }
+#p-home.on > .content ~ .content { display: none; }                                  /* तलको खाली spacer */
+#p-home .years-stack { flex: 1 1 auto; gap: 9px; }
+#p-home .year-card { flex: 1 1 0; height: auto; min-height: 76px; max-height: 150px; }
+#p-home .np-scene { margin-top: auto; }
+#p-home .year-card .yc-body { padding-top: 8px; padding-bottom: 8px; }
+#p-home .year-card .yc-title { font-size: clamp(1.25rem, 3.4dvh, 1.55rem); }
+@media (min-width: 700px) {
+  /* चौडा स्क्रिन: तस्बिरको ३:१ अनुपात राखी बीचमा, दुवैतिर बिस्तारै हराउने */
+  .np-scene { width: min(100%, calc(3 * clamp(140px, 32vh, 340px))); width: min(100%, calc(3 * clamp(140px, 32dvh, 340px))); margin-inline: auto;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%), linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 9%), linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
+    -webkit-mask-composite: source-in; mask-composite: intersect; }
+  .np-img { height: auto; aspect-ratio: 3 / 1; }
+}

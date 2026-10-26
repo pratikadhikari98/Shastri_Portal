@@ -306,7 +306,6 @@ function refreshNoticeViews() {
   App.newsIdx = 0;
   if (typeof setNews === 'function') setNews(0);
   if (typeof renderNewsBoardDots === 'function') renderNewsBoardDots();
-  if (typeof renderTicker === 'function') renderTicker();
   if (typeof renderNewsCards === 'function') renderNewsCards();
   renderAdminNoticeList();
 }

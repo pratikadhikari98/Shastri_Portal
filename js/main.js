@@ -481,7 +481,7 @@ const I18N = {
     dm_offline:'अफलाइन', dm_offline_save:'अफलाइनको लागि Save गर्नुस्', dm_offline_save_sub:'सबै अध्याय फोनमै राख्नुस्',
     dm_offline_delete:'अफलाइन डाटा हटाउनुस्', dm_app_info:'एप जानकारी', dm_update:'एप अपडेट गर्नुस्',
     dm_version:'भर्जन', dm_follow:'हामीलाई फलो गर्नुस्',
-    ticker_news:'समाचार', search_ph:'किताब वा विषय खोज्नुस्…', years:'वर्षहरू',
+    search_ph:'किताब वा विषय खोज्नुस्…', years:'वर्षहरू',
     edit:'सम्पादन', contact_social:'सम्पर्क / Social', stats:'तथ्याङ्क', settings:'सेटिङहरू',
     display:'प्रदर्शन', data:'Data', json_download:'JSON download', backup_import:'Backup Import',
     json_restore:'JSON restore', reading_history:'पढ्ने इतिहास', clear:'सफा',
@@ -500,7 +500,7 @@ const I18N = {
     dm_offline:'ऑफलाइन', dm_offline_save:'ऑफलाइनार्थं रक्षतु', dm_offline_save_sub:'सर्वे पाठाः दूरभाषे स्थाप्यन्ताम्',
     dm_offline_delete:'ऑफलाइन-दत्तांशं निष्कासयतु', dm_app_info:'अनुप्रयोग-सूचना', dm_update:'अनुप्रयोगं अद्यतनं करोतु',
     dm_version:'संस्करणम्', dm_follow:'अस्मान् अनुसरतु',
-    ticker_news:'समाचारः', search_ph:'पुस्तकं विषयं वा अन्विष्यताम्…', years:'वर्षाणि',
+    search_ph:'पुस्तकं विषयं वा अन्विष्यताम्…', years:'वर्षाणि',
     edit:'सम्पादनम्', contact_social:'सम्पर्कः / Social', stats:'तथ्याङ्काः', settings:'सेटिंग्स्',
     display:'प्रदर्शनम्', data:'दत्तांशः', json_download:'JSON अवाहनम्', backup_import:'बैकअप-आयातः',
     json_restore:'JSON पुनःस्थापनम्', reading_history:'पठन-इतिहासः', clear:'शोधयतु',
@@ -519,7 +519,7 @@ const I18N = {
     dm_offline:'Offline', dm_offline_save:'Save for Offline', dm_offline_save_sub:'Keep all chapters on your phone',
     dm_offline_delete:'Delete Offline Data', dm_app_info:'App Info', dm_update:'Update App',
     dm_version:'Version', dm_follow:'Follow Us',
-    ticker_news:'News', search_ph:'Search books or subjects…', years:'Years',
+    search_ph:'Search books or subjects…', years:'Years',
     edit:'Edit', contact_social:'Contact / Social', stats:'Stats', settings:'Settings',
     display:'Display', data:'Data', json_download:'JSON download', backup_import:'Backup Import',
     json_restore:'JSON restore', reading_history:'Reading History', clear:'Clear',
@@ -629,8 +629,6 @@ function go(page, data={}, fromHistory=false) {
     document.getElementById('searchWrap')?.classList.remove('open');
     document.getElementById('sDrop')?.classList.remove('open');
   }
-  // समाचार ticker केवल होम पेजमा मात्र देखिने
-  document.getElementById('tickerBar')?.classList.toggle('hide', page !== 'home');
   window.scrollTo(0,0);
   saveLastLocation();
   if (typeof window._updateChProgress === 'function') window._updateChProgress();
@@ -784,19 +782,7 @@ function renderHome() {
       <div class="yc-arrow">›</div>
     </a>`;
   }).join('');
-  renderTicker();
   renderNewsCards();
-}
-
-/* ════════════════════════════════════
-   TICKER
-   ════════════════════════════════════ */
-function renderTicker() {
-  const el = document.getElementById('tickerInner');
-  if (!el||!App.data?.news?.length) return;
-  // ४ पटक दोहोर्याउने — समाचार थोरै भए पनि loop बीचमा खाली ठाउँ नआओस् भनेर
-  const dbl = [...App.data.news,...App.data.news,...App.data.news,...App.data.news];
-  el.innerHTML = dbl.map(n=>`<span class="t-item">${n.title}</span>`).join('');
 }
 
 /* ════════════════════════════════════
