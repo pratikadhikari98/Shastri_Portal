@@ -2844,62 +2844,63 @@ window.applyTheme=applyTheme;
 (function () {
   const go = () => {
     const el = document.querySelector('.np-scene'); if (!el || !('IntersectionObserver' in window)) return;
-    new IntersectionObserver(es => es.forEach(e => el.classList.toggle('np-paused', !e.isIntersecting)), { threshold: 0 }).observe(el);
+    new IntersectionObserver(es => es.forEach(e => { el.classList.toggle('np-paused', !e.isIntersecting); const sv = el.querySelector('svg'); if (sv && sv.pauseAnimations) { e.isIntersecting ? sv.unpauseAnimations() : sv.pauseAnimations(); } }), { threshold: 0 }).observe(el);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
 })();
 
 
 /* ════════════════════════════════════
-   होममा तल तान्दा ताजा (refresh) — होम स्क्रोल नहुने भएकाले आफ्नै gesture
+   होममा तल तान्दा ताजा (refresh) — रबर जस्तो तन्किने, छाड्नासाथ स्प्रिङले फर्कने
    ════════════════════════════════════ */
 (function initPullRefresh() {
-  const THRESH = 70, MAX = 120;
-  let ind, ico, txt, startY = 0, pull = 0, active = false, busy = false;
+  const THRESH = 90, HOLD = 100, MAXPULL = 230;
+  let ind, txt, ico, page, startY = 0, pull = 0, active = false, busy = false;
   const home = () => { const p = document.getElementById('p-home'); return p && p.classList.contains('on') ? p : null; };
-  function show(px) {
-    const k = Math.min(px / THRESH, 1);
-    ind.style.opacity = String(Math.min(k * 1.4, 1));
-    ind.style.transform = `translate(-50%, ${-70 + Math.min(px, MAX) * 0.9}px)`;
-  }
-  function hide() {
-    ind.classList.add('snap'); ind.style.opacity = '0'; ind.style.transform = 'translate(-50%, -70px)';
-    ind.classList.remove('ready', 'busy');
+  const rubber = dy => MAXPULL * (1 - Math.exp(-dy / 300));             // जति तान्यो उति कडा हुने
+  function place(px, animate) {
+    if (!page) return;
+    page.style.transition = animate ? 'transform .55s cubic-bezier(.2,1.5,.35,1)' : 'none';   // छाड्दा थोरै ओभरसुट गरी ठाउँमा
+    page.style.transformOrigin = '50% 0';
+    page.style.transform = px ? `translateY(${px}px) scaleY(${1 + px / 2200})` : '';
+    ind.classList.toggle('snap', !!animate);
+    const k = Math.min(px / 55, 1);
+    ind.style.opacity = String(k);
+    ind.style.transform = `translate(-50%, ${px ? px / 2 - 24 : -70}px) scale(${0.7 + 0.3 * k})`;
   }
   function setup() {
     ind = document.getElementById('ptrInd'); ico = document.getElementById('ptrIco'); txt = document.getElementById('ptrTxt');
     if (!ind) return;
     document.addEventListener('touchstart', e => {
-      const p = home();
-      if (!p || busy || e.touches.length !== 1 || p.scrollTop > 0) { active = false; return; }
-      if (document.querySelector('.overlay.open, .modal-open')) { active = false; return; }
-      startY = e.touches[0].clientY; pull = 0; active = true; ind.classList.remove('snap');
+      page = home();
+      if (!page || busy || e.touches.length !== 1 || page.scrollTop > 0) { active = false; return; }
+      if (document.querySelector('.overlay.open')) { active = false; return; }
+      startY = e.touches[0].clientY; pull = 0; active = true;
     }, { passive: true });
     document.addEventListener('touchmove', e => {
       if (!active) return;
       const dy = e.touches[0].clientY - startY;
-      if (dy <= 0) { pull = 0; show(0); return; }
-      pull = dy * 0.55;                                   // तान्दा बिस्तारै कडा हुने
-      show(pull);
+      if (dy <= 0) { pull = 0; place(0, false); return; }
+      pull = rubber(dy);
+      place(pull, false);
       const ready = pull >= THRESH;
       ind.classList.toggle('ready', ready);
       txt.textContent = ready ? 'छोड्नुस् — ताजा गर्न' : 'तल तान्नुस्';
       if (ico) ico.textContent = '↓';
     }, { passive: true });
-    const end = async () => {
+    document.addEventListener('touchend', async () => {
       if (!active) return; active = false;
-      if (pull < THRESH) { hide(); return; }
-      busy = true; ind.classList.add('snap', 'busy'); ind.classList.remove('ready');
-      ind.style.opacity = '1'; ind.style.transform = 'translate(-50%, 8px)';
+      if (pull < THRESH) { ind.classList.remove('ready'); place(0, true); return; }
+      busy = true; ind.classList.remove('ready'); ind.classList.add('busy');
       txt.textContent = 'ताजा हुँदैछ…'; if (ico) ico.textContent = '';
+      place(HOLD, true);                                                    // लोडिङ हुँदा केही तल रोकिने
       const t0 = Date.now();
       try { if (typeof refreshDataInBackground === 'function') await refreshDataInBackground(); } catch (e) {}
-      const wait = 700 - (Date.now() - t0); if (wait > 0) await new Promise(r => setTimeout(r, wait));
-      hide(); busy = false;
+      const wait = 900 - (Date.now() - t0); if (wait > 0) await new Promise(r => setTimeout(r, wait));
+      ind.classList.remove('busy'); place(0, true); busy = false;
       if (typeof toast === 'function') toast('ताजा भयो ✓');
-    };
-    document.addEventListener('touchend', end, { passive: true });
-    document.addEventListener('touchcancel', () => { if (active) { active = false; hide(); } }, { passive: true });
+    }, { passive: true });
+    document.addEventListener('touchcancel', () => { if (active) { active = false; ind.classList.remove('ready'); place(0, true); } }, { passive: true });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup); else setup();
 })();
