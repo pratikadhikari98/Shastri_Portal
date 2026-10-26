@@ -2717,29 +2717,22 @@ mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-
 /* होमबाट "सूचना पाटी" पट्टी र ब्ल्याकबोर्ड (समाचार-बोर्ड) हटाइयो — कोड/डाटा जस्ताको तस्तै राखेर लुकाइएको, फर्काउन index.html बाट `hidden` हटाउने */
 .nb-banner[hidden], .news-board[hidden] { display: none !important; }
 
-/* ═══ नेपालको एनिमेटेड silhouette (होमको तल) — दुवै कुना छुने, थिमको रङ अनुसार ═══ */
+/* ═══ नेपालको skyline तस्बिर (होमको तल) + माथि एनिमेटेड बादल र चरा — दुवै कुना छुने ═══ */
 .np-scene { position: relative; width: 100%; margin: 18px 0 0; padding: 0; line-height: 0; overflow: hidden; pointer-events: none; user-select: none; -webkit-user-select: none;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 34%); mask-image: linear-gradient(to bottom, transparent 0, #000 34%); }
-.np-svg { display: block; width: 100%; height: auto; min-height: 158px; }          /* सानो स्क्रिनमा किनारा काटिएर बीचको स्तुप/हिमाल देखिने */
-.np-far { fill: var(--accent); opacity: .36; }
-.np-mid { fill: var(--accent-2, var(--accent)); opacity: .52; }
-.np-snow { fill: #fff; opacity: .92; }
-.np-fg { fill: #16223a; fill: color-mix(in srgb, var(--accent) 26%, #0b1224); }
-.np-eye { fill: var(--bg); }
-.np-str { fill: none; stroke: #16223a; stroke-width: .9; }
-.np-wing { fill: none; stroke: #2a3550; stroke-width: 1.6; stroke-linecap: round; }
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22%); mask-image: linear-gradient(to bottom, transparent 0, #000 22%); }
+.np-img { display: block; width: 100%; height: auto; min-height: 158px; object-fit: cover; object-position: 50% 100%; }  /* सानो स्क्रिनमा किनारा काटिएर बीचको स्तुप/हिमाल देखिने */
+.np-svg { position: absolute; inset: 0; width: 100%; height: 100%; }                  /* तस्बिरमाथिको बादल/चरा (तस्बिरसँग उही crop) */
+.np-cloud g { fill: #cfdff5; }
+.np-wing { fill: none; stroke: #234a82; stroke-width: 3.6; stroke-linecap: round; }
+[data-theme="dark"] .np-img { filter: brightness(.5) saturate(.85); }                 /* कालो थिममा सेतो आकाश नझिलमिलाउने */
+[data-theme="dark"] .np-cloud g { fill: #8fa6c9; }
+[data-theme="dark"] .np-wing { stroke: #c9d6ee; }
 /* चल्ने भाग */
 .np-cloud { animation: npDrift var(--dur, 90s) linear var(--del, 0s) infinite; }
-@keyframes npDrift { from { transform: translateX(-320px); } to { transform: translateX(1520px); } }
+@keyframes npDrift { from { transform: translateX(-600px); } to { transform: translateX(2800px); } }
 .np-bird { animation: npFly var(--dur, 28s) linear var(--del, 0s) infinite; }
-@keyframes npFly { from { transform: translate(-60px, 0); } 50% { transform: translate(600px, -12px); } to { transform: translate(1260px, 4px); } }
+@keyframes npFly { from { transform: translate(-140px, 0); } 50% { transform: translate(1100px, -24px); } to { transform: translate(2350px, 8px); } }
 .np-wing { transform-box: fill-box; transform-origin: center; animation: npFlap .45s ease-in-out infinite alternate; }
 @keyframes npFlap { from { transform: scaleY(1); } to { transform: scaleY(.25); } }
-.np-pf { transform-box: fill-box; transform-origin: 50% 0; animation: npSway 2.2s ease-in-out var(--d, 0s) infinite alternate; }
-@keyframes npSway { from { transform: rotate(-9deg) skewX(-4deg); } to { transform: rotate(9deg) skewX(4deg); } }
-.np-nflag { transform-box: fill-box; transform-origin: 0 0; animation: npWave 1.7s ease-in-out infinite alternate; }
-@keyframes npWave { from { transform: skewY(-5deg) scaleX(1); } to { transform: skewY(5deg) scaleX(.88); } }
-.np-sun, .np-glow { transform-box: fill-box; transform-origin: center; animation: npPulse 7s ease-in-out infinite; }
-@keyframes npPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.09); } }
 .np-scene.np-paused * { animation-play-state: paused !important; }              /* स्क्रिनबाहिर हुँदा नचल्ने (ब्याट्री) */
 @media (prefers-reduced-motion: reduce) { .np-scene * { animation: none !important; } }
