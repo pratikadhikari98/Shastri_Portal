@@ -105,12 +105,13 @@ async function _fetchWithTimeout(url, ms = 4000) {
   } finally { clearTimeout(t); }
 }
 
+let _forceFresh = false;   // तल तानेर ताजा गर्दा — ब्राउजरको cache छलेर सिधै सर्भरबाट
 async function fetchJson(path, ms = 6000) {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), ms);
     try {
-      const r = await fetch(path, { signal: ctrl.signal });
+      const r = await fetch(path, { signal: ctrl.signal, cache: _forceFresh ? 'reload' : 'default' });
       return r.ok ? await r.json() : null;
     } finally { clearTimeout(t); }
   } catch { return null; }
@@ -136,7 +137,7 @@ async function fetchAllData() {
 
 function applyRawData(raw) {
   const validBooks = raw.books && typeof raw.books === 'object' && Array.isArray(raw.books.years) && raw.books.years.length;
-  App.data = validBooks ? raw.books : makeFallback();
+  App.data = validBooks ? Object.assign({}, raw.books) : makeFallback();   // कपी — cache को raw.books नबिगारियोस्
   if (raw.subjects && typeof raw.subjects === 'object') Object.assign(SUBJ, raw.subjects);
   App.data.news = Array.isArray(raw.news) ? raw.news : [];
   App.feedPosts = Array.isArray(raw.feed) ? raw.feed : [];
@@ -159,26 +160,28 @@ async function loadData() {
   return false;
 }
 
-async function refreshDataInBackground() {
+async function refreshDataInBackground(force) {
+  // फर्काउँछ: 'updated' (नयाँ डाटा आयो) | 'same' (पहिल्यै नयाँ) | 'fail' (नेटवर्क/सर्भर समस्या) | 'admin'
   try {
-    if (App.isAdmin) return;                       // Admin ले GitHub API बाट आफ्नै ताजा डाटा लिन्छ
+    if (App.isAdmin) return 'admin';               // Admin ले GitHub API बाट आफ्नै ताजा डाटा लिन्छ
     const cached = readDataCache() || {};
-    const fresh = await fetchAllData();
-    if (!fresh.books) return;                      // network समस्या — cache मै रहन दिने
+    _forceFresh = !!force;
+    let fresh; try { fresh = await fetchAllData(); } finally { _forceFresh = false; }
+    if (!fresh.books) return 'fail';               // network समस्या — cache मै रहन दिने
     // नयाँ नआएको भाग पुरानै राख्ने
     const merged = {
       books: fresh.books, subjects: fresh.subjects || cached.subjects || null,
       news: fresh.news || cached.news || null, feed: fresh.feed || cached.feed || null,
       contribs: fresh.contribs || cached.contribs || null
     };
-    if (JSON.stringify(merged) === JSON.stringify(cached)) return;   // केही फरक छैन → केही नगर्ने
+    if (JSON.stringify(merged) === JSON.stringify(cached)) return 'same';   // केही फरक छैन → केही नगर्ने
     writeDataCache(merged);
-    if (App.isAdmin) return;
     applyRawData(merged);
     if (typeof refreshBookViews === 'function') refreshBookViews(); else renderHome();
     if (typeof refreshNoticeViews === 'function') refreshNoticeViews();
     if (typeof renderContributors === 'function') renderContributors();
-  } catch (e) { /* चुपचाप — cache ले काम चलाइरहेको छ */ }
+    return 'updated';
+  } catch (e) { return 'fail'; }                    // चुपचाप — cache ले काम चलाइरहेको छ
 }
 
 function makeFallback() {
@@ -1064,7 +1067,7 @@ window.setTab = setTab;
    (chapters, news, contributors...) लाई fetch गरेर JS मानको रूपमा पढ्ने */
 async function fetchJsData(path) {
   try {
-    const r = await fetch(path);
+    const r = await fetch(path, _forceFresh ? { cache: 'reload' } : undefined);
     if (!r.ok) return null;
     const text = await r.text();
     return new Function('"use strict"; return (' + text + ');')();
@@ -2873,7 +2876,7 @@ window.applyTheme=applyTheme;
     if (!ind) return;
     document.addEventListener('touchstart', e => {
       page = home();
-      if (!page || busy || e.touches.length !== 1 || page.scrollTop > 0) { active = false; return; }
+      if (!page || busy || e.touches.length !== 1 || (window.scrollY || document.documentElement.scrollTop || 0) > 0) { active = false; return; }
       if (document.querySelector('.overlay.open')) { active = false; return; }
       startY = e.touches[0].clientY; pull = 0; active = true;
     }, { passive: true });
@@ -2895,10 +2898,27 @@ window.applyTheme=applyTheme;
       txt.textContent = 'ताजा हुँदैछ…'; if (ico) ico.textContent = '';
       place(HOLD, true);                                                    // लोडिङ हुँदा केही तल रोकिने
       const t0 = Date.now();
-      try { if (typeof refreshDataInBackground === 'function') await refreshDataInBackground(); } catch (e) {}
-      const wait = 900 - (Date.now() - t0); if (wait > 0) await new Promise(r => setTimeout(r, wait));
+      let status = 'fail', swChanged = false;
+      const onCtrl = () => { swChanged = true; };
+      if (!navigator.onLine) status = 'offline';
+      else {
+        // साँच्चै ताजा: (१) एपको नयाँ संस्करण खोज्ने, (२) डाटा browser cache छलेर सिधै सर्भरबाट तान्ने
+        try { navigator.serviceWorker && navigator.serviceWorker.addEventListener('controllerchange', onCtrl); } catch (e) {}
+        try { const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration(); if (reg) reg.update().catch(() => {}); } catch (e) {}
+        status = await refreshDataInBackground(true);
+        await new Promise(r => setTimeout(r, 700));                      // नयाँ संस्करण install हुन केही समय
+        try { navigator.serviceWorker && navigator.serviceWorker.removeEventListener('controllerchange', onCtrl); } catch (e) {}
+      }
+      const wait = 800 - (Date.now() - t0); if (wait > 0) await new Promise(r => setTimeout(r, wait));
       ind.classList.remove('busy'); place(0, true); busy = false;
-      if (typeof toast === 'function') toast('ताजा भयो ✓');
+      const msg = swChanged ? 'नयाँ संस्करण आयो — पुनः खुल्दैछ…'
+        : status === 'updated' ? 'नयाँ डाटा आयो ✓'
+        : status === 'same' ? 'पहिल्यै नयाँ छ ✓'
+        : status === 'admin' ? 'एडमिन मोडमा सिधै GitHub बाट आउँछ'
+        : status === 'offline' ? 'इन्टरनेट छैन — ताजा हुन सकेन'
+        : 'सर्भर नभेटियो — पछि फेरि प्रयास गर्नुहोस्';
+      if (typeof toast === 'function') toast(msg);
+      if (swChanged) setTimeout(() => location.reload(), 900);
     }, { passive: true });
     document.addEventListener('touchcancel', () => { if (active) { active = false; ind.classList.remove('ready'); place(0, true); } }, { passive: true });
   }

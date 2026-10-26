@@ -2686,9 +2686,9 @@ mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-
 .nb-banner[hidden], .news-board[hidden] { display: none !important; }
 
 /* ═══ नेपालको skyline तस्बिर (होमको तल) + माथि एनिमेटेड बादल र चरा — दुवै कुना छुने ═══ */
-.np-scene { position: relative; width: 100%; margin: 0; padding: 0; line-height: 0; overflow: hidden; pointer-events: none; user-select: none; -webkit-user-select: none; flex: 0 0 auto;
+.np-scene { position: relative; width: 100%; margin: 18px 0 0; padding: 0; line-height: 0; overflow: hidden; pointer-events: none; user-select: none; -webkit-user-select: none; flex: 0 0 auto;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%); mask-image: linear-gradient(to bottom, transparent 0, #000 9%); }
-.np-img { display: block; width: 100%; height: clamp(120px, 24vh, 44vw); height: clamp(120px, 24dvh, 44vw); object-fit: cover; object-position: 56% 100%; }  /* सानो स्क्रिनमा किनारा काटिएर बीचको स्तुप/हिमाल देखिने */
+.np-img { display: block; width: 100%; height: clamp(120px, 44vw, 340px); object-fit: cover; object-position: 56% 100%; }  /* सानो स्क्रिनमा किनारा काटिएर बीचको स्तुप/हिमाल देखिने */
 .np-svg { position: absolute; inset: 0; width: 100%; height: 100%; }                  /* तस्बिरमाथिको बादल/चरा (तस्बिरसँग उही crop) */
 .np-cloud g { fill: #cfdff5; }
 .np-wind { fill: none; stroke: #fff; stroke-width: 3.4; stroke-linecap: round; opacity: 0; stroke-dasharray: 700; stroke-dashoffset: 700; animation: npWind 11s ease-in-out var(--wd, 0s) infinite; filter: drop-shadow(0 0 2px rgba(120,160,215,.65)); }
@@ -2712,26 +2712,18 @@ html.lite .np-svg { display: none; }
 @media (prefers-reduced-motion: reduce) { .np-svg { display: none; } }
 
 
-/* ═══ होम = एउटै स्क्रिनमा (स्क्रोल नगरी): वर्षका कार्ड बाँकी ठाउँमा खुम्चिन्छन्, तल skyline ═══ */
-body:has(#p-home.on) { padding-bottom: 0; height: 100vh; height: 100dvh; overflow: hidden; }
-#p-home.on { display: flex; flex-direction: column; height: calc(100vh - var(--hdr-h, 60px)); height: calc(100dvh - var(--hdr-h, 60px)); overflow-y: auto; overflow-x: hidden; }
-#p-home.on > .content:first-child { flex: 1 1 auto; width: 100%; display: flex; flex-direction: column; padding-bottom: 8px; }
-#p-home.on > .content ~ .content { display: none; }                                  /* तलको खाली spacer */
-#p-home .years-stack { flex: 1 1 auto; gap: 9px; }
-#p-home .year-card { flex: 1 1 0; height: auto; min-height: 76px; max-height: 150px; }
-#p-home .np-scene { margin-top: auto; }
-#p-home .year-card .yc-body { padding-top: 8px; padding-bottom: 8px; }
-#p-home .year-card .yc-title { font-size: clamp(1.25rem, 3.4dvh, 1.55rem); }
+/* ═══ होम फेरि पहिलेको जस्तै स्क्रोल हुने: कार्ड आफ्नै उचाइमा, तल skyline ═══ */
+#p-home > .content ~ .content { display: none; }                                      /* तलको खाली spacer */
 @media (min-width: 700px) {
   /* चौडा स्क्रिन: तस्बिरको ३:१ अनुपात राखी बीचमा, दुवैतिर बिस्तारै हराउने */
-  .np-scene { width: min(100%, calc(3 * clamp(140px, 32vh, 340px))); width: min(100%, calc(3 * clamp(140px, 32dvh, 340px))); margin-inline: auto;
+  .np-scene { width: min(100%, 1020px); margin-inline: auto;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%), linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0, #000 9%), linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
     -webkit-mask-composite: source-in; mask-composite: intersect; }
   .np-img { height: auto; aspect-ratio: 3 / 1; }
 }
 
-/* ═══ होममा तल तानेर ताजा गर्ने (स्क्रोल नहुने भएकाले आफ्नै gesture) ═══ */
+/* ═══ होममा तल तानेर ताजा गर्ने (पेजको सबैभन्दा माथि हुँदा) ═══ */
 .ptr-ind { position: fixed; left: 50%; top: calc(var(--hdr-h, 62px) + 4px); z-index: 190; display: flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 20px;
   background: var(--surface-high, var(--surface)); border: 1px solid var(--border); box-shadow: 0 6px 20px var(--shadow-lg, rgba(0,0,0,.18)); color: var(--text-2); font-size: .8rem; font-weight: 600;
   opacity: 0; pointer-events: none; transform: translate(-50%, -70px); will-change: transform, opacity; }
