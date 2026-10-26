@@ -2852,3 +2852,13 @@ function initBorderChips() {
 // Expose App
 window.App=App;
 window.applyTheme=applyTheme;
+
+
+/* नेपाल silhouette: स्क्रिनमा नदेखिँदा एनिमेसन रोक्ने (ब्याट्री बचत) */
+(function () {
+  const go = () => {
+    const el = document.querySelector('.np-scene'); if (!el || !('IntersectionObserver' in window)) return;
+    new IntersectionObserver(es => es.forEach(e => el.classList.toggle('np-paused', !e.isIntersecting)), { threshold: 0 }).observe(el);
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+})();
