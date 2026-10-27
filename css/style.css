@@ -2235,13 +2235,6 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .subj-tab, .subj-tab.active, .subj-tab:hover, .subj-tab:active { flex: 0 0 52px; width: 52px; height: 44px; }
 .subj-tab-ico, .subj-tab:not(.active) .subj-tab-ico { width: 38px; height: 38px; border-radius: 12px; font-size: 13px; }
 
-/* विषयको पाटी: स्क्रिनको दायाँ-बायाँ कुनासम्म नछोइने — सामग्रीकै चौडाइभित्र, गोलो कुना सहित (sticky कायमै) */
-.subj-tabs {
-  width: auto; max-width: 100%; margin: 6px 0 12px; border-radius: 20px;
-  border: 1px solid var(--divider); box-shadow: 0 3px 10px var(--neu-dark);
-}
-
-
 /* ═══ तैरिने नेभिगेसन बटन ═══ */
 .nav-fab { position: fixed; z-index: 260; --fm: 14px; -webkit-tap-highlight-color: transparent; }
 .nav-fab[data-corner="br"] { right: var(--fm); bottom: calc(var(--fm) + env(safe-area-inset-bottom, 0px)); }
@@ -2742,16 +2735,7 @@ html.lite .np-svg { display: none; }
 /* ═══ ☰ — किताबको दायाँमा, अध्यायहरू बाहिरै खोल्ने ═══ */
 .book-item-top { display: flex; align-items: center; gap: 8px; }
 .book-item-top > .book-row { flex: 1; min-width: 0; }
-.book-row-menu {
-  order: 2; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
-  color: var(--text-2); border: 1px solid var(--divider); background: linear-gradient(135deg, var(--bg), var(--surface-high));
-  box-shadow: 1px 1px 2px 0 var(--shadow), 3px 3px 8px -1px var(--shadow), -1px -1px 2px 0 var(--surface-high), -2px -2px 6px -2px var(--surface-high);
-  transition: box-shadow .15s var(--ease-out), color .15s, transform .2s var(--ease-spring); -webkit-tap-highlight-color: transparent;
-}
-.book-row-menu:active, .book-item.ch-open .book-row-menu { color: var(--accent); box-shadow: inset 0 0 2px var(--shadow-lg), inset 2px 2px 6px var(--shadow), inset -2px -2px 5px var(--surface-high); }
-.book-row-menu svg { transition: transform .25s var(--ease-out); }
-.book-item.ch-open .book-row-menu svg { transform: rotate(90deg); }
-.book-ch-panel { margin: 6px 48px 2px 0; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
+.book-ch-panel { margin: 6px 0 2px 0; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
   box-shadow: inset 1px 1px 4px var(--shadow); animation: bcpIn .22s var(--ease-out); }
 .book-ch-panel[hidden] { display: none; }
 @keyframes bcpIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }

@@ -1012,15 +1012,10 @@ function bookCardHtml(b, yearId, key) {
     : `<!-- no cover → gradient + letter-avatar -->
        <span class="book-row-ico">${s.short}</span>`;
 
-  const menuBtn = b.id === 'pv' ? '' : `
-    <button type="button" class="book-row-menu" aria-label="अध्यायहरू हेर्नुस्" aria-expanded="false" title="अध्यायहरू"
-            onclick="event.stopPropagation();toggleBookChapters('${b.id}',${yearId},this)">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-    </button>`;
   return `
   <div class="book-item" data-bid="${b.id}">
-   <div class="book-item-top">${menuBtn}
-    <a class="book-row" onclick="${b.id === 'pv' ? `go('subject',{subjectId:'${b.id}',yearId:${yearId}})` : `toggleBookChapters('${b.id}',${yearId},this.closest('.book-item').querySelector('.book-row-menu'))`};return false;" href="#">
+   <div class="book-item-top">
+    <a class="book-row" onclick="${b.id === 'pv' ? `go('subject',{subjectId:'${b.id}',yearId:${yearId}})` : `toggleBookChapters('${b.id}',${yearId},this)`};return false;" href="#">
       <div class="book-row-cover" style="background:linear-gradient(135deg,${c1},${c2})">
         ${coverHtml}
       </div>
@@ -1077,7 +1072,7 @@ async function toggleBookChapters(bookId, yearId, btn) {
   const panel = item.querySelector('.book-ch-panel');
   const opening = !item.classList.contains('ch-open');
   document.querySelectorAll('.book-item.ch-open').forEach(el => {          // अरू खुलेका बन्द गर्ने
-    if (el !== item) { el.classList.remove('ch-open'); el.querySelector('.book-ch-panel').hidden = true; el.querySelector('.book-row-menu')?.setAttribute('aria-expanded', 'false'); }
+    if (el !== item) { el.classList.remove('ch-open'); el.querySelector('.book-ch-panel').hidden = true; }
   });
   if (!opening) { panel.hidden = true; item.classList.remove('ch-open'); btn.setAttribute('aria-expanded', 'false'); return; }
   item.classList.add('ch-open'); btn.setAttribute('aria-expanded', 'true');
