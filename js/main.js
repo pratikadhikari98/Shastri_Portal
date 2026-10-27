@@ -1015,7 +1015,7 @@ function bookCardHtml(b, yearId, key) {
   const menuBtn = b.id === 'pv' ? '' : `
     <button type="button" class="book-row-menu" aria-label="अध्यायहरू हेर्नुस्" aria-expanded="false" title="अध्यायहरू"
             onclick="event.stopPropagation();toggleBookChapters('${b.id}',${yearId},this)">
-      <span class="bm-i bm-i-a"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="bm-i bm-i-b"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.6C10.5 5.4 8.3 4.8 5 4.8v12.4c3.3 0 5.5.6 7 1.8 1.5-1.2 3.7-1.8 7-1.8V4.8c-3.3 0-5.5.6-7 1.8z"/><path d="M12 6.6V19"/></svg></span>
+      <span class="bm-sphere" aria-hidden="true"><span class="bm-play"></span><span class="bm-waves"></span></span>
     </button>`;
   return `
   <div class="book-item" data-bid="${b.id}">
@@ -1076,6 +1076,8 @@ async function toggleBookChapters(bookId, yearId, btn) {
   const item = btn.closest('.book-item'); if (!item) return;
   const panel = item.querySelector('.book-ch-panel');
   const opening = !item.classList.contains('ch-open');
+  btn.classList.remove('bm-pulse'); void btn.offsetWidth; btn.classList.add('bm-pulse');          // छुँदा चम्किने/छाल animation
+  clearTimeout(btn._bmT); btn._bmT = setTimeout(() => btn.classList.remove('bm-pulse'), 2100);
   document.querySelectorAll('.book-item.ch-open').forEach(el => {          // अरू खुलेका बन्द गर्ने
     if (el !== item) { el.classList.remove('ch-open'); el.querySelector('.book-ch-panel').hidden = true; el.querySelector('.book-row-menu')?.setAttribute('aria-expanded', 'false'); }
   });
