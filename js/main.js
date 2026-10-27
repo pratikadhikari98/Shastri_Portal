@@ -1018,7 +1018,7 @@ function bookCardHtml(b, yearId, key) {
   return `
   <div class="book-item" data-bid="${b.id}">
    <div class="book-item-top">${menuBtn}
-    <a class="book-row" onclick="go('subject',{subjectId:'${b.id}',yearId:${yearId}});return false;" href="#">
+    <a class="book-row" onclick="${b.id === 'pv' ? `go('subject',{subjectId:'${b.id}',yearId:${yearId}})` : `toggleBookChapters('${b.id}',${yearId},this.closest('.book-item').querySelector('.book-row-menu'))`};return false;" href="#">
       <div class="book-row-cover" style="background:linear-gradient(135deg,${c1},${c2})">
         ${coverHtml}
       </div>
