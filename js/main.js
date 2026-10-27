@@ -59,7 +59,7 @@ const THEMES = [
 
 /* ── App version — कोड अपडेट गर्दा यी दुई लाइन बदल्नुहोस् ── */
 const APP_VERSION    = 'V13';
-const APP_BUILD_DATE  = '2026-07-04'; // YYYY-MM-DD — कोड जहिले अपडेट भयो त्यो मिति
+const APP_BUILD_DATE  = '2026-10-27'; // YYYY-MM-DD — कोड जहिले अपडेट भयो त्यो मिति
 
 /* ════════════════════════════════════
    BOOT
@@ -436,11 +436,15 @@ function initAppInfo() {
   const dLbl = document.getElementById('appUpdateDateLbl');
   if (vLbl) vLbl.textContent = APP_VERSION;
   if (dLbl) dLbl.textContent = formatUpdateDate(APP_BUILD_DATE);
-  // वास्तविक चलिरहेको cache (Service Worker) को भर्जन नम्बर देखाउने — जस्तै: v163
-  if (vLbl && window.caches && caches.keys) {
+  // वास्तविक चलिरहेको cache (Service Worker) को भर्जन नम्बर र अपडेट मिति — जस्तै: shastri-app-v171-20261027 → v171 · २७ अक्टोबर २०२६
+  if (window.caches && caches.keys) {
     caches.keys().then(keys => {
-      const nums = keys.map(k => /^shastri-app-v(\d+)$/.exec(k)).filter(Boolean).map(m => +m[1]);
-      if (nums.length) vLbl.textContent = 'v' + Math.max(...nums);
+      const hits = keys.map(k => /^shastri-app-v(\d+)(?:-(\d{4})(\d{2})(\d{2}))?$/.exec(k)).filter(Boolean)
+        .sort((a, b) => +b[1] - +a[1]);
+      if (!hits.length) return;
+      const m = hits[0];
+      if (vLbl) vLbl.textContent = 'v' + m[1];
+      if (dLbl && m[2]) dLbl.textContent = formatUpdateDate(`${m[2]}-${m[3]}-${m[4]}`);
     }).catch(() => {});
   }
 }
