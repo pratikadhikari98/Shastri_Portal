@@ -1370,15 +1370,23 @@ function chShowMenu(bookId, idx, expK) {
 }
 function _chSwitch(bookId, k) {
   const it = document.getElementById(`chi-${bookId}-${k}`); if (!it) return false;
-  // एकै frame मा: पुरानो बन्द → नयाँ खोल्ने → सिधै सुरुमा पुर्‍याउने (बीचमा खाली/झिलमिल नदेखियोस्)
-  document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
-  it.classList.add('open');
+  // ठूलो अध्यायको layout ढिलो हुन्छ (फोनमा ~१ सेकेन्ड) — त्यतिन्जेल कार्ड हराउने होइन, कार्डको टाउको + skeleton तुरुन्तै देखाउने,
+  // अनि पछि मात्र भारी सामग्री देखाउने (दुई frame पछि)
+  document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open', 'ch-opening'));
+  it.classList.add('open', 'ch-opening');
   const h = document.querySelector('.site-header');
-  const y = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8;   // layout यहीँ बन्छ (sync)
-  window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });   // 'auto' ले html{scroll-behavior:smooth} अनुसार ठूलो दूरी सर्थ्यो — त्यही झिलमिल
+  const y = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8;   // सामग्री लुकेको बेला — छिटो layout
+  window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });   // 'auto' ले html{scroll-behavior:smooth} अनुसार सर्थ्यो
   history.pushState({ chOpen: { bookId, idx: k } }, '');
   saveLastLocation();
-  window._updateChProgress && requestAnimationFrame(() => window._updateChProgress());
+  requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => {
+    if (!it.classList.contains('ch-opening')) return;
+    it.classList.remove('ch-opening');                                  // अब भारी सामग्री देखिन्छ
+    const y2 = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8;
+    window.scrollTo({ top: Math.max(0, y2), behavior: 'instant' });
+    chMarkCurPart(it);
+    window._updateChProgress && window._updateChProgress();
+  }, 0)));
   return true;
 }
 function chMenuTap(bookId, idx, k) {
