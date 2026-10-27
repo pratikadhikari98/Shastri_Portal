@@ -1370,15 +1370,15 @@ function chShowMenu(bookId, idx, expK) {
 }
 function _chSwitch(bookId, k) {
   const it = document.getElementById(`chi-${bookId}-${k}`); if (!it) return false;
+  // एकै frame मा: पुरानो बन्द → नयाँ खोल्ने → सिधै सुरुमा पुर्‍याउने (बीचमा खाली/झिलमिल नदेखियोस्)
   document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
   it.classList.add('open');
+  const h = document.querySelector('.site-header');
+  const y = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8;   // layout यहीँ बन्छ (sync)
+  window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });   // 'auto' ले html{scroll-behavior:smooth} अनुसार ठूलो दूरी सर्थ्यो — त्यही झिलमिल
   history.pushState({ chOpen: { bookId, idx: k } }, '');
   saveLastLocation();
-  requestAnimationFrame(() => {
-    const h = document.querySelector('.site-header');
-    _chScrollTo(it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8, false);
-    window._updateChProgress && window._updateChProgress();
-  });
+  window._updateChProgress && requestAnimationFrame(() => window._updateChProgress());
   return true;
 }
 function chMenuTap(bookId, idx, k) {
