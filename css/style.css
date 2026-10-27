@@ -2772,6 +2772,6 @@ html.lite .np-svg { display: none; }
 .copy-notice li { font-size: 0.72rem; line-height: 1.7; color: var(--text-3); margin-bottom: 2px; }
 
 /* skyline को तलको गाढा नीलो भागमा © नाम */
-.np-copy { position: absolute; left: 0; right: 0; bottom: clamp(5px, 1.8vw, 12px); text-align: center; line-height: 1.2;
-  font-family: var(--font); font-size: clamp(11px, 3vw, 15px); font-weight: 600; letter-spacing: .4px;
+.np-copy { position: absolute; left: clamp(8px, 2.6vw, 16px); right: auto; bottom: clamp(5px, 1.8vw, 12px); text-align: left; line-height: 1.2;
+  font-family: var(--font); font-size: clamp(9px, 2.3vw, 12px); font-weight: 600; letter-spacing: .3px;
   color: rgba(255,255,255,.88); text-shadow: 0 1px 3px rgba(8,30,70,.55); pointer-events: none; user-select: none; -webkit-user-select: none; }
