@@ -720,6 +720,184 @@ async function _mdFontAdded(file, taId) {
   } catch (e) { toast('⚠️ फन्ट यही फोनमा मात्र चल्छ, GitHub मा गएन: ' + e.message); }
 }
 
+/* ════════════════════════════════════
+   🔎 शब्द खोज्ने र बदल्ने (Find & Replace)
+   - लेख्ने (rich) मोड र "Show markup" (कोड) मोड दुवैमा चल्छ
+   - बक्सको शीर्षक जस्ता सम्पादन नमिल्ने भाग छोडिन्छ
+   - फरक-फरक फर्म्याट (बोल्ड/रंग) पार गरेर फैलिएको शब्द भने भेटिँदैन
+   ════════════════════════════════════ */
+let _fr = { id: null, pos: null };
+
+function _frEsc(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+function _frRegex(q, cs) { return q ? new RegExp(_frEsc(q), cs ? 'g' : 'gi') : null; }
+
+/* rich मोडमा बदल्न मिल्ने सबै text node */
+function _frTextNodes(root) {
+  const out = [];
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(n) {
+      const p = n.parentElement;
+      if (!p || p.closest('[contenteditable="false"],.rte-box-head,script,style')) return NodeFilter.FILTER_REJECT;
+      return n.nodeValue ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    }
+  });
+  let n; while ((n = w.nextNode())) out.push(n);
+  return out;
+}
+
+function _frCount(id, q, cs) {
+  const re = _frRegex(q, cs); if (!re) return 0;
+  const R = window.RTE && RTE.get(id);
+  if (R && !R.codeMode) {
+    let c = 0;
+    _frTextNodes(R.el).forEach(n => { const m = n.nodeValue.match(re); if (m) c += m.length; });
+    return c;
+  }
+  const ta = _mdTa(id); if (!ta) return 0;
+  const m = ta.value.match(re); return m ? m.length : 0;
+}
+
+function _frRead() {
+  const pop = document.getElementById('findPicker'); if (!pop) return null;
+  return {
+    id: pop.dataset.ta,
+    q: pop.querySelector('#frFind').value,
+    r: pop.querySelector('#frRepl').value,
+    cs: pop.querySelector('#frCase').checked
+  };
+}
+
+function mdFindUpdate() {
+  const s = _frRead(); if (!s) return;
+  _fr.pos = null;
+  const out = document.getElementById('frInfo');
+  if (!s.q) { out.textContent = ''; return; }
+  const c = _frCount(s.id, s.q, s.cs);
+  out.textContent = c ? c + ' ठाउँमा भेटियो' : 'कतै भेटिएन';
+}
+window.mdFindUpdate = mdFindUpdate;
+
+function mdFindReplace(all) {
+  const s = _frRead(); if (!s || !s.q) { toast('⚠️ पहिले खोज्ने शब्द लेख्नुस्'); return; }
+  const re = _frRegex(s.q, s.cs);
+  const R = window.RTE && RTE.get(s.id);
+  let done = 0;
+
+  if (R && !R.codeMode) {
+    if (R.dirty) R.flush();                       // Undo को लागि अघिल्लो अवस्था सुरक्षित
+    const nodes = _frTextNodes(R.el);
+    if (all) {
+      nodes.forEach(n => {
+        const v = n.nodeValue, m = v.match(re);
+        if (m) { done += m.length; n.nodeValue = v.replace(re, () => s.r); }
+      });
+    } else {
+      /* अघिल्लो बदलिएको ठाउँपछिको पहिलो मिल्दो शब्द; नभए सुरुबाट */
+      const after = (n, idx) => {
+        if (!_fr.pos || _fr.pos.id !== s.id || !_fr.pos.node.isConnected) return true;
+        if (n === _fr.pos.node) return idx >= _fr.pos.off;
+        return !!(_fr.pos.node.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING);
+      };
+      let hit = null;
+      for (let pass = 0; pass < 2 && !hit; pass++) {
+        for (const n of nodes) {
+          re.lastIndex = 0; let m;
+          while ((m = re.exec(n.nodeValue))) {
+            if (pass === 1 || after(n, m.index)) { hit = { n, i: m.index, len: m[0].length }; break; }
+            if (!m[0].length) re.lastIndex++;
+          }
+          if (hit) break;
+        }
+      }
+      if (hit) {
+        const v = hit.n.nodeValue;
+        hit.n.nodeValue = v.slice(0, hit.i) + s.r + v.slice(hit.i + hit.len);
+        _fr.pos = { id: s.id, node: hit.n, off: hit.i + s.r.length };
+        done = 1;
+      }
+    }
+    if (done) R.commit();
+  } else {
+    const ta = _mdTa(s.id); if (!ta) return;
+    const v = ta.value;
+    if (all) {
+      const m = v.match(re); done = m ? m.length : 0;
+      if (done) ta.value = v.replace(re, () => s.r);
+    } else {
+      let start = _fr.pos && _fr.pos.id === s.id ? _fr.pos.off : (ta.selectionEnd || 0);
+      re.lastIndex = start;
+      let m = re.exec(v);
+      if (!m) { re.lastIndex = 0; m = re.exec(v); }
+      if (m) {
+        ta.value = v.slice(0, m.index) + s.r + v.slice(m.index + m[0].length);
+        const p = m.index + s.r.length;
+        _fr.pos = { id: s.id, off: p };
+        ta.setSelectionRange(p, p);
+        done = 1;
+      }
+    }
+  }
+
+  const out = document.getElementById('frInfo');
+  if (!done) { out.textContent = 'कतै भेटिएन'; return; }
+  if (all) { out.textContent = '✅ ' + done + ' ठाउँमा बदलियो'; _fr.pos = null; }
+  else { const left = _frCount(s.id, s.q, s.cs); out.textContent = '✅ एउटा बदलियो · बाँकी ' + left; }
+  if (all) toast('✅ ' + done + ' शब्द बदलियो');
+}
+window.mdFindReplace = mdFindReplace;
+
+function _mdFindOutside(e) {
+  const pop = document.getElementById('findPicker');
+  if (!pop) return;
+  if (!pop.contains(e.target) && !e.target.closest('.tb-btn-find')) mdCloseFind();
+}
+function mdCloseFind() {
+  document.getElementById('findPicker')?.classList.remove('show');
+  document.removeEventListener('click', _mdFindOutside, true);
+}
+window.mdCloseFind = mdCloseFind;
+
+function mdToggleFind(id, btnEl) {
+  let pop = document.getElementById('findPicker');
+  if (pop && pop.classList.contains('show')) { mdCloseFind(); return; }
+  if (!pop) {
+    pop = document.createElement('div'); pop.id = 'findPicker'; pop.className = 'color-popover find-popover';
+    pop.innerHTML =
+      '<div class="color-popover-title">🔎 शब्द खोज्नुस् र बदल्नुस्</div>' +
+      '<input id="frFind" class="f-input fr-input" type="text" placeholder="खोज्ने शब्द" autocomplete="off" oninput="mdFindUpdate()">' +
+      '<input id="frRepl" class="f-input fr-input" type="text" placeholder="बदलेर राख्ने शब्द" autocomplete="off">' +
+      '<label class="fr-case"><input id="frCase" type="checkbox" onchange="mdFindUpdate()"> अङ्ग्रेजी ठूलो/सानो अक्षर फरक गर्ने</label>' +
+      '<div id="frInfo" class="fr-info"></div>' +
+      '<div class="fr-btns">' +
+        '<button type="button" class="btn-s fr-btn" onclick="mdFindReplace(false)">एउटा बदल्नुस्</button>' +
+        '<button type="button" class="btn-p fr-btn" onclick="mdFindReplace(true)">सबै बदल्नुस्</button>' +
+      '</div>';
+    pop.addEventListener('keydown', e => {
+      if (e.key === 'Escape') mdCloseFind();
+      else if (e.key === 'Enter') { e.preventDefault(); mdFindReplace(false); }
+    });
+    document.body.appendChild(pop);
+  }
+  pop.dataset.ta = id; _fr = { id, pos: null };
+  /* सम्पादकमा शब्द चुनिएको छ भने त्यसलाई नै खोज्ने शब्द बनाउने */
+  const R = window.RTE && RTE.get(id), ta = _mdTa(id);
+  let sel = '';
+  if (R && !R.codeMode) sel = String(getSelection() || '');
+  else if (ta) sel = ta.value.substring(ta.selectionStart, ta.selectionEnd);
+  if (sel && sel.length <= 80 && !/\n/.test(sel)) pop.querySelector('#frFind').value = sel;
+  const r = btnEl.getBoundingClientRect();
+  const popW = Math.min(290, window.innerWidth - 20);
+  pop.style.width = popW + 'px';
+  let left = Math.min(r.left, window.innerWidth - popW - 10); if (left < 10) left = 10;
+  let top = r.bottom + 6;
+  if (top + 260 > window.innerHeight) top = Math.max(10, r.top - 266);
+  pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  pop.classList.add('show');
+  mdFindUpdate();
+  setTimeout(() => { document.addEventListener('click', _mdFindOutside, true); pop.querySelector('#frFind').focus(); }, 0);
+}
+window.mdToggleFind = mdToggleFind;
+
 /* आइकनहरू — DevExtreme जस्तै सरल रेखा-आइकन */
 const _DXI = {
   undo:      '<path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>',
@@ -744,6 +922,7 @@ const _DXI = {
   photo:     '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
   link:      '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
   eraser:    '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
+  find:      '<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
   full:      '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>',
 };
 const _dxIco = k => `<svg class="dxtb-ico" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${_DXI[k]}</svg>`;
@@ -799,6 +978,7 @@ function renderMdToolbar(textareaId, opts = {}) {
     ${btn('pdf', 'PDF अपलोड (पृष्ठहरू अध्यायभित्र चित्र जस्तै देखिन्छन्)', `mdUploadPdf('${id}')`)}
     ${btn('link', 'इन्टरनेटको फोटो (URL)', `mdInsertImage('${id}')`)}
     ${btn('eraser', 'चुनिएको अक्षरको बोल्ड/रंग/हाइलाइट हटाउनुस्', `mdClearMarks('${id}')`)}
+    ${btn('find', 'शब्द खोज्नुस् र बदल्नुस् (Find & Replace)', `mdToggleFind('${id}',this)`, '', 'tb-btn-find')}
     ${sep}
     <button type="button" class="dxtb-btn tb-btn-vedic" title="वैदिक/संस्कृत विशेष अक्षर" aria-label="वैदिक अक्षर" onmousedown="event.preventDefault()" onclick="mdToggleVedic('${id}',this)"><span style="font-size:1.15rem;line-height:1">ॐ</span><svg class="dxtb-ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg></button>
     ${sep}
