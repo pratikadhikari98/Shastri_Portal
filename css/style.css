@@ -638,7 +638,7 @@ body::after {
   width: 30px; height: 30px;
   background: #FFFFFF;
   border-radius: 9px;
-  border: 2px solid var(--accent);
+  border: 1px solid var(--divider);
   box-sizing: border-box;
   display: flex; align-items: center; justify-content: center; font-size: 18px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
@@ -2537,6 +2537,12 @@ html.borders-on.bd-grad-on :is(.year-card,.book-row,.book-card,.info-card,.note-
 html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x) {
   outline: none !important; border: 1px solid transparent !important;
   background: linear-gradient(135deg, var(--bg), var(--surface-high)) padding-box, var(--bd-grad) border-box !important;
+}
+/* हेडरको लोगो-बाकस पनि अन्य कार्ड/बटन (प्रथमः खण्डः आदि) जस्तै बोर्डर-प्रणालीमा */
+.borders-on .logo-ico { outline: 0.5px solid color-mix(in srgb, var(--bd-color, var(--accent)) 70%, transparent); outline-offset: -0.5px; }
+html.borders-on.bd-grad-on .logo-ico {
+  outline: none !important; border: 1px solid transparent !important;
+  background: linear-gradient(#FFFFFF, #FFFFFF) padding-box, var(--bd-grad) border-box !important;
 }
 
 /* किताब-सूची: आइकन र नाम पछाडिको दुवै छेउ छुने प्यानल (पङ्क्तिको कार्ड) हटाइएको — आइकन र नामको ब्यानर मात्र */
