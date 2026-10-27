@@ -1384,7 +1384,7 @@ function _chSwitch(bookId, k) {
   _chLimit(c);                                                       // पहिलो भाग मात्र layout हुन्छ
   it.classList.add('open');
   const h = document.querySelector('.site-header');
-  const y = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8;
+  const y = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56);   // ठ्याक्कै हेडरमुनि — टाँसिएको जम्प-बार/मेनु उही ठाउँमा रहोस् (९px सर्ने झिलमिल नहोस्)
   window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });   // 'auto' ले html{scroll-behavior:smooth} अनुसार सर्थ्यो
   history.pushState({ chOpen: { bookId, idx: k } }, '');
   saveLastLocation();
@@ -1396,8 +1396,13 @@ function chMenuTap(bookId, idx, k) {
   if (k === idx) {
     const menu = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`);
     chShowMenu(bookId, idx, menu && menu.dataset.exp === String(k) ? -1 : k);
-  } else if (_chSwitch(bookId, k)) {
-    chShowMenu(bookId, k, k);   // नयाँ अध्यायमा गएर त्यसका भाग खोल्ने
+  } else {
+    const om = document.querySelector(`#chj-${bookId}-${idx} .ch-jump-menu`), st = om ? om.scrollTop : 0;
+    if (_chSwitch(bookId, k)) {
+      chShowMenu(bookId, k, k);   // नयाँ अध्यायमा गएर त्यसका भाग खोल्ने — उही frame मा, मेनु हराउँदै-आउँदै नगरी
+      const nm = document.querySelector(`#chj-${bookId}-${k} .ch-jump-menu`);
+      if (nm) nm.scrollTop = st;  // मेनु जहाँ स्क्रोल गरेको थियो त्यहीँ रहोस्
+    }
   }
 }
 function chMenuBm(bookId, k, btn) {

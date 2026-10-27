@@ -1285,8 +1285,6 @@ input[type=range].dm-slider {
   background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:2px 3px 8px var(--accent-glow), 1px 1px 3px var(--shadow-lg); }
 .ch-zip:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
 
-.ch-jump-menu:not([hidden]) { animation: jmIn .16s ease-out; }
-@keyframes jmIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
 .ch-jump-menu { position:absolute; left:8px; right:8px; top:calc(100% + 6px); z-index:5; max-height:260px; box-shadow:0 10px 28px var(--shadow-lg); overflow-y:auto; border-radius:14px; padding:6px; background:var(--bg);
   border:1px solid var(--divider); }
 .ch-jump-item { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 10px; border-radius:10px; color:var(--text-1); font:inherit; font-size:0.84rem; cursor:pointer; }
@@ -2759,6 +2757,5 @@ html.lite .np-svg { display: none; }
 .bcp-go { color: var(--text-3); font-size: 1.1rem; }
 .bcp-load, .bcp-empty { padding: 14px; text-align: center; color: var(--text-3); font-size: .82rem; }
 .bcp-load { display: flex; justify-content: center; }
-.chapter-item.open .ch-read-content { animation: chTextIn .22s ease-out; }
-@keyframes chTextIn { from { opacity: .45; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .chapter-item.open .ch-read-content { animation: none; } }
+/* अध्याय बदल्दा कुनै fade/opacity animation छैन — त्यसले नै झिलमिल (blink) देखाउँथ्यो */
+.chapter-item.open .ch-read-body, .chapter-item.open .ch-read-content, .ch-jump-menu { animation: none !important; }
