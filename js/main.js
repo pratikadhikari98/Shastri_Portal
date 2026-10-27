@@ -1015,7 +1015,7 @@ function bookCardHtml(b, yearId, key) {
   const menuBtn = b.id === 'pv' ? '' : `
     <button type="button" class="book-row-menu" aria-label="अध्यायहरू हेर्नुस्" aria-expanded="false" title="अध्यायहरू"
             onclick="event.stopPropagation();toggleBookChapters('${b.id}',${yearId},this)">
-      <span class="bm-sphere" aria-hidden="true"><span class="bm-play"></span><span class="bm-waves"></span></span>
+      <span class="bm-sphere" aria-hidden="true"><span class="bm-g bm-list"><i></i><i></i><i></i></span><span class="bm-g bm-up"><i></i><i></i></span><span class="bm-waves"></span></span>
     </button>`;
   return `
   <div class="book-item" data-bid="${b.id}">
