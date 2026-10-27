@@ -436,6 +436,13 @@ function initAppInfo() {
   const dLbl = document.getElementById('appUpdateDateLbl');
   if (vLbl) vLbl.textContent = APP_VERSION;
   if (dLbl) dLbl.textContent = formatUpdateDate(APP_BUILD_DATE);
+  // वास्तविक चलिरहेको cache (Service Worker) को भर्जन नम्बर देखाउने — जस्तै: v163
+  if (vLbl && window.caches && caches.keys) {
+    caches.keys().then(keys => {
+      const nums = keys.map(k => /^shastri-app-v(\d+)$/.exec(k)).filter(Boolean).map(m => +m[1]);
+      if (nums.length) vLbl.textContent = 'v' + Math.max(...nums);
+    }).catch(() => {});
+  }
 }
 
 function formatUpdateDate(iso) {
