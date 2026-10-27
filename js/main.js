@@ -945,6 +945,7 @@ function renderYearPage(yearId) {
       ${(yr.subjects[firstKey]||[]).map(b=>bookCardHtml(b,yr.id,firstKey)).join('') || '<div class="empty"><div class="empty-ico">📚</div><div class="empty-t">कुनै किताब छैन</div></div>'}
     </div>
   </div>`;
+  setTimeout(prefetchVisibleBooks, 0);
 }
 
 /* विषय ट्याबको पछाडि सर्ने उठेको पट्टी (Neuromorphic Navbar शैली) */
@@ -978,6 +979,7 @@ function setYearSubjectTab(yearId, key, fromHistory=false) {
   void el.offsetWidth; // reflow — ताकि animation फेरि सुरुदेखि चल्छ
   el.innerHTML = books.map(b=>bookCardHtml(b,yearId,key)).join('') || '<div class="empty"><div class="empty-ico">📚</div><div class="empty-t">कुनै किताब छैन</div></div>';
   el.classList.add('subj-anim-in');
+  prefetchVisibleBooks();
   // विषय ट्याब बदलिँदा history मा थप्ने — ताकि back गर्दा एकैचोटि वर्षको default ट्याबमा नफर्किई यही ट्याबबाट क्रमशः फर्कियोस्
   if (!fromHistory) history.pushState({ subTab: { yearId, key } }, '');
 }
@@ -1013,7 +1015,7 @@ function bookCardHtml(b, yearId, key) {
   const menuBtn = b.id === 'pv' ? '' : `
     <button type="button" class="book-row-menu" aria-label="अध्यायहरू हेर्नुस्" aria-expanded="false" title="अध्यायहरू"
             onclick="event.stopPropagation();toggleBookChapters('${b.id}',${yearId},this)">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <svg class="bm-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path class="bm-l1" d="M4 7h16"/><path class="bm-l2" d="M4 12h16"/><path class="bm-l3" d="M4 17h16"/></svg>
     </button>`;
   return `
   <div class="book-item" data-bid="${b.id}">
@@ -1034,25 +1036,63 @@ function bookCardHtml(b, yearId, key) {
 }
 
 /* ☰ — किताबको अध्यायहरू बाहिरै (सूचीमै) खोल्ने/बन्द गर्ने; अध्यायमा थिचे सिधै त्यही अध्याय खुल्छ */
+/* अध्याय-सूची एकै पटक मात्र लोड (साझा promise) — prefetch र क्लिक दुवैले एउटै प्रयोग गर्छन् */
+function loadBookChaptersOnce(bookId) {
+  App.chaptersCache = App.chaptersCache || {};
+  if (App.chaptersCache[bookId]) return Promise.resolve(App.chaptersCache[bookId]);
+  App._chPromises = App._chPromises || {};
+  if (!App._chPromises[bookId]) {
+    App._chPromises[bookId] = loadChaptersForBook(bookId).then(r => {
+      if (Array.isArray(r)) { App.chaptersCache[bookId] = r; try { r.forEach(_chIdx); } catch (e) {} }
+      else App.chaptersCache[bookId] = [];
+      return App.chaptersCache[bookId];
+    }).catch(() => { delete App._chPromises[bookId]; return []; });
+  }
+  return App._chPromises[bookId];
+}
+window.loadBookChaptersOnce = loadBookChaptersOnce;
+
+/* सूचीमा देखिएका किताबहरूको अध्याय पहिल्यै (खाली समयमा) लोड गरिराख्ने — ताकि छुँदा लोडर नघुमोस् */
+function prefetchVisibleBooks() {
+  const ids = [...document.querySelectorAll('.book-item[data-bid]')].map(e => e.dataset.bid).filter(id => id && id !== 'pv' && !(App.chaptersCache && App.chaptersCache[id]));
+  if (!ids.length) return;
+  const idle = window.requestIdleCallback || (cb => setTimeout(cb, 120));
+  let k = 0;
+  const next = () => { if (k >= ids.length) return; const id = ids[k++]; loadBookChaptersOnce(id).then(() => idle(next)); };
+  idle(next); idle(next);
+}
+window.prefetchVisibleBooks = prefetchVisibleBooks;
+// छुन थाल्नेबित्तिकै (टच/माउस तल) त्यो किताबको अध्याय लोड सुरु
+document.addEventListener('pointerdown', e => {
+  const it = e.target.closest && e.target.closest('.book-item[data-bid]');
+  if (it && it.dataset.bid !== 'pv') loadBookChaptersOnce(it.dataset.bid);
+}, { passive: true });
+
 async function toggleBookChapters(bookId, yearId, btn) {
   const item = btn.closest('.book-item'); if (!item) return;
   const panel = item.querySelector('.book-ch-panel');
-  const opening = panel.hidden;
-  document.querySelectorAll('.book-item.ch-open').forEach(el => {          // एकपटकमा एउटा मात्र खुला
+  const opening = !item.classList.contains('ch-open');
+  document.querySelectorAll('.book-item.ch-open').forEach(el => {          // अरू खुलेका बन्द गर्ने
     if (el !== item) { el.classList.remove('ch-open'); el.querySelector('.book-ch-panel').hidden = true; el.querySelector('.book-row-menu')?.setAttribute('aria-expanded', 'false'); }
   });
   if (!opening) { panel.hidden = true; item.classList.remove('ch-open'); btn.setAttribute('aria-expanded', 'false'); return; }
   item.classList.add('ch-open'); btn.setAttribute('aria-expanded', 'true');
-  panel.hidden = false;
-  if (!App.chaptersCache[bookId]) {
-    panel.innerHTML = '<div class="bcp-load"><div class="spinner"></div></div>';
-    try { App.chaptersCache[bookId] = await loadChaptersForBook(bookId); } catch (e) { App.chaptersCache[bookId] = []; }
-  }
-  if (panel.hidden) return;                                                  // लोड हुँदा बन्द गरिएछ
-  const chs = App.chaptersCache[bookId] || [];
-  panel.innerHTML = chs.length
-    ? chs.map((ch, i) => `<button type="button" class="bcp-item" onclick="openBookChapter('${bookId}',${yearId},${i})"><span class="bcp-num">${toN(i + 1)}</span><span class="bcp-title">${(ch.title || ('अध्याय ' + (i + 1))).toString().replace(/<[^>]*>/g, '')}</span><span class="bcp-go">›</span></button>`).join('')
-    : '<div class="bcp-empty">अध्याय छैन</div>';
+  const render = () => {
+    const chs = App.chaptersCache[bookId] || [];
+    panel.innerHTML = chs.length
+      ? chs.map((ch, i) => `<button type="button" class="bcp-item" onclick="openBookChapter('${bookId}',${yearId},${i})"><span class="bcp-num">${toN(i + 1)}</span><span class="bcp-title">${(ch.title || ('अध्याय ' + (i + 1))).toString().replace(/<[^>]*>/g, '')}</span><span class="bcp-go">›</span></button>`).join('')
+      : '<div class="bcp-empty">अध्याय छैन</div>';
+    panel.hidden = false;
+  };
+  if (App.chaptersCache && App.chaptersCache[bookId]) { render(); return; }     // तयार छ भने तुरुन्तै, लोडर बिना
+  // ढिलो मात्र भए (>०.५ सेकेन्ड) लोडर देखाउने
+  const spin = setTimeout(() => {
+    if (item.classList.contains('ch-open') && !App.chaptersCache[bookId]) { panel.innerHTML = '<div class="bcp-load"><div class="spinner"></div></div>'; panel.hidden = false; }
+  }, 500);
+  await loadBookChaptersOnce(bookId);
+  clearTimeout(spin);
+  if (!item.classList.contains('ch-open')) return;                           // बीचमा बन्द गरिएछ भने केही नगर्ने
+  render();
 }
 window.toggleBookChapters = toggleBookChapters;
 
