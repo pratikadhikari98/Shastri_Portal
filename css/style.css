@@ -2770,3 +2770,8 @@ html.lite .np-svg { display: none; }
 .copy-notice b { color: var(--text-2); font-weight: 800; }
 .copy-notice ul { margin: 0 0 8px; padding-left: 20px; }
 .copy-notice li { font-size: 0.72rem; line-height: 1.7; color: var(--text-3); margin-bottom: 2px; }
+
+/* skyline को तलको गाढा नीलो भागमा © नाम */
+.np-copy { position: absolute; left: 0; right: 0; bottom: clamp(5px, 1.8vw, 12px); text-align: center; line-height: 1.2;
+  font-family: var(--font); font-size: clamp(11px, 3vw, 15px); font-weight: 600; letter-spacing: .4px;
+  color: rgba(255,255,255,.88); text-shadow: 0 1px 3px rgba(8,30,70,.55); pointer-events: none; user-select: none; -webkit-user-select: none; }
