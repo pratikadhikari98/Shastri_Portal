@@ -2749,3 +2749,12 @@ html.lite .np-svg { display: none; }
 .bcp-load { display: flex; justify-content: center; }
 /* अध्याय बदल्दा कुनै fade/opacity animation छैन — त्यसले नै झिलमिल (blink) देखाउँथ्यो */
 .chapter-item.open .ch-read-body, .chapter-item.open .ch-read-content, .ch-jump-menu { animation: none !important; }
+
+/* थिम विकल्प: छुँदा खुल्ने / फेरि छुँदा बन्द हुने (सहज उचाइ एनिमेसन) */
+.dm-chev { margin-left: auto; font-size: 1rem; color: var(--text-3); transition: transform .3s var(--ease-spring); flex-shrink: 0; }
+#themeToggleRow.open .dm-chev { transform: rotate(180deg); color: var(--accent); }
+.theme-opts { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .32s var(--ease-out); }
+.theme-opts.open { grid-template-rows: 1fr; }
+.theme-opts-in { min-height: 0; overflow: hidden; visibility: hidden; opacity: 0; transition: opacity .25s, visibility .32s; }
+.theme-opts.open .theme-opts-in { visibility: visible; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .theme-opts, .theme-opts-in, .dm-chev { transition: none; } }

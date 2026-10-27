@@ -118,7 +118,15 @@
       <button class="hdr-btn" id="dotsBtn" title="थप विकल्प" data-i18n-title="more_options">⋮</button>
       <div class="dots-menu" id="dotsMenu">
 
-        <!-- बोर्डर (नीलो) चालु/बन्द -->
+        <!-- थिम — छुँदा मात्र सबै विकल्प खुल्ने / फेरि छुँदा बन्द हुने -->
+        <div class="dm-section" style="padding-top:6px">
+          <div class="dm-item" id="themeToggleRow" role="button" tabindex="0" aria-expanded="false" aria-controls="themeOpts" onclick="toggleThemeOpts()">
+            <div class="dm-item-ico">🎨</div>
+            <div style="flex:1"><div class="dm-item-name" data-i18n="dm_theme">थिम</div><div class="dm-item-sub" data-i18n="dm_theme_sub">बोर्डर र रङ छान्नुस्</div></div>
+            <span class="dm-chev" aria-hidden="true">▾</span>
+          </div>
+        </div>
+        <div class="theme-opts" id="themeOpts"><div class="theme-opts-in">
         <div class="dm-section" style="padding-top:6px">
           <div class="dm-item" id="borderToggle" onclick="toggleBorders()">
             <div class="dm-item-ico">🔲</div>
@@ -136,6 +144,7 @@
           <div style="padding:2px 14px 0;font-size:0.78rem;font-weight:700;color:var(--text-3)">🌈 एउटै बोर्डरमा धेरै रङ (इन्द्रेणी)</div>
           <div class="bd-chips" id="borderGradChips"></div>
         </div>
+        </div></div>
 
         <!-- Language -->
         <div class="dm-section" style="padding-top:6px;border-top:1px solid var(--divider)">

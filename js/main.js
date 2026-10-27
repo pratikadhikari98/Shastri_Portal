@@ -354,6 +354,20 @@ function toN(n){ return String(n).replace(/[0-9]/g,d=>'०१२३४५६७�
 /* ════════════════════════════════════
    3-DOTS MENU
    ════════════════════════════════════ */
+/* थिम विकल्प: छुँदा खुल्ने, फेरि छुँदा बन्द हुने */
+function setThemeOpts(open) {
+  const box = document.getElementById('themeOpts'), row = document.getElementById('themeToggleRow');
+  if (!box || !row) return;
+  box.classList.toggle('open', !!open);
+  row.classList.toggle('open', !!open);
+  row.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function toggleThemeOpts() { setThemeOpts(!document.getElementById('themeOpts')?.classList.contains('open')); }
+window.toggleThemeOpts = toggleThemeOpts;
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.id === 'themeToggleRow') { e.preventDefault(); toggleThemeOpts(); }
+});
+
 function initDotsMenu() {
   const btn = document.getElementById('dotsBtn');
   const menu = document.getElementById('dotsMenu');
@@ -362,6 +376,7 @@ function initDotsMenu() {
   btn.addEventListener('click', e => {
     e.stopPropagation();
     menu.classList.toggle('open');
+    if (menu.classList.contains('open')) setThemeOpts(false);      // हरेक पटक मेनु खुल्दा थिम बन्द अवस्थामा
   });
   document.addEventListener('click', e => {
     if (!e.target.closest('.dots-menu-wrap')) menu.classList.remove('open');
@@ -494,7 +509,7 @@ const I18N = {
     my_notes:'मेरा नोटहरू', dm_settings_profile:'सेटिङ र Profile', backup_export:'Backup Export',
     dm_offline:'अफलाइन', dm_offline_save:'अफलाइनको लागि Save गर्नुस्', dm_offline_save_sub:'सबै अध्याय फोनमै राख्नुस्',
     dm_offline_delete:'अफलाइन डाटा हटाउनुस्', dm_app_info:'एप जानकारी', dm_update:'एप अपडेट गर्नुस्',
-    dm_version:'भर्जन', dm_follow:'हामीलाई फलो गर्नुस्',
+    dm_version:'भर्जन', dm_theme:'थिम', dm_theme_sub:'बोर्डर र रङ छान्नुस्', dm_follow:'हामीलाई फलो गर्नुस्',
     search_ph:'किताब वा विषय खोज्नुस्…', years:'वर्षहरू',
     edit:'सम्पादन', contact_social:'सम्पर्क / Social', stats:'तथ्याङ्क', settings:'सेटिङहरू',
     display:'प्रदर्शन', data:'Data', json_download:'JSON download', backup_import:'Backup Import',
@@ -513,7 +528,7 @@ const I18N = {
     my_notes:'मम टिप्पण्यः', dm_settings_profile:'सेटिंग् / परिचयः', backup_export:'बैकअप-निर्यातः',
     dm_offline:'ऑफलाइन', dm_offline_save:'ऑफलाइनार्थं रक्षतु', dm_offline_save_sub:'सर्वे पाठाः दूरभाषे स्थाप्यन्ताम्',
     dm_offline_delete:'ऑफलाइन-दत्तांशं निष्कासयतु', dm_app_info:'अनुप्रयोग-सूचना', dm_update:'अनुप्रयोगं अद्यतनं करोतु',
-    dm_version:'संस्करणम्', dm_follow:'अस्मान् अनुसरतु',
+    dm_version:'संस्करणम्', dm_theme:'वर्णविन्यासः', dm_theme_sub:'सीमा-वर्णं चिनुत', dm_follow:'अस्मान् अनुसरतु',
     search_ph:'पुस्तकं विषयं वा अन्विष्यताम्…', years:'वर्षाणि',
     edit:'सम्पादनम्', contact_social:'सम्पर्कः / Social', stats:'तथ्याङ्काः', settings:'सेटिंग्स्',
     display:'प्रदर्शनम्', data:'दत्तांशः', json_download:'JSON अवाहनम्', backup_import:'बैकअप-आयातः',
@@ -532,7 +547,7 @@ const I18N = {
     my_notes:'My Notes', dm_settings_profile:'Settings & Profile', backup_export:'Backup Export',
     dm_offline:'Offline', dm_offline_save:'Save for Offline', dm_offline_save_sub:'Keep all chapters on your phone',
     dm_offline_delete:'Delete Offline Data', dm_app_info:'App Info', dm_update:'Update App',
-    dm_version:'Version', dm_follow:'Follow Us',
+    dm_version:'Version', dm_theme:'Theme', dm_theme_sub:'Choose border & colors', dm_follow:'Follow Us',
     search_ph:'Search books or subjects…', years:'Years',
     edit:'Edit', contact_social:'Contact / Social', stats:'Stats', settings:'Settings',
     display:'Display', data:'Data', json_download:'JSON download', backup_import:'Backup Import',
