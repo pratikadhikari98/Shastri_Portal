@@ -1126,13 +1126,13 @@ input[type=range].dm-slider {
 @keyframes subjListIn { from { opacity:0; transform:translateY(12px) scale(0.99); } to { opacity:1; transform:translateY(0) scale(1); } }
 #yearBooksList.subj-anim-in { animation: subjListIn 0.28s cubic-bezier(0.16,1,0.3,1) both; }
 @keyframes subjRowIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-#yearBooksList.subj-anim-in .book-row { opacity:0; animation: subjRowIn 0.32s cubic-bezier(0.16,1,0.3,1) both; will-change:transform,opacity; }
-#yearBooksList.subj-anim-in .book-row:nth-child(1) { animation-delay:.03s; }
-#yearBooksList.subj-anim-in .book-row:nth-child(2) { animation-delay:.06s; }
-#yearBooksList.subj-anim-in .book-row:nth-child(3) { animation-delay:.09s; }
-#yearBooksList.subj-anim-in .book-row:nth-child(4) { animation-delay:.12s; }
-#yearBooksList.subj-anim-in .book-row:nth-child(5) { animation-delay:.15s; }
-#yearBooksList.subj-anim-in .book-row:nth-child(n+6) { animation-delay:.17s; }
+#yearBooksList.subj-anim-in .book-item { opacity:0; animation: subjRowIn 0.32s cubic-bezier(0.16,1,0.3,1) both; will-change:transform,opacity; }
+#yearBooksList.subj-anim-in .book-item:nth-child(1) { animation-delay:.03s; }
+#yearBooksList.subj-anim-in .book-item:nth-child(2) { animation-delay:.06s; }
+#yearBooksList.subj-anim-in .book-item:nth-child(3) { animation-delay:.09s; }
+#yearBooksList.subj-anim-in .book-item:nth-child(4) { animation-delay:.12s; }
+#yearBooksList.subj-anim-in .book-item:nth-child(5) { animation-delay:.15s; }
+#yearBooksList.subj-anim-in .book-item:nth-child(n+6) { animation-delay:.17s; }
 
 .books-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(146px,1fr)); gap:9px; }
 .books-list { display:flex; flex-direction:column; gap:8px; }
@@ -2730,3 +2730,29 @@ html.lite .np-svg { display: none; }
     -webkit-mask-composite: source-in; mask-composite: intersect; }
   .np-img { height: auto; aspect-ratio: 3 / 1; }
 }
+
+
+/* ═══ ☰ — किताबको बायाँमा, अध्यायहरू बाहिरै खोल्ने ═══ */
+.book-item-top { display: flex; align-items: center; gap: 8px; }
+.book-item-top > .book-row { flex: 1; min-width: 0; }
+.book-row-menu {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  color: var(--text-2); border: 1px solid var(--divider); background: linear-gradient(135deg, var(--bg), var(--surface-high));
+  box-shadow: 1px 1px 2px 0 var(--shadow), 3px 3px 8px -1px var(--shadow), -1px -1px 2px 0 var(--surface-high), -2px -2px 6px -2px var(--surface-high);
+  transition: box-shadow .15s var(--ease-out), color .15s, transform .2s var(--ease-spring); -webkit-tap-highlight-color: transparent;
+}
+.book-row-menu svg { transition: transform .25s var(--ease-out); }
+.book-row-menu:active, .book-item.ch-open .book-row-menu { color: var(--accent); box-shadow: inset 0 0 2px var(--shadow-lg), inset 2px 2px 6px var(--shadow), inset -2px -2px 5px var(--surface-high); }
+.book-item.ch-open .book-row-menu svg { transform: rotate(90deg); }
+.book-ch-panel { margin: 6px 0 2px 48px; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
+  box-shadow: inset 1px 1px 4px var(--shadow); animation: bcpIn .22s var(--ease-out); }
+.book-ch-panel[hidden] { display: none; }
+@keyframes bcpIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.bcp-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 8px; border: 0; background: transparent; border-radius: 10px; cursor: pointer; color: var(--text-1); font: inherit; font-size: .86rem; -webkit-tap-highlight-color: transparent; }
+.bcp-item + .bcp-item { border-top: 1px solid var(--divider); border-radius: 0; }
+.bcp-item:active { background: var(--accent-glow, rgba(0,0,0,.06)); }
+.bcp-num { flex: 0 0 auto; min-width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700; color: var(--accent); border: 1px solid var(--divider); background: var(--bg); }
+.bcp-title { flex: 1; min-width: 0; font-weight: 600; }
+.bcp-go { color: var(--text-3); font-size: 1.1rem; }
+.bcp-load, .bcp-empty { padding: 14px; text-align: center; color: var(--text-3); font-size: .82rem; }
+.bcp-load { display: flex; justify-content: center; }
