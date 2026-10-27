@@ -1015,7 +1015,7 @@ function bookCardHtml(b, yearId, key) {
   const menuBtn = b.id === 'pv' ? '' : `
     <button type="button" class="book-row-menu" aria-label="अध्यायहरू हेर्नुस्" aria-expanded="false" title="अध्यायहरू"
             onclick="event.stopPropagation();toggleBookChapters('${b.id}',${yearId},this)">
-      <svg class="bm-ico" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path class="bm-l1" d="M4 7h16"/><path class="bm-l2" d="M4 12h16"/><path class="bm-l3" d="M4 17h16"/></svg>
+      <span class="bm-i bm-i-a"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="bm-i bm-i-b"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6.6C10.5 5.4 8.3 4.8 5 4.8v12.4c3.3 0 5.5.6 7 1.8 1.5-1.2 3.7-1.8 7-1.8V4.8c-3.3 0-5.5.6-7 1.8z"/><path d="M12 6.6V19"/></svg></span>
     </button>`;
   return `
   <div class="book-item" data-bid="${b.id}">
@@ -1042,11 +1042,12 @@ function loadBookChaptersOnce(bookId) {
   if (App.chaptersCache[bookId]) return Promise.resolve(App.chaptersCache[bookId]);
   App._chPromises = App._chPromises || {};
   if (!App._chPromises[bookId]) {
+    // खाली/असफल नतिजा कहिल्यै cache नगर्ने (ढिलो नेटले ६ सेकेन्डमा abort भए "अध्याय छैन" नदेखियोस्) — null फर्काउँछ
     App._chPromises[bookId] = loadChaptersForBook(bookId).then(r => {
-      if (Array.isArray(r)) { App.chaptersCache[bookId] = r; try { r.forEach(_chIdx); } catch (e) {} }
-      else App.chaptersCache[bookId] = [];
-      return App.chaptersCache[bookId];
-    }).catch(() => { delete App._chPromises[bookId]; return []; });
+      delete App._chPromises[bookId];
+      if (Array.isArray(r) && r.length) { App.chaptersCache[bookId] = r; try { r.forEach(_chIdx); } catch (e) {} return r; }
+      return null;
+    }).catch(() => { delete App._chPromises[bookId]; return null; });
   }
   return App._chPromises[bookId];
 }
@@ -1054,12 +1055,15 @@ window.loadBookChaptersOnce = loadBookChaptersOnce;
 
 /* सूचीमा देखिएका किताबहरूको अध्याय पहिल्यै (खाली समयमा) लोड गरिराख्ने — ताकि छुँदा लोडर नघुमोस् */
 function prefetchVisibleBooks() {
-  const ids = [...document.querySelectorAll('.book-item[data-bid]')].map(e => e.dataset.bid).filter(id => id && id !== 'pv' && !(App.chaptersCache && App.chaptersCache[id]));
-  if (!ids.length) return;
-  const idle = window.requestIdleCallback || (cb => setTimeout(cb, 120));
-  let k = 0;
-  const next = () => { if (k >= ids.length) return; const id = ids[k++]; loadBookChaptersOnce(id).then(() => idle(next)); };
-  idle(next); idle(next);
+  if (navigator.connection && navigator.connection.saveData) return;
+  clearTimeout(App._pfT);
+  App._pfT = setTimeout(() => {
+    const ids = [...document.querySelectorAll('.book-item[data-bid]')].map(e => e.dataset.bid).filter(id => id && id !== 'pv' && !(App.chaptersCache && App.chaptersCache[id]));
+    const idle = window.requestIdleCallback || (cb => setTimeout(cb, 150));
+    let k = 0;
+    const next = () => { if (k >= ids.length) return; const id = ids[k++]; loadBookChaptersOnce(id).then(() => idle(next)); };   // एक-एक गरी (नेट नदबाउन)
+    idle(next);
+  }, 1200);
 }
 window.prefetchVisibleBooks = prefetchVisibleBooks;
 // छुन थाल्नेबित्तिकै (टच/माउस तल) त्यो किताबको अध्याय लोड सुरु
@@ -1089,7 +1093,8 @@ async function toggleBookChapters(bookId, yearId, btn) {
   const spin = setTimeout(() => {
     if (item.classList.contains('ch-open') && !App.chaptersCache[bookId]) { panel.innerHTML = '<div class="bcp-load"><div class="spinner"></div></div>'; panel.hidden = false; }
   }, 500);
-  await loadBookChaptersOnce(bookId);
+  let got = await loadBookChaptersOnce(bookId);
+  if (!got && item.classList.contains('ch-open')) got = await loadBookChaptersOnce(bookId);   // एकपटक फेरि प्रयास
   clearTimeout(spin);
   if (!item.classList.contains('ch-open')) return;                           // बीचमा बन्द गरिएछ भने केही नगर्ने
   render();

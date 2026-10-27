@@ -2742,14 +2742,14 @@ html.lite .np-svg { display: none; }
   box-shadow: 1px 1px 2px 0 var(--shadow), 3px 3px 8px -1px var(--shadow), -1px -1px 2px 0 var(--surface-high), -2px -2px 6px -2px var(--surface-high);
   transition: box-shadow .15s var(--ease-out), color .15s, transform .2s var(--ease-spring); -webkit-tap-highlight-color: transparent;
 }
-.book-row-menu svg { transition: transform .25s var(--ease-out); }
 .book-row-menu:active, .book-item.ch-open .book-row-menu { color: var(--accent); box-shadow: inset 0 0 2px var(--shadow-lg), inset 2px 2px 6px var(--shadow), inset -2px -2px 5px var(--surface-high); }
-.book-row-menu .bm-ico path { transform-box: view-box; transform-origin: 12px 12px; transition: transform .32s var(--ease-spring), opacity .2s var(--ease-out); }
-/* सूची खुल्दा ☰ → ✕ मा बदलिन्छ (रेखाहरू घुमेर), बन्द हुँदा फेरि ☰ */
-.book-item.ch-open .book-row-menu .bm-ico { transform: none; }
-.book-item.ch-open .book-row-menu .bm-l1 { transform: translateY(5px) rotate(45deg); }
-.book-item.ch-open .book-row-menu .bm-l2 { opacity: 0; transform: scaleX(0.2); }
-.book-item.ch-open .book-row-menu .bm-l3 { transform: translateY(-5px) rotate(-45deg); }
+.book-row-menu { position: relative; }
+/* तल-दायाँको floating नेभिगेसन जस्तै: दुई आइकन एकमाथि अर्को राखिएका, छुँदा पहिलो घुमेर सानो हुँदै हराउँछ र अर्को (खुला किताब) देखिन्छ */
+.book-row-menu .bm-i { position: absolute; display: flex; transition: transform 0.3s var(--ease-spring), opacity 0.2s; }
+.book-row-menu .bm-i-b { opacity: 0; transform: rotate(-90deg) scale(0.6); }
+.book-item.ch-open .book-row-menu .bm-i-a { opacity: 0; transform: rotate(90deg) scale(0.6); }
+.book-item.ch-open .book-row-menu .bm-i-b { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .book-row-menu .bm-i { transition: none; } }
 .book-ch-panel { margin: 6px 48px 2px 0; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
   box-shadow: inset 1px 1px 4px var(--shadow); animation: bcpIn .22s var(--ease-out); }
 .book-ch-panel[hidden] { display: none; }
