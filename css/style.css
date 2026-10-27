@@ -2732,11 +2732,11 @@ html.lite .np-svg { display: none; }
 }
 
 
-/* ═══ ☰ — किताबको बायाँमा, अध्यायहरू बाहिरै खोल्ने ═══ */
+/* ═══ ☰ — किताबको दायाँमा, अध्यायहरू बाहिरै खोल्ने ═══ */
 .book-item-top { display: flex; align-items: center; gap: 8px; }
 .book-item-top > .book-row { flex: 1; min-width: 0; }
 .book-row-menu {
-  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  order: 2; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
   color: var(--text-2); border: 1px solid var(--divider); background: linear-gradient(135deg, var(--bg), var(--surface-high));
   box-shadow: 1px 1px 2px 0 var(--shadow), 3px 3px 8px -1px var(--shadow), -1px -1px 2px 0 var(--surface-high), -2px -2px 6px -2px var(--surface-high);
   transition: box-shadow .15s var(--ease-out), color .15s, transform .2s var(--ease-spring); -webkit-tap-highlight-color: transparent;
@@ -2744,7 +2744,7 @@ html.lite .np-svg { display: none; }
 .book-row-menu svg { transition: transform .25s var(--ease-out); }
 .book-row-menu:active, .book-item.ch-open .book-row-menu { color: var(--accent); box-shadow: inset 0 0 2px var(--shadow-lg), inset 2px 2px 6px var(--shadow), inset -2px -2px 5px var(--surface-high); }
 .book-item.ch-open .book-row-menu svg { transform: rotate(90deg); }
-.book-ch-panel { margin: 6px 0 2px 48px; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
+.book-ch-panel { margin: 6px 48px 2px 0; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
   box-shadow: inset 1px 1px 4px var(--shadow); animation: bcpIn .22s var(--ease-out); }
 .book-ch-panel[hidden] { display: none; }
 @keyframes bcpIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
