@@ -2748,14 +2748,14 @@ html.lite .np-svg { display: none; }
    तीन तहको गोला + पावर-आइकन; सूची खुल्दा "on" (थिम-रङले चम्कन्छ), छुँदा भित्री भाग थिचिने animation ═══ */
 .book-row-menu, .book-item .book-row-menu, .book-item.ch-open .book-row-menu, .book-row-menu:active {
   background: none; border: none; box-shadow: none; overflow: visible;
-  --nm-s: 0.45; --nm-h: 1;                       /* छाया/उज्यालोको मात्रा (लाइट थिम) */
+  --nm-s: 0.14; --nm-h: 1; --nm-g2: rgb(196,205,218);   /* छाया/उज्यालोको मात्रा र गोलाको तलको रङ (लाइट थिम — हल्का) */
 }
-[data-theme="dark"] .book-row-menu { --nm-s: 1; --nm-h: 0.35; }
+[data-theme="dark"] .book-row-menu { --nm-s: 0.5; --nm-h: 0.3; --nm-g2: rgb(70,74,82); }
 .book-row-menu .nm-out, .book-row-menu .nm-out * {
   position: absolute; top: 0; bottom: 0; left: 0; right: 0; margin: auto; border-radius: 50%; overflow: hidden; box-sizing: border-box; pointer-events: none;
 }
 .book-row-menu .nm-out {
-  --nm-g: linear-gradient(205deg, rgba(255,255,255,1) 0%, rgba(65,68,72,1) 100%);
+  --nm-g: linear-gradient(205deg, rgba(255,255,255,1) 0%, var(--nm-g2) 100%);
   left: 50%; top: 50%; right: auto; bottom: auto; width: 330px; height: 330px; margin: -165px 0 0 -165px;
   transform: scale(0.118); background: var(--nm-g);
   box-shadow:
@@ -2794,14 +2794,14 @@ html.lite .np-svg { display: none; }
     -20px 20px 15px 35px rgba(0,0,0, calc(0.7 * var(--nm-s))); }
 }
 .book-row-menu .nm-io svg {
-  width: 112px; height: 112px; background: none; border-radius: 0; overflow: visible;
-  fill: rgba(75,75,75,0.45); transition: fill 0.2s, filter 0.2s;
-  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 0%, transparent));
+  width: 96px; height: 96px; background: none; border-radius: 0; overflow: visible;
+  fill: rgba(90,100,115,0.38); transition: fill 0.2s, filter 0.2s;
+  filter: drop-shadow(0 0 0 transparent);
 }
 .book-row-menu .nm-io svg * { position: static; border-radius: 0; overflow: visible; }
 .book-item.ch-open .book-row-menu .nm-io svg {                 /* सूची खुल्दा = "on" */
-  fill: color-mix(in srgb, var(--accent) 85%, white);
-  filter: drop-shadow(0 0 18px var(--accent)) drop-shadow(0 0 6px var(--accent));
+  fill: color-mix(in srgb, var(--accent) 60%, white);
+  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 55%, transparent));
 }
 @media (prefers-reduced-motion: reduce) { .book-row-menu .nm-io.nm-anim { animation: none; } .book-row-menu .nm-io svg { transition: none; } }
 .book-ch-panel { margin: 6px 48px 2px 0; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
