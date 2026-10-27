@@ -2758,3 +2758,10 @@ html.lite .np-svg { display: none; }
 .theme-opts-in { min-height: 0; overflow: hidden; visibility: hidden; opacity: 0; transition: opacity .25s, visibility .32s; }
 .theme-opts.open .theme-opts-in { visibility: visible; opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .theme-opts, .theme-opts-in, .dm-chev { transition: none; } }
+
+/* स्वामित्व सम्बन्धी स्पष्टीकरण (footer) */
+.copy-notice { margin: 14px auto 0; max-width: 520px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); text-align: left; }
+.copy-notice-t { font-size: 0.78rem; font-weight: 800; color: var(--text-2); margin-bottom: 6px; }
+.copy-notice p { font-size: 0.72rem; line-height: 1.7; color: var(--text-3); margin: 0 0 6px; }
+.copy-notice p:last-child { margin-bottom: 0; }
+.copy-notice-en { font-size: 0.68rem; opacity: 0.85; }
