@@ -2235,6 +2235,12 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .subj-tab, .subj-tab.active, .subj-tab:hover, .subj-tab:active { flex: 0 0 52px; width: 52px; height: 44px; }
 .subj-tab-ico, .subj-tab:not(.active) .subj-tab-ico { width: 38px; height: 38px; border-radius: 12px; font-size: 13px; }
 
+/* विषयको पाटी: स्क्रिनको दायाँ-बायाँ कुनासम्म नछोइने — सामग्रीकै चौडाइभित्र, गोलो कुना सहित (sticky कायमै) */
+.subj-tabs {
+  width: auto; max-width: 100%; margin: 6px 0 12px; border-radius: 20px;
+  border: 1px solid var(--divider); box-shadow: 0 3px 10px var(--neu-dark);
+}
+
 
 /* ═══ तैरिने नेभिगेसन बटन ═══ */
 .nav-fab { position: fixed; z-index: 260; --fm: 14px; -webkit-tap-highlight-color: transparent; }
@@ -2743,67 +2749,8 @@ html.lite .np-svg { display: none; }
   transition: box-shadow .15s var(--ease-out), color .15s, transform .2s var(--ease-spring); -webkit-tap-highlight-color: transparent;
 }
 .book-row-menu:active, .book-item.ch-open .book-row-menu { color: var(--accent); box-shadow: inset 0 0 2px var(--shadow-lg), inset 2px 2px 6px var(--shadow), inset -2px -2px 5px var(--surface-high); }
-.book-row-menu { position: relative; }
-/* ═══ किताबको दायाँ बटन → Neumorphism Study 1 (© Rafa / RAFA3L, MIT License, codepen.io/RAFA3L/pen/zYmJOvM)
-   तीन तहको गोला + पावर-आइकन; सूची खुल्दा "on" (थिम-रङले चम्कन्छ), छुँदा भित्री भाग थिचिने animation ═══ */
-.book-row-menu, .book-item .book-row-menu, .book-item.ch-open .book-row-menu, .book-row-menu:active {
-  background: none; border: none; box-shadow: none; overflow: visible;
-  --nm-s: 0.14; --nm-h: 1; --nm-g2: rgb(196,205,218);   /* छाया/उज्यालोको मात्रा र गोलाको तलको रङ (लाइट थिम — हल्का) */
-}
-[data-theme="dark"] .book-row-menu { --nm-s: 0.5; --nm-h: 0.3; --nm-g2: rgb(70,74,82); }
-.book-row-menu .nm-out, .book-row-menu .nm-out * {
-  position: absolute; top: 0; bottom: 0; left: 0; right: 0; margin: auto; border-radius: 50%; overflow: hidden; box-sizing: border-box; pointer-events: none;
-}
-.book-row-menu .nm-out {
-  --nm-g: linear-gradient(205deg, rgba(255,255,255,1) 0%, var(--nm-g2) 100%);
-  left: 50%; top: 50%; right: auto; bottom: auto; width: 330px; height: 330px; margin: -165px 0 0 -165px;
-  transform: scale(0.118); background: var(--nm-g);
-  box-shadow:
-    10px -10px 20px 7px rgba(153,153,153, calc(0.2 * var(--nm-h))),
-    -7px 20px 3px rgba(0,0,0, calc(1 * var(--nm-s))),
-    -10px 30px 13px rgba(0,0,0, calc(1 * var(--nm-s))),
-    -30px 80px 54px rgba(0,0,0, calc(0.8 * var(--nm-s)));
-}
-.book-row-menu .nm-in {
-  width: calc(330px * 0.79); height: calc(330px * 0.79); background: var(--nm-g);
-  box-shadow:
-    -5px 5px 5px rgba(0,0,0, calc(0.3 * var(--nm-s))),
-    -20px 20px 25px rgba(0,0,0, calc(0.5 * var(--nm-s))),
-    -30px 200px 75px 100px rgba(0,0,0, calc(0.5 * var(--nm-s))),
-    0px 0px 15px 33px rgba(255,255,255, calc(0.7 * var(--nm-h))),
-    -20px 20px 15px 35px rgba(0,0,0, calc(1 * var(--nm-s)));
-}
-.book-row-menu .nm-io {
-  width: calc(330px * 0.58); height: calc(330px * 0.58); background: var(--nm-g); transition: box-shadow 0.2s ease-in-out;
-  box-shadow:
-    inset 0 0 12px 100px rgba(0,0,0,0),
-    inset 0 0 12px 12px rgba(0,0,0, calc(0.1 * var(--nm-s))),
-    0 0 4px 5px rgba(0,0,0, calc(1 * var(--nm-s))),
-    10px -10px 12px 2px rgba(0,0,0, calc(0.4 * var(--nm-s))),
-    0 0 12px 27px rgba(255,255,255, calc(0.8 * var(--nm-h))),
-    -20px 20px 15px 35px rgba(0,0,0, calc(0.7 * var(--nm-s)));
-}
-.book-row-menu .nm-io.nm-anim { animation: NmPress 0.3s; }
-@keyframes NmPress {
-  50% { box-shadow:
-    inset 0 0 12px 100px rgba(0,0,0, calc(0.2 * var(--nm-s))),
-    inset 0 0 12px 18px rgba(255,255,255,0.2),
-    0 0 4px 5px rgba(0,0,0, calc(1 * var(--nm-s))),
-    10px -10px 12px 2px rgba(0,0,0, calc(0.4 * var(--nm-s))),
-    0 0 12px 27px rgba(255,255,255, calc(0.8 * var(--nm-h))),
-    -20px 20px 15px 35px rgba(0,0,0, calc(0.7 * var(--nm-s))); }
-}
-.book-row-menu .nm-io svg {
-  width: 96px; height: 96px; background: none; border-radius: 0; overflow: visible;
-  fill: rgba(90,100,115,0.38); transition: fill 0.2s, filter 0.2s;
-  filter: drop-shadow(0 0 0 transparent);
-}
-.book-row-menu .nm-io svg * { position: static; border-radius: 0; overflow: visible; }
-.book-item.ch-open .book-row-menu .nm-io svg {                 /* सूची खुल्दा = "on" */
-  fill: color-mix(in srgb, var(--accent) 60%, white);
-  filter: drop-shadow(0 0 9px color-mix(in srgb, var(--accent) 55%, transparent));
-}
-@media (prefers-reduced-motion: reduce) { .book-row-menu .nm-io.nm-anim { animation: none; } .book-row-menu .nm-io svg { transition: none; } }
+.book-row-menu svg { transition: transform .25s var(--ease-out); }
+.book-item.ch-open .book-row-menu svg { transform: rotate(90deg); }
 .book-ch-panel { margin: 6px 48px 2px 0; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
   box-shadow: inset 1px 1px 4px var(--shadow); animation: bcpIn .22s var(--ease-out); }
 .book-ch-panel[hidden] { display: none; }
