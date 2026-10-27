@@ -1287,7 +1287,7 @@ input[type=range].dm-slider {
 
 .ch-jump-menu { position:absolute; left:8px; right:8px; top:calc(100% + 6px); z-index:5; max-height:260px; box-shadow:0 10px 28px var(--shadow-lg); overflow-y:auto; border-radius:14px; padding:6px; background:var(--bg);
   border:1px solid var(--divider); }
-.ch-jump-item { display:block; width:100%; text-align:left; background:none; border:none; padding:8px 10px; border-radius:10px; color:var(--text-1); font:inherit; font-size:0.84rem; cursor:pointer; }
+.ch-jump-item { display:block; width:100%; text-align:left; background:none; border:none; padding:9px 10px; border-radius:10px; color:var(--text-1); font:inherit; font-size:0.95rem; cursor:pointer; }
 .ch-jump-item:hover, .ch-jump-item:active { background:var(--divider); }
 .ch-jump-empty { font-size:0.78rem; color:var(--text-3); padding:8px 10px; }
 
@@ -2606,7 +2606,7 @@ html.borders-on.bd-grad-on .logo-ico {
 /* ☰ मेनुको माथि: "अध्यायहरू" शीर्षक + ✕ बन्द बटन (पप-अपको जस्तै) — भाग छोएपछि मेनु आफैं बन्द हुँदैन */
 .ch-jump-top { position: sticky; top: 0; z-index: 8; display: flex; align-items: center; justify-content: space-between;
   background: var(--bg); padding: 2px 0 4px; }
-.ch-jump-top .ch-jump-lbl { padding: 4px 10px; }
+.ch-jump-top .ch-jump-lbl { padding: 4px 10px; font-size: 1.08rem; font-weight: 800; color: var(--text-1); letter-spacing: .2px; }   /* "अध्यायहरू" शीर्षक — ठूलो र स्पष्ट */
 .ch-jump-top .m-x { width: 34px; height: 34px; margin: 0; flex-shrink: 0; }
 .ch-jump-menu .ch-jm-row.exp { top: 40px; }
 
