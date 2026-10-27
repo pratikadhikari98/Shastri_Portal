@@ -2759,20 +2759,6 @@ html.lite .np-svg { display: none; }
 .bcp-go { color: var(--text-3); font-size: 1.1rem; }
 .bcp-load, .bcp-empty { padding: 14px; text-align: center; color: var(--text-3); font-size: .82rem; }
 .bcp-load { display: flex; justify-content: center; }
-
-
-/* ═══ अध्याय बदल्दा: कार्ड नहराई तुरुन्तै skeleton, अनि सामग्री नरम रूपमा आउने ═══ */
-.chapter-item.ch-opening .ch-read-content { display: none; }
-.chapter-item.ch-opening .ch-read-body { animation: none; }
-.chapter-item.ch-opening .ch-read-body::after {
-  content: ''; display: block; height: min(70vh, 520px); margin: 18px 16px 0; border-radius: 12px; opacity: .9;
-  background:
-    linear-gradient(90deg, transparent 0%, var(--surface-high, rgba(255,255,255,.7)) 50%, transparent 100%) 0 0 / 60% 100% no-repeat,
-    repeating-linear-gradient(to bottom, var(--divider, rgba(0,0,0,.08)) 0 12px, transparent 12px 30px);
-  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%); mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
-  animation: chSkel 1.1s ease-in-out infinite;
-}
-@keyframes chSkel { from { background-position: -60% 0, 0 0; } to { background-position: 160% 0, 0 0; } }
-.chapter-item.open:not(.ch-opening) .ch-read-content { animation: chTextIn .28s ease-out; }
-@keyframes chTextIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .chapter-item.ch-opening .ch-read-body::after, .chapter-item.open:not(.ch-opening) .ch-read-content { animation: none; } }
+.chapter-item.open .ch-read-content { animation: chTextIn .22s ease-out; }
+@keyframes chTextIn { from { opacity: .45; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .chapter-item.open .ch-read-content { animation: none; } }

@@ -1259,30 +1259,13 @@ window.toggleCh = toggleCh;
 function nextCh(bookId, idx) {
   const chs = App.chaptersCache[bookId]||[];
   if (idx+1 >= chs.length) return;
-  // Close current, open next
-  document.querySelectorAll('.chapter-item.open').forEach(el=>el.classList.remove('open'));
-  const next = document.getElementById(`chi-${bookId}-${idx+1}`);
-  if (next) {
-    next.classList.add('open');
-    next.scrollIntoView({behavior:'smooth',block:'start'});
-    history.pushState({ chOpen: { bookId, idx: idx+1 } }, '');
-  }
-  saveLastLocation();
-  setTimeout(() => window._updateChProgress && window._updateChProgress(), 60);
+  _chSwitch(bookId, idx+1);
 }
 window.nextCh = nextCh;
 
 function prevCh(bookId, idx) {
   if (idx <= 0) return;
-  document.querySelectorAll('.chapter-item.open').forEach(el=>el.classList.remove('open'));
-  const prev = document.getElementById(`chi-${bookId}-${idx-1}`);
-  if (prev) {
-    prev.classList.add('open');
-    prev.scrollIntoView({behavior:'smooth',block:'start'});
-    history.pushState({ chOpen: { bookId, idx: idx-1 } }, '');
-  }
-  saveLastLocation();
-  setTimeout(() => window._updateChProgress && window._updateChProgress(), 60);
+  _chSwitch(bookId, idx-1);
 }
 window.prevCh = prevCh;
 
@@ -1298,6 +1281,7 @@ function _chContent(bookId, idx) { return document.querySelector(`#chi-${bookId}
 function _chScrollTo(y, smooth) { window.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' }); }
 function chZipTo(bookId, idx, val) {
   const c = _chContent(bookId, idx); if (!c) return;
+  _chRevealAll(c);
   const top = c.getBoundingClientRect().top + window.scrollY - _chOff();
   const max = Math.max(0, c.offsetHeight - window.innerHeight + _chOff());
   _chScrollTo(top + (parseFloat(val) / 100) * max, false);
@@ -1307,6 +1291,7 @@ function chJump(bookId, idx, what) {
   if (what === 'prev') return prevCh(bookId, idx);
   if (what === 'next') return nextCh(bookId, idx);
   const c = _chContent(bookId, idx); if (!c) return;
+  _chRevealAll(c);
   const r = c.getBoundingClientRect();
   if (what === 'top' || what === 'end') {
     /* '---' (<hr>) ले छुट्ट्याएको हरेक प्रश्न/भागको सुरु: ▼ अर्को भागमा, ▲ अघिल्लो भागमा */
@@ -1368,25 +1353,43 @@ function chShowMenu(bookId, idx, expK) {
     menu.addEventListener('wheel', ev => { if (menu.scrollHeight <= menu.clientHeight + 1) ev.preventDefault(); }, { passive: false });
   }
 }
+/* ठूलो अध्याय: पहिलो पटक पहिलो भाग (~एक स्क्रिन) मात्र देखाएर बाँकी थोरै-थोरै गर्दै खोल्ने —
+   ताकि अध्याय छान्नासाथ कार्ड + पाठ तुरुन्तै देखियोस् (भाग छान्दा जस्तै), भारी layout पछाडि चुपचाप हुने */
+const CH_FIRST = 40, CH_STEP = 60;
+function _chLimit(c) {
+  if (!c || c._hi !== undefined) return;
+  const kids = c.children;
+  if (kids.length <= CH_FIRST + 30) return;
+  c._kids = Array.prototype.slice.call(kids); c._hi = CH_FIRST;
+  for (let i = CH_FIRST; i < c._kids.length; i++) c._kids[i].style.display = 'none';
+}
+function _chRevealAll(c) {
+  if (!c || c._hi === undefined) return;
+  const ks = c._kids; for (let i = c._hi; i < ks.length; i++) ks[i].style.display = '';
+  c._hi = undefined; c._kids = null; clearTimeout(c._rt);
+  const it = c.closest('.chapter-item'); if (it) { chMarkCurPart(it); window._updateChProgress && window._updateChProgress(); }
+}
+function _chRevealMore(c) {
+  if (!c || c._hi === undefined) return;
+  const ks = c._kids, end = Math.min(ks.length, c._hi + CH_STEP);
+  for (let i = c._hi; i < end; i++) ks[i].style.display = '';
+  c._hi = end;
+  if (end >= ks.length) { c._hi = undefined; c._kids = null; const it = c.closest('.chapter-item'); if (it) { chMarkCurPart(it); window._updateChProgress && window._updateChProgress(); } return; }
+  c._rt = setTimeout(() => requestAnimationFrame(() => _chRevealMore(c)), 0);
+}
 function _chSwitch(bookId, k) {
   const it = document.getElementById(`chi-${bookId}-${k}`); if (!it) return false;
-  // ठूलो अध्यायको layout ढिलो हुन्छ (फोनमा ~१ सेकेन्ड) — त्यतिन्जेल कार्ड हराउने होइन, कार्डको टाउको + skeleton तुरुन्तै देखाउने,
-  // अनि पछि मात्र भारी सामग्री देखाउने (दुई frame पछि)
-  document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open', 'ch-opening'));
-  it.classList.add('open', 'ch-opening');
+  const c = it.querySelector('.ch-read-content');
+  document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
+  _chLimit(c);                                                       // पहिलो भाग मात्र layout हुन्छ
+  it.classList.add('open');
   const h = document.querySelector('.site-header');
-  const y = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8;   // सामग्री लुकेको बेला — छिटो layout
+  const y = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8;
   window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });   // 'auto' ले html{scroll-behavior:smooth} अनुसार सर्थ्यो
   history.pushState({ chOpen: { bookId, idx: k } }, '');
   saveLastLocation();
-  requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => {
-    if (!it.classList.contains('ch-opening')) return;
-    it.classList.remove('ch-opening');                                  // अब भारी सामग्री देखिन्छ
-    const y2 = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56) - 8;
-    window.scrollTo({ top: Math.max(0, y2), behavior: 'instant' });
-    chMarkCurPart(it);
-    window._updateChProgress && window._updateChProgress();
-  }, 0)));
+  if (c && c._hi !== undefined) requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => _chRevealMore(c), 0)));
+  window._updateChProgress && requestAnimationFrame(() => window._updateChProgress());
   return true;
 }
 function chMenuTap(bookId, idx, k) {
@@ -1406,6 +1409,7 @@ function chGoChapter(bookId, idx, k) { chMenuTap(bookId, idx, k); }
 window.chGoChapter = chGoChapter;
 function chGoHead(bookId, idx, k) {
   const c = _chContent(bookId, idx); if (!c) return;
+  _chRevealAll(c);
   const h = c.querySelectorAll('h1,h2,h3,h4,h5')[k]; if (!h) return;
   _chScrollTo(h.getBoundingClientRect().top + window.scrollY - _chOff(), true);
   /* मेनु बन्द हुँदैन — छोएको भाग तुरुन्तै दबिएको देखिन्छ; बन्द गर्न माथिको ✕ थिच्ने */
@@ -1423,6 +1427,7 @@ window.chCloseMenu = chCloseMenu;
 /* ☰ मेनुमा अहिले पढिरहेको भाग (शीर्षक) दबिएको (inset) देखाउने — अर्को भाग पढ्दा त्यो दबिन्छ, अघिल्लो उठ्छ */
 function chMarkCurPart(item) {
   const menu = item && item.querySelector('.ch-jump-menu');
+  if (item && item.querySelector('.ch-read-content')?._hi !== undefined) return;   // अझै थोरै-थोरै खुल्दैछ
   if (!menu || menu.hidden) return;
   if (menu._hold && Date.now() < menu._hold) return;
   const p = item.id.lastIndexOf('-');
