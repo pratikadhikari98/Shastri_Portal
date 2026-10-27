@@ -2744,86 +2744,66 @@ html.lite .np-svg { display: none; }
 }
 .book-row-menu:active, .book-item.ch-open .book-row-menu { color: var(--accent); box-shadow: inset 0 0 2px var(--shadow-lg), inset 2px 2px 6px var(--shadow), inset -2px -2px 5px var(--surface-high); }
 .book-row-menu { position: relative; }
-/* ═══ किताबको दायाँ बटन → Neomorphic चम्किलो गोला (आधार: Pure CSS Neomorphic Button — © Vadim Matveev, MIT License, codepen.io/fooontic/pen/BaoZZoQ)
-   बन्द हुँदा चम्किलो ☰ (३ रेखा), खुल्दा ⌃ (माथि-तीर) मा घुमेर बदलिन्छ; छुँदा चम्किने + थिम-रङको छाल (waves) फैलिने animation ═══ */
+/* ═══ किताबको दायाँ बटन → Neumorphism Study 1 (© Rafa / RAFA3L, MIT License, codepen.io/RAFA3L/pen/zYmJOvM)
+   तीन तहको गोला + पावर-आइकन; सूची खुल्दा "on" (थिम-रङले चम्कन्छ), छुँदा भित्री भाग थिचिने animation ═══ */
 .book-row-menu, .book-item .book-row-menu, .book-item.ch-open .book-row-menu, .book-row-menu:active {
   background: none; border: none; box-shadow: none; overflow: visible;
-  --bm-light: 255,255,255; --bm-shadow: 0,0,0; --bm-lm: 1; --bm-sm: 1;
-  --bm-c: var(--accent); --bm-c-press: var(--accent-2, var(--accent));
+  --nm-s: 0.45; --nm-h: 1;                       /* छाया/उज्यालोको मात्रा (लाइट थिम) */
 }
-[data-theme="dark"] .book-row-menu { --bm-lm: 0.08; --bm-sm: 2; }
-.book-row-menu .bm-sphere {
-  position: absolute; left: 50%; top: 50%; width: 200px; height: 200px; margin: -100px 0 0 -100px;
-  transform: scale(0.2); border-radius: 50%; box-sizing: border-box; pointer-events: none;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(var(--bm-light), calc(0.9 * var(--bm-lm))) 25%, rgba(var(--bm-shadow), calc(0.1 * var(--bm-sm)))),
-    linear-gradient(120deg, rgba(var(--bm-shadow), 0.1), rgba(var(--bm-shadow), 0.3));
+[data-theme="dark"] .book-row-menu { --nm-s: 1; --nm-h: 0.35; }
+.book-row-menu .nm-out, .book-row-menu .nm-out * {
+  position: absolute; top: 0; bottom: 0; left: 0; right: 0; margin: auto; border-radius: 50%; overflow: hidden; box-sizing: border-box; pointer-events: none;
+}
+.book-row-menu .nm-out {
+  --nm-g: linear-gradient(205deg, rgba(255,255,255,1) 0%, rgba(65,68,72,1) 100%);
+  left: 50%; top: 50%; right: auto; bottom: auto; width: 330px; height: 330px; margin: -165px 0 0 -165px;
+  transform: scale(0.118); background: var(--nm-g);
   box-shadow:
-    inset 10px 15px 40px -10px rgba(var(--bm-light), calc(1 * var(--bm-lm))),
-    inset -20px -30px 12px -32px rgba(var(--bm-shadow), calc(0.4 * var(--bm-sm))),
-    inset -20px -30px 40px -20px rgba(var(--bm-shadow), calc(0.3 * var(--bm-sm))),
-    -10px -15px 16px -2px rgba(var(--bm-light), calc(1 * var(--bm-lm))),
-    12px 18px 12px -18px rgba(var(--bm-shadow), calc(0.4 * var(--bm-sm))),
-    13px 20px 20px -12px rgba(var(--bm-shadow), calc(0.2 * var(--bm-sm)));
+    10px -10px 20px 7px rgba(153,153,153, calc(0.2 * var(--nm-h))),
+    -7px 20px 3px rgba(0,0,0, calc(1 * var(--nm-s))),
+    -10px 30px 13px rgba(0,0,0, calc(1 * var(--nm-s))),
+    -30px 80px 54px rgba(0,0,0, calc(0.8 * var(--nm-s)));
 }
-/* छुँदा भित्र फैलिने उज्यालो — थिम-रङले रंगिएको */
-.book-row-menu .bm-sphere::after {
-  content: ''; position: absolute; left: 10%; top: 10%; right: 10%; bottom: 10%; border-radius: 99em; opacity: 0; filter: blur(12px);
-  background: radial-gradient(circle at 80% 80%, color-mix(in srgb, var(--bm-c) 60%, white) 25%, color-mix(in srgb, var(--bm-c) 35%, transparent));
-}
-/* ── नयाँ आइकन: चम्किला गोलाकार रेखा (pill) हरू ── */
-.book-row-menu .bm-g { --pi: 1.7; --pr: 0deg; position: absolute; z-index: 2; left: 50%; top: 50%; display: block; width: 0; height: 0;
-  transition: transform 0.45s var(--ease-spring), opacity 0.25s; }
-.book-row-menu .bm-g i {
-  position: absolute; display: block; height: 9px; border-radius: 99em; background-color: rgba(var(--bm-light), 1); filter: blur(0.3px);
+.book-row-menu .nm-in {
+  width: calc(330px * 0.79); height: calc(330px * 0.79); background: var(--nm-g);
   box-shadow:
-    0 0 0 -3px var(--bm-c),
-    inset -1.2px -0.8px 1px 0.8px rgba(var(--bm-light), calc(0.6 * var(--bm-lm))),
-    inset 1.2px 0.8px 1px 0.8px rgba(var(--bm-shadow), calc(0.16 * var(--bm-sm))),
-    inset 1.2px 1.2px 1px -0.8px rgba(var(--bm-shadow), calc(0.16 * var(--bm-sm))),
-    inset 0 0 1px 2px rgba(var(--bm-light), calc(0.5 * var(--bm-lm))),
-    inset 0 1px 3px 3px var(--bm-c);
-  transition: box-shadow 0.4s;
+    -5px 5px 5px rgba(0,0,0, calc(0.3 * var(--nm-s))),
+    -20px 20px 25px rgba(0,0,0, calc(0.5 * var(--nm-s))),
+    -30px 200px 75px 100px rgba(0,0,0, calc(0.5 * var(--nm-s))),
+    0px 0px 15px 33px rgba(255,255,255, calc(0.7 * var(--nm-h))),
+    -20px 20px 15px 35px rgba(0,0,0, calc(1 * var(--nm-s)));
 }
-/* ☰ — तीन रेखा */
-.book-row-menu .bm-list { transform: translate(-50%, -50%) rotate(0deg) scale(var(--pi)); opacity: 1; }
-.book-row-menu .bm-list i { left: -26px; width: 52px; }
-.book-row-menu .bm-list i:nth-child(1) { top: -22px; }
-.book-row-menu .bm-list i:nth-child(2) { top: -4.5px; width: 40px; }
-.book-row-menu .bm-list i:nth-child(3) { top: 13px; }
-/* ⌃ — माथि-तीर (दुई रेखा) */
-.book-row-menu .bm-up { transform: translate(-50%, -50%) rotate(-90deg) scale(0.6); opacity: 0; }
-.book-row-menu .bm-up i { left: 0; top: -2px; width: 34px; transform-origin: 0 50%; }
-.book-row-menu .bm-up i:nth-child(1) { transform: translate(0, -12px) rotate(135deg) translateY(-50%); }
-.book-row-menu .bm-up i:nth-child(2) { transform: translate(0, -12px) rotate(45deg) translateY(-50%); }
-.book-item.ch-open .book-row-menu .bm-list { transform: translate(-50%, -50%) rotate(90deg) scale(0.6); opacity: 0; }
-.book-item.ch-open .book-row-menu .bm-up { transform: translate(-50%, -50%) rotate(0deg) scale(var(--pi)); opacity: 1; }
-/* थिम-रङको छाल (waves) */
-.book-row-menu .bm-waves { opacity: 0; }
-.book-row-menu .bm-waves, .book-row-menu .bm-waves::before, .book-row-menu .bm-waves::after {
-  position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; border-radius: 99em; box-sizing: border-box; transform: translate(-50%, -50%) scale(1);
+.book-row-menu .nm-io {
+  width: calc(330px * 0.58); height: calc(330px * 0.58); background: var(--nm-g); transition: box-shadow 0.2s ease-in-out;
+  box-shadow:
+    inset 0 0 12px 100px rgba(0,0,0,0),
+    inset 0 0 12px 12px rgba(0,0,0, calc(0.1 * var(--nm-s))),
+    0 0 4px 5px rgba(0,0,0, calc(1 * var(--nm-s))),
+    10px -10px 12px 2px rgba(0,0,0, calc(0.4 * var(--nm-s))),
+    0 0 12px 27px rgba(255,255,255, calc(0.8 * var(--nm-h))),
+    -20px 20px 15px 35px rgba(0,0,0, calc(0.7 * var(--nm-s)));
 }
-.book-row-menu .bm-waves::before, .book-row-menu .bm-waves::after {
-  content: ''; border: 9px solid color-mix(in srgb, var(--bm-c) 75%, transparent);
-  box-shadow: 0 0 34px 8px color-mix(in srgb, var(--bm-c) 45%, transparent), inset 0 0 34px 6px color-mix(in srgb, var(--bm-c) 40%, transparent);
+.book-row-menu .nm-io.nm-anim { animation: NmPress 0.3s; }
+@keyframes NmPress {
+  50% { box-shadow:
+    inset 0 0 12px 100px rgba(0,0,0, calc(0.2 * var(--nm-s))),
+    inset 0 0 12px 18px rgba(255,255,255,0.2),
+    0 0 4px 5px rgba(0,0,0, calc(1 * var(--nm-s))),
+    10px -10px 12px 2px rgba(0,0,0, calc(0.4 * var(--nm-s))),
+    0 0 12px 27px rgba(255,255,255, calc(0.8 * var(--nm-h))),
+    -20px 20px 15px 35px rgba(0,0,0, calc(0.7 * var(--nm-s))); }
 }
-/* छुँदा (JS ले .bm-pulse थप्छ) */
-.book-row-menu.bm-pulse .bm-sphere::after { animation: BmInner 0.8s ease both; }
-.book-row-menu.bm-pulse .bm-g i { animation: BmPill 0.8s ease; }
-.book-row-menu.bm-pulse .bm-waves { animation: BmWave 2s linear both; }
-.book-row-menu.bm-pulse .bm-waves::before { animation: BmWaveB 1.1s 0.1s linear both; }
-.book-row-menu.bm-pulse .bm-waves::after { animation: BmWaveB 0.9s 0.55s linear both; }
-@keyframes BmInner { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes BmPill { 50% {
-  box-shadow: 0 0 16px -3px var(--bm-c),
-    inset -1.2px -0.8px 1px 0.8px rgba(var(--bm-light), calc(0.24 * var(--bm-lm))),
-    inset 1.2px 0.8px 1px 0.8px rgba(var(--bm-shadow), calc(0.12 * var(--bm-sm))),
-    inset 1.2px 1.2px 1px -0.8px rgba(var(--bm-shadow), calc(0.12 * var(--bm-sm))),
-    inset 0 0 1px 2px rgba(var(--bm-light), calc(0.5 * var(--bm-lm))),
-    inset 0 1px 3px 3px var(--bm-c-press); } }
-@keyframes BmWave { 30% { opacity: 1; } }
-@keyframes BmWaveB { 0% { opacity: 0; transform: translate(-50%, -50%) scale(1); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8); } }
-@media (prefers-reduced-motion: reduce) { .book-row-menu.bm-pulse :is(.bm-sphere::after, .bm-g i, .bm-waves, .bm-waves::before, .bm-waves::after) { animation: none !important; } .book-row-menu .bm-g { transition: none; } }
+.book-row-menu .nm-io svg {
+  width: 112px; height: 112px; background: none; border-radius: 0; overflow: visible;
+  fill: rgba(75,75,75,0.45); transition: fill 0.2s, filter 0.2s;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 0%, transparent));
+}
+.book-row-menu .nm-io svg * { position: static; border-radius: 0; overflow: visible; }
+.book-item.ch-open .book-row-menu .nm-io svg {                 /* सूची खुल्दा = "on" */
+  fill: color-mix(in srgb, var(--accent) 85%, white);
+  filter: drop-shadow(0 0 18px var(--accent)) drop-shadow(0 0 6px var(--accent));
+}
+@media (prefers-reduced-motion: reduce) { .book-row-menu .nm-io.nm-anim { animation: none; } .book-row-menu .nm-io svg { transition: none; } }
 .book-ch-panel { margin: 6px 48px 2px 0; padding: 6px; border-radius: 14px; border: 1px solid var(--divider); background: var(--surface); max-height: min(52vh, 360px); overflow-y: auto; overscroll-behavior: contain;
   box-shadow: inset 1px 1px 4px var(--shadow); animation: bcpIn .22s var(--ease-out); }
 .book-ch-panel[hidden] { display: none; }
