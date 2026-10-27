@@ -1224,7 +1224,16 @@ function renderChapterListHtml(bookId) {
   }
   const it = document.getElementById(`chi-${bookId}-${idx}`);
   if (it) it.classList.add('open');
-  if (_jump && it) { try { saveLastLocation(); } catch (e) {} setTimeout(() => it.scrollIntoView({ block: 'start' }), 80); }
+  if (_jump && it) {
+    try { saveLastLocation(); } catch (e) {}
+    // अध्यायको सुरुमै पुर्‍याउने: टाँसिने हेडर (र जम्प-बार) मुनि नलुकोस्; smooth scroll र ढिलो layout ले बीचमै नरोकियोस्
+    const goStart = () => {
+      const h = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--hdr-h')) || (document.querySelector('.site-header')?.offsetHeight || 0);
+      const y = it.getBoundingClientRect().top + (window.scrollY || document.documentElement.scrollTop || 0) - h - 6;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+    };
+    goStart(); requestAnimationFrame(goStart); setTimeout(goStart, 120); setTimeout(goStart, 450);
+  }
   setTimeout(() => window._updateChProgress && window._updateChProgress(), 60);
   if (window.PDFV) PDFV.scan();
 }
