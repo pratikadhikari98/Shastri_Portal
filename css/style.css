@@ -2803,6 +2803,3 @@ html.lite .np-svg { display: none; }
 .rte.rte-big > div, .rte.rte-big > p, .rte.rte-big > h1, .rte.rte-big > h2, .rte.rte-big > h3, .rte.rte-big > h4, .rte.rte-big > h5, .rte.rte-big > blockquote, .rte.rte-big > ul {
   content-visibility: auto; contain-intrinsic-size: auto 2.2em;
 }
-
-.ch-read-content .ch-chunk.ch-gap { margin-bottom: 10px; }
-.ch-lazy-ph { padding: 14px 4px; color: var(--text-3); font-size: 0.85rem; }
