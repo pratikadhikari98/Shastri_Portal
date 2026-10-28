@@ -2694,41 +2694,44 @@ mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-
 .nb-banner[hidden], .news-board[hidden] { display: none !important; }
 
 /* ═══ नेपालको skyline तस्बिर (होमको तल) + माथि एनिमेटेड बादल र चरा — दुवै कुना छुने ═══ */
-.np-scene { position: relative; width: 100%; margin: 18px 0 0; padding: 0; line-height: 0; overflow: hidden; pointer-events: none; user-select: none; -webkit-user-select: none; flex: 0 0 auto;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%); mask-image: linear-gradient(to bottom, transparent 0, #000 9%); }
+.np-scene { position: relative; width: 100%; margin: 18px 0 0; padding: 0; line-height: 0; overflow: hidden; pointer-events: none; user-select: none; -webkit-user-select: none; flex: 0 0 auto; }
 .np-img { display: block; width: 100%; height: clamp(120px, 44vw, 340px); object-fit: cover; object-position: 56% 100%; }  /* सानो स्क्रिनमा किनारा काटिएर बीचको स्तुप/हिमाल देखिने */
-.np-svg { position: absolute; inset: 0; width: 100%; height: 100%; }                  /* तस्बिरमाथिको बादल/चरा (तस्बिरसँग उही crop) */
-.np-cloud g { fill: #cfdff5; }
-.np-wind { fill: none; stroke: #fff; stroke-width: 3.4; stroke-linecap: round; opacity: 0; stroke-dasharray: 700; stroke-dashoffset: 700; animation: npWind 11s ease-in-out var(--wd, 0s) infinite; filter: drop-shadow(0 0 2px rgba(120,160,215,.65)); }
+/* ═══ तस्बिरमाथिका बादल/चरा/हावा — सबै GPU (compositor) मा चल्ने: केवल transform/opacity, main-thread मा repaint छैन ═══ */
+.np-scene { container-type: inline-size; }
+.np-img { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%); mask-image: linear-gradient(to bottom, transparent 0, #000 9%); }   /* fade तस्बिरमा मात्र (स्थिर) — चल्ने तहमा mask नलगाउने */
+.np-fx { --u: .0608vw; position: absolute; inset: 0; overflow: hidden; pointer-events: none; contain: strict; }
+@supports (width: 1cqw) { .np-fx { --u: .0608cqw; } }                      /* १ svg-एकाइ = कति चौडाइ (तस्बिर उचाइ ÷ ७२४) */
+.np-cl { position: absolute; left: 0; top: var(--y); width: calc(250 * var(--s) * var(--u)); aspect-ratio: 250 / 62; opacity: var(--o); will-change: transform;
+  animation: npDrift var(--dur) linear var(--del) infinite; }
+.np-cl u { display: block; width: 100%; height: 100%; background: url(../images/cloud.webp) 0 0 / 100% 100% no-repeat; transform-origin: 0 50%; animation: npCGust 11s ease-in-out var(--gd) infinite; will-change: transform; }
+.np-b { position: absolute; left: 0; top: var(--y); width: calc(var(--bu) * var(--u)); aspect-ratio: 96 / 122; will-change: transform; animation: npFly var(--dur) linear var(--del) infinite; }
+.np-b s, .np-b span { display: block; width: 100%; height: 100%; text-decoration: none; }
+.np-b s { animation: npBGust 11s ease-in-out var(--gd) infinite; will-change: transform; }
+.np-b span { overflow: hidden; }
+.np-b em { display: block; width: 800%; height: 100%; background: url(../images/bird-sprite.webp) 0 0 / 100% 100% no-repeat; animation: npStrip var(--fd) steps(8) infinite; will-change: transform; }
+@keyframes npStrip { to { transform: translate3d(-100%, 0, 0); } }
+.np-wd { position: absolute; left: var(--x); top: var(--y); width: var(--l); height: 3px; border-radius: 3px; opacity: 0; will-change: transform, opacity;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.95) 35%, rgba(255,255,255,.95) 65%, transparent); box-shadow: 0 0 6px rgba(120,160,215,.55); animation: npWind 11s ease-in-out var(--wd) infinite; }
 [data-theme="dark"] .np-img { filter: brightness(.5) saturate(.85); }                 /* कालो थिममा सेतो आकाश नझिलमिलाउने */
-[data-theme="dark"] .np-cloud g { fill: #8fa6c9; }
-[data-theme="dark"] .np-wind { stroke: #b9c9e6; }
-/* चल्ने भाग */
-.np-cloud { animation: npDrift var(--dur, 90s) linear var(--del, 0s) infinite; }
-@keyframes npDrift { from { transform: translateX(-600px); } to { transform: translateX(2800px); } }
-.np-bird { animation: npFly var(--dur, 28s) linear var(--del, 0s) infinite; }
-@keyframes npFly { from { transform: translate(-260px, 0); } 50% { transform: translate(1100px, -24px); } to { transform: translate(2450px, 8px); } }
-/* बेलाबेला हावाको झोक्का: बादल तानिन्छ, चरा हल्लिन्छ, हावाका धर्का आकाशमा सर्छन् */
-.np-cg { transform-box: fill-box; transform-origin: 0 50%; animation: npCGust 11s ease-in-out var(--gd, 0s) infinite; }
+@keyframes npDrift { from { transform: translate3d(-30cqw, 0, 0); } to { transform: translate3d(125cqw, 0, 0); } }
+@keyframes npFly { from { transform: translate3d(-12cqw, 0, 0); } 50% { transform: translate3d(54cqw, calc(-22 * var(--u)), 0); } to { transform: translate3d(112cqw, calc(8 * var(--u)), 0); } }
 @keyframes npCGust { 0%, 62%, 100% { transform: scaleX(1) skewX(0); } 74% { transform: scaleX(1.28) skewX(-9deg); } 86% { transform: scaleX(1.1) skewX(-3deg); } }
-.np-bg { animation: npBGust 11s ease-in-out var(--gd, 0s) infinite; }
-@keyframes npBGust { 0%, 62%, 100% { transform: translateY(0) rotate(0); } 70% { transform: translateY(-26px) rotate(-7deg); } 78% { transform: translateY(14px) rotate(6deg); } 88% { transform: translateY(-8px) rotate(-3deg); } }
-@keyframes npWind { 0%, 58% { opacity: 0; stroke-dashoffset: 700; } 66% { opacity: .85; } 80% { opacity: .7; stroke-dashoffset: 0; } 92%, 100% { opacity: 0; stroke-dashoffset: -700; } }
+@keyframes npBGust { 0%, 62%, 100% { transform: translate3d(0,0,0) rotate(0); } 70% { transform: translate3d(0, calc(-26 * var(--u)), 0) rotate(-7deg); } 78% { transform: translate3d(0, calc(14 * var(--u)), 0) rotate(6deg); } 88% { transform: translate3d(0, calc(-8 * var(--u)), 0) rotate(-3deg); } }
+@keyframes npWind { 0%, 58% { opacity: 0; transform: translate3d(-35%, 0, 0); } 66% { opacity: .85; } 80% { opacity: .7; transform: translate3d(25%, 0, 0); } 92%, 100% { opacity: 0; transform: translate3d(90%, 0, 0); } }
 .np-scene.np-paused * { animation-play-state: paused !important; }              /* स्क्रिनबाहिर हुँदा नचल्ने (ब्याट्री) */
-/* कमजोर फोन (html.lite) वा Reduce-motion मा बादल/चरा नचल्ने — सबै एकै ठाउँमा थुप्रिनु भन्दा सफा तस्बिर मात्र */
-html.lite .np-svg { display: none; }
-@media (prefers-reduced-motion: reduce) { .np-svg { display: none; } }
-
-
-/* ═══ होम फेरि पहिलेको जस्तै स्क्रोल हुने: कार्ड आफ्नै उचाइमा, तल skyline ═══ */
-#p-home > .content ~ .content { display: none; }                                      /* तलको खाली spacer */
+/* कमजोर फोन (html.lite) वा Reduce-motion मा चल्ने तह नदेखाउने — सफा तस्बिर मात्र */
+html.lite .np-fx { display: none; }
+@media (prefers-reduced-motion: reduce) { .np-fx { display: none; } }
 @media (min-width: 700px) {
   /* चौडा स्क्रिन: तस्बिरको ३:१ अनुपात राखी बीचमा, दुवैतिर बिस्तारै हराउने */
-  .np-scene { width: min(100%, 1020px); margin-inline: auto;
+  .np-scene { width: min(100%, 1020px); margin-inline: auto; }
+  .np-img { height: auto; aspect-ratio: 3 / 1;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 9%), linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0, #000 9%), linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%);
     -webkit-mask-composite: source-in; mask-composite: intersect; }
-  .np-img { height: auto; aspect-ratio: 3 / 1; }
+  .np-fx { --u: .046vw; -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 12%, #000 88%, transparent 100%); }
+  @supports (width: 1cqw) { .np-fx { --u: .046cqw; } }
+}
 }
 
 
