@@ -1268,7 +1268,7 @@ function _renderChapterListHtmlRaw(bookId) {
           <button class="neu-btn neu-btn--round" title="अर्को अध्याय" ${i>=chs.length-1?'disabled':''} onclick="chJump('${bookId}',${i},'next')">⏭</button>
           <div class="ch-jump-menu" hidden></div>
         </div>
-        <div class="ch-read-content" lang="hi" ondblclick="toggleCh('${bookId}',${i})" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content||'')}</div>
+        <div class="ch-read-content" lang="hi" ondblclick="if(!String(getSelection()).trim())toggleCh('${bookId}',${i})" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content||'')}</div>
       </div>
     </div>`;}).join('')}</div>`;
 }
@@ -2272,7 +2272,7 @@ function feedCardHtml(n, i, preview) {
       ? `<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0">${(n.authorName||'?').trim().charAt(0)}</div>`
       : `<div style="width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:0 1px 3px var(--shadow)"><img src="images/icons/logo.svg" alt="शास्त्री पोर्टल" style="width:24px;height:24px;display:block"></div>`;
     return `
-    <div ondblclick="toggleFeedBody(${i})" style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden;box-shadow:0 3px 12px var(--shadow)">
+    <div ondblclick="if(!String(getSelection()).trim())toggleFeedBody(${i})" style="background:var(--surface);border:1px solid var(--surface-b);border-radius:var(--r-md);margin-bottom:14px;overflow:hidden;box-shadow:0 3px 12px var(--shadow)">
       <div style="padding:12px 14px 8px;display:flex;align-items:center;gap:9px">
         ${avatarHtml}
         <div style="flex:1;min-width:0">

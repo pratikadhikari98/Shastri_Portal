@@ -2641,6 +2641,9 @@ html.borders-on.bd-grad-on .logo-ico {
 
 /* पट्टीका समूह (अनुवाद | रङ/हाइलाइट | कपी/सबै) — सानो स्क्रिनमा समूह नै तल सर्छ */
 .tr-grp { display: flex; align-items: center; gap: 6px; }
+.tr-bar.tr-wait { opacity: 0; pointer-events: none; }
+/* अध्यायको पाठ: फोनको आफ्नै select राम्ररी चलोस् (select खुला, थिच्दा खैरो चमक नआओस्) */
+.chapter-item .ch-read-content { -webkit-user-select: text; user-select: text; -webkit-tap-highlight-color: transparent; }
 .tr-grp + .tr-grp { border-left: 1px solid var(--divider); padding-left: 8px; }
 
 /* अनुवाद पट्टीभित्रै तलतिर फैलिने */

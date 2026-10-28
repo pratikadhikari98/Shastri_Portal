@@ -139,7 +139,7 @@
     cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e;
     const b = ensureBar();
     if (b.hidden || had || !b.firstChild) { if (b.hidden) view = 'main'; paintBar(); }
-    b.hidden = false;
+    b.hidden = false; b.classList.remove('tr-wait');
     const bw = b.offsetWidth, bh = b.offsetHeight, vw = innerWidth, vh = innerHeight;
     const hdr = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--hdr-h'), 10) || 64;
     if (userPos) {                                                     // प्रयोगकर्ताले सारेको ठाउँमा
@@ -154,8 +154,9 @@
     left = Math.max(8, Math.min(vw - bw - 8, left));
     b.style.top = top + 'px'; b.style.left = left + 'px';
   }
-  const schedule = () => { clearTimeout(timer); timer = setTimeout(place, 220); };
-  document.addEventListener('selectionchange', schedule);
+  const schedule = () => { clearTimeout(timer); timer = setTimeout(place, COARSE ? 380 : 220); };
+  /* फोनको थोप्ला तान्दै गर्दा पट्टी सँगसँगै उफ्रिन्न/थोप्लामाथि पर्दैन — लुकेर बस्छ, छान्न रोकिएपछि मात्र आउँछ */
+  document.addEventListener('selectionchange', () => { if (bar && !bar.hidden && !drag) bar.classList.add('tr-wait'); schedule(); });
   window.addEventListener('scroll', () => { if (!bar || bar.hidden || raf) return; raf = requestAnimationFrame(() => { raf = 0; place(); }); }, { passive: true, capture: true });
   window.addEventListener('resize', schedule);
 
