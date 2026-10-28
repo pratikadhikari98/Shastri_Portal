@@ -320,11 +320,13 @@
         "nepali": [],
         "vyakaran": [
           {
-            "cover": "images/year3/vya2.jpg",
             "id": "vya3_2",
+            "title": "परिभाषेन्दुशेखर",
+            "author": "",
+            "cover": "images/year3/vya2.jpg",
             "description": "तृतीय वर्षको व्याकरण",
-            "author": "लेखकको नाम",
-            "title": "व्याकरण २"
+            "font": "siddhanta",
+            "pdf": ""
           }
         ],
         "english": [
