@@ -282,7 +282,7 @@ function drawBg() {}
 /* ════════════════════════════════════
    CLOCK
    ════════════════════════════════════ */
-function startClock() { tick(); setInterval(() => { if (!document.hidden) tick(); }, 1000); }
+function startClock() { tick(); setInterval(tick, 1000); }
 function tick() {
   const now = new Date();
   const te = document.getElementById('dtTime');
@@ -1590,11 +1590,6 @@ function chCloseMenu(bookId, idx) {
 window.chCloseMenu = chCloseMenu;
 /* ☰ मेनुमा अहिले पढिरहेको भाग (शीर्षक) दबिएको (inset) देखाउने — अर्को भाग पढ्दा त्यो दबिन्छ, अघिल्लो उठ्छ */
 function chMarkCurPart(item) {
-  if (item) {                                         // स्क्रोल गर्दा हरेक frame मा सबै शीर्षक नाप्ने काम ~४ पटक/सेकेन्डमा सीमित
-    const now = performance.now();
-    if (item._mcpT && now - item._mcpT < 250) { clearTimeout(item._mcpR); item._mcpR = setTimeout(() => { item._mcpT = 0; chMarkCurPart(item); }, 260); return; }
-    item._mcpT = now;
-  }
   const menu = item && item.querySelector('.ch-jump-menu');
   if (item && item.querySelector('.ch-read-content')?._hi !== undefined) return;   // अझै थोरै-थोरै खुल्दैछ
   if (!menu || menu.hidden) return;
@@ -3091,14 +3086,4 @@ window.applyTheme=applyTheme;
     new IntersectionObserver(es => es.forEach(e => { el.classList.toggle('np-paused', !e.isIntersecting); const sv = el.querySelector('svg'); if (sv && sv.pauseAnimations) { e.isIntersecting ? sv.unpauseAnimations() : sv.pauseAnimations(); } }), { threshold: 0 }).observe(el);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
-})();
-
-
-/* स्क्रोल गर्दा skyline को निरन्तर एनिमेसन रोक्ने (स्क्रोल सहज) — रोकिएको 0.18 सेकेन्डपछि फेरि चल्छ */
-(function () {
-  let t = 0, on = false;
-  window.addEventListener('scroll', () => {
-    if (!on) { on = true; document.documentElement.classList.add('is-scrolling'); }
-    clearTimeout(t); t = setTimeout(() => { on = false; document.documentElement.classList.remove('is-scrolling'); }, 180);
-  }, { passive: true });
 })();

@@ -2806,5 +2806,3 @@ html.lite .np-svg { display: none; }
 
 .ch-read-content .ch-chunk.ch-gap { margin-bottom: 10px; }
 .ch-lazy-ph { padding: 14px 4px; color: var(--text-3); font-size: 0.85rem; }
-
-.is-scrolling .np-scene * { animation-play-state: paused !important; }
