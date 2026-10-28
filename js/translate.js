@@ -1,7 +1,7 @@
 /* ================================================
    शास्त्री पोर्टल — अध्यायको पाठ select गर्दा आउने पट्टी
    ================================================
-   अध्यायको पाठ होल्ड/select गर्दा zipper-बटन जस्तै पट्टी आउँछ:
+   अध्यायको पाठ फोनको आफ्नै select (थोप्ला) ले छान्दा zipper-बटन जस्तै पट्टी आउँछ:
      [ने] [अं] [सं]  → नेपाली / English / संस्कृतमा अनुवाद (तलबाट पाटी)
      [अ̲] [अ-हाइलाइट] → छानेको पाठ रङ्गिन वा हाइलाइट (यही फोनमा सुरक्षित, अध्याय फेरि खोल्दा पनि रहन्छ)
 
@@ -24,140 +24,11 @@
   let bar = null, timer = 0, raf = 0, drag = null, lastTap = 0, userPos = null;
   try { userPos = JSON.parse(localStorage.getItem('sp_trbar_pos') || 'null'); } catch (e) {}   // पट्टी सारेको ठाउँ सम्झने
 
-  /* ── फोनको आफ्नै select (र त्यसको Copy/Select all मेनु) बन्द गरेर आफ्नै select ──
-     छुने स्क्रिन (pointer: coarse) मा अध्यायको पाठको user-select बन्द हुन्छ, त्यसैले फोनको select-मेनु आउनै सक्दैन।
-     त्यसको सट्टा: होल्ड गर्दा शब्द छानिन्छ, दुई छेउका ठुला थोप्लाले बढाउन/घटाउन मिल्छ। (माउस/कम्प्युटरमा पहिले जस्तै) */
-  const CUST = !!(window.Highlight && window.CSS && CSS.highlights && window.matchMedia && matchMedia('(pointer: coarse)').matches);
-  if (CUST) document.documentElement.classList.add('tr-cust');
-  let cs = null, hdls = null, lp = null;                               // cs = आफ्नै छानिएको Range
-  const DELIM = /[\s\u0964\u0965,;:.!?()\[\]{}"'“”‘’<>|\/\\]/;
-  /* औँला मुनिको अक्षर ठ्याक्कै चिन्ने: हरेक अक्षरको ठाउँ (rect) हेरेर नजिकको अक्षर। फोनको
-     caretRangeFromPoint user-select बन्द हुँदा गलत ठाउँ दिन सक्ने भएकाले यो पहिलो, त्यो पछि (fallback) */
-  function hitText(x, y) {
-    const el = document.elementFromPoint(x, y);
-    const root = el && el.closest ? el.closest(SEL) : null;
-    if (!root || el === root) return null;
-    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), r = document.createRange();
-    let best = null, bestD = 1e9, n;
-    while ((n = w.nextNode())) {
-      const t = n.nodeValue; if (!t.trim()) continue;
-      r.selectNodeContents(n);
-      const bb = r.getBoundingClientRect();
-      if (bb && (y < bb.top - 30 || y > bb.bottom + 30)) continue;     // अर्कै ठाउँको पाठ छोड्ने
-      for (let i = 0; i < t.length; i++) {
-        r.setStart(n, i); r.setEnd(n, i + 1);
-        const rs = r.getClientRects();
-        for (let k = 0; k < rs.length; k++) {
-          const q = rs[k]; if (!q.width && !q.height) continue;
-          const dx = x < q.left ? q.left - x : x > q.right ? x - q.right : 0;
-          const dy = y < q.top ? q.top - y : y > q.bottom ? y - q.bottom : 0;
-          const d = dy * 3 + dx;                                       // उही लाइनलाई प्राथमिकता
-          if (d < bestD) { bestD = d; best = { n, o: x > (q.left + q.right) / 2 ? i + 1 : i }; }
-        }
-        if (bestD === 0) break;
-      }
-      if (bestD === 0) break;
-    }
-    return best && bestD < 60 ? best : null;
-  }
-  function caretAt(x, y) {
-    const h = hitText(x, y); if (h) return h;
-    let n = null, o = 0;
-    if (document.caretPositionFromPoint) { const p = document.caretPositionFromPoint(x, y); if (p) { n = p.offsetNode; o = p.offset; } }
-    else if (document.caretRangeFromPoint) { const r = document.caretRangeFromPoint(x, y); if (r) { n = r.startContainer; o = r.startOffset; } }
-    if (!n) return null;
-    const el = n.nodeType === 3 ? n.parentElement : n;
-    return el && el.closest && el.closest(SEL) ? { n, o } : null;
-  }
-  function paintSel() {
-    if (!CUST) return;
-    const h = CSS.highlights.get('trsel') || new Highlight();
-    h.clear(); if (cs) h.add(cs);
-    CSS.highlights.set('trsel', h);
-  }
-  function setH(i, x, y) { const h = hdls[i]; h.hidden = false; h.style.left = (x - 18) + 'px'; h.style.top = (y - 2) + 'px'; }
-  function hideHandles() { if (hdls) hdls.forEach(h => { h.hidden = true; }); }
-  function placeHandles() {
-    if (!CUST || !cs) { hideHandles(); return; }
-    ensureHandles();
-    const rs = cs.getClientRects(); if (!rs.length) { hideHandles(); return; }
-    const f = rs[0], l = rs[rs.length - 1];
-    setH(0, f.left, f.bottom); setH(1, l.right, l.bottom);
-  }
-  function ensureHandles() {
-    if (hdls) return hdls;
-    hdls = [0, 1].map(i => {
-      const h = document.createElement('div'); h.className = 'tr-hdl'; h.hidden = true; document.body.appendChild(h);
-      let id = null, fixed = null, grab = { dx: 0, dy: 0 };
-      h.addEventListener('pointerdown', e => {
-        e.preventDefault(); e.stopPropagation(); id = e.pointerId;
-        fixed = i === 0 ? { n: cs.endContainer, o: cs.endOffset } : { n: cs.startContainer, o: cs.startOffset };
-        const rs = cs.getClientRects(), q = i === 0 ? rs[0] : rs[rs.length - 1];     // औँलाले थोप्ला समातेको ठाउँ र अक्षर-लाइनबीचको दूरी सम्झने
-        if (q) grab = { dx: e.clientX - (i === 0 ? q.left : q.right), dy: e.clientY - (q.top + q.bottom) / 2 };
-        try { h.setPointerCapture(id); } catch (x) {}
-      });
-      h.addEventListener('pointermove', e => {
-        if (e.pointerId !== id || !cs || !fixed) return;
-        const c = caretAt(e.clientX - grab.dx, e.clientY - grab.dy);   // थोप्ला तान्दा अक्षर जहाँ औँला त्यहीँ (उफ्रिने होइन)
-        if (!c) return;
-        const mv = document.createRange(); mv.setStart(c.n, c.o); mv.collapse(true);
-        const fx = document.createRange(); fx.setStart(fixed.n, fixed.o); fx.collapse(true);
-        const r = document.createRange();
-        if (mv.compareBoundaryPoints(Range.START_TO_START, fx) <= 0) { r.setStart(c.n, c.o); r.setEnd(fixed.n, fixed.o); }
-        else { r.setStart(fixed.n, fixed.o); r.setEnd(c.n, c.o); }
-        cs = r; paintSel(); placeHandles(); schedule();
-      });
-      const end = e => { if (e.pointerId === id) { id = null; fixed = null; place(); } };
-      h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
-      return h;
-    });
-    return hdls;
-  }
-  function selectWordAt(x, y) {
-    const c = caretAt(x, y), r = document.createRange();
-    if (c && c.n.nodeType === 3) {
-      const t = c.n.nodeValue; let a = Math.min(c.o, t.length);
-      if (a > 0 && (a >= t.length || DELIM.test(t[a])) && !DELIM.test(t[a - 1])) a--;
-      if (a >= t.length || DELIM.test(t[a])) return false;
-      while (a > 0 && !DELIM.test(t[a - 1])) a--;
-      let b = a; while (b < t.length && !DELIM.test(t[b])) b++;
-      r.setStart(c.n, a); r.setEnd(c.n, b);
-    } else {                                                           // अक्षर ठ्याक्कै नचिनिए: औँला मुनिको अनुच्छेद
-      const el = document.elementFromPoint(x, y), host = el && el.closest ? el.closest(SEL) : null; if (!host) return false;
-      const blk = el.closest('p,li,h1,h2,h3,h4,h5,td,th,blockquote') || host;
-      r.selectNodeContents(host.contains(blk) ? blk : host);
-    }
-    if (r.collapsed) return false;
-    cs = r; paintSel(); place();
-    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
-    return true;
-  }
-  function clearCust() { if (!cs) return; cs = null; paintSel(); hideHandles(); hide(); }
-  if (CUST) {
-    document.addEventListener('pointerdown', e => {
-      if (e.pointerType !== 'touch') return;
-      const t = e.target;
-      if (t.closest && (t.closest('#trBar') || t.closest('.tr-hdl'))) { lp = null; return; }
-      const inChap = !!(t.closest && t.closest('.chapter-item ' + SEL));
-      lp = { x: e.clientX, y: e.clientY, t: Date.now(), moved: false, made: false, tm: 0 };
-      if (inChap) lp.tm = setTimeout(() => { if (lp && !lp.moved) lp.made = selectWordAt(lp.x, lp.y); }, 450);
-    }, true);
-    document.addEventListener('pointermove', e => {
-      if (!lp || e.pointerType !== 'touch') return;
-      if (Math.abs(e.clientX - lp.x) > 10 || Math.abs(e.clientY - lp.y) > 10) { lp.moved = true; clearTimeout(lp.tm); }
-    }, true);
-    const lpEnd = e => {
-      if (!lp) return; clearTimeout(lp.tm);
-      if (e.type === 'pointerup' && cs && !lp.made && !lp.moved && Date.now() - lp.t < 400) clearCust();   // खाली ठाउँमा सानो थिचाइ: छान्ने हट्ने
-      lp = null;
-    };
-    document.addEventListener('pointerup', lpEnd, true);
-    document.addEventListener('pointercancel', lpEnd, true);
-  }
+  /* ── select: फोनको आफ्नै select (थोप्ला/मेनु) चल्छ; हामी केवल तल पट्टी देखाउँछौँ ── */
+  const COARSE = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
 
   /* ── select गरिएको पाठ (अध्यायको पाठ भित्र मात्र) ── */
   function curRange() {
-    if (cs) return cs;
     const s = window.getSelection && getSelection();
     return s && s.rangeCount && !s.isCollapsed ? s.getRangeAt(0) : null;
   }
@@ -262,8 +133,7 @@
   function hide() { if (bar) { bar.hidden = true; view = 'main'; out = null; outText = ''; showOut._n = (showOut._n || 0) + 1; } }
   function place() {
     const info = selInfo();
-    if (!info) { hide(); hideHandles(); return; }
-    placeHandles();
+    if (!info) { hide(); return; }
     if (out && info.text.slice(0, MAXLEN) !== outText) { out = null; outText = ''; showOut._n = (showOut._n || 0) + 1; if (bar) paintBar(); }   // नयाँ पाठ छानियो — पुरानो अनुवाद हटाउने
     const had = cur.el !== info.el || !!cur.key !== !!info.key;
     cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e;
@@ -277,7 +147,7 @@
       b.style.top = (4 + userPos.fy * Math.max(0, vh - bh - 8)) + 'px';
       return;
     }
-    let top = info.rect.bottom + (cs ? 40 : 16);                       // आफ्नै select मा थोप्ला (handle) मुनि                                   // फोनको आफ्नै select-मेनु सामान्यतया माथि आउँछ, त्यसैले तल
+    let top = info.rect.bottom + (COARSE ? 44 : 16);                   // फोनको select-थोप्ला (handle) मुनि पट्टी आओस्, थोप्लामाथि नपरोस्
     if (top + bh > vh - 8) top = info.rect.top - bh - 16;
     top = Math.max(hdr + 8, Math.min(vh - bh - 8, top));
     let left = info.rect.left + info.rect.width / 2 - bw / 2;
@@ -364,7 +234,7 @@
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, () => {});
   }
 
-  /* ── कपी / सबै छान्ने (फोनको आफ्नै मेनु रोकिएकाले पट्टीमै) ── */
+  /* ── कपी / सबै छान्ने (पट्टीमै) ── */
   function copySel() {
     const rg = curRange(); const txt = rg ? rg.toString() : '';
     if (!txt) return;
@@ -375,7 +245,6 @@
   function selectAll() {
     if (!cur.el) return;
     const r = document.createRange(); r.selectNodeContents(cur.el);
-    if (CUST) { cs = r; paintSel(); place(); return; }
     const s = getSelection(); s.removeAllRanges(); s.addRange(r);       // selectionchange ले पट्टी फेरि ठाउँमा ल्याउँछ
   }
 
@@ -444,7 +313,7 @@
     if (!st[cur.key].length) delete st[cur.key];
     saveMarks(); applyAll(cur.el); done();
   }
-  function done() { if (cs) { cs = null; paintSel(); } hideHandles(); const s = getSelection(); if (s) s.removeAllRanges(); hide(); }
+  function done() { const s = getSelection(); if (s) s.removeAllRanges(); hide(); }
 
   /* अध्याय फेरि बन्दा/खुल्दा (दोहोरो render) मा रङ/हाइलाइट फेरि लगाउने */
   let mto = 0;
