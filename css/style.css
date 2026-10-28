@@ -2795,11 +2795,3 @@ html.lite .np-svg { display: none; }
 }
 .ch-jm-act:active { box-shadow: inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 20px var(--shadow) !important; }
 .ch-jm-act:active::before { box-shadow: none; }
-
-/* लामो लेख: छिटो चल्ने (नअड्किने) बनाउन */
-.ch-read-content .ch-chunk { display: block; }
-.ch-read-content p.ch-sp { margin-bottom: 0; }
-/* editor: ठूलो लेखमा स्क्रिन बाहिरका लाइन layout/paint नगर्ने (सरर चल्छ) */
-.rte.rte-big > div, .rte.rte-big > p, .rte.rte-big > h1, .rte.rte-big > h2, .rte.rte-big > h3, .rte.rte-big > h4, .rte.rte-big > h5, .rte.rte-big > blockquote, .rte.rte-big > ul {
-  content-visibility: auto; contain-intrinsic-size: auto 2.2em;
-}
