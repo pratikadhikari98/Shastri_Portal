@@ -6,7 +6,17 @@
       "color": "orange",
       "subtitle": "",
       "subjects": {
-        "sanskrit": [],
+        "sanskrit": [
+          {
+            "id": "san1_1793228768987",
+            "title": "Pm",
+            "author": "",
+            "cover": "",
+            "description": "12345678",
+            "font": "siddhanta",
+            "pdf": ""
+          }
+        ],
         "jyotish": [
           {
             "id": "jyo1_1",
