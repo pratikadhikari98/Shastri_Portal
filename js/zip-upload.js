@@ -190,18 +190,13 @@
       body.innerHTML = `
         <label class="zu-drop" for="zuFile">
           <span class="ico">📦</span><b>Zip फाइल छान्न यहाँ थिच्नुस्</b>
-          <span class="zu-sub">फोल्डर छान्न पर्दैन — सबै फाइल एउटै commit मा जान्छन्</span>
         </label>
         <input type="file" id="zuFile" accept=".zip,application/zip" style="display:none" onchange="ZU.pick(this)">
-        <div class="zu-tips">
-          <div><span>🔒</span><p><b>सुरक्षित:</b> data/ र images/ मा पहिल्यै भएका किताब, अध्याय, सूचना र फोटो कहिल्यै बदलिँदैनन्।</p></div>
-          <div><span>🧹</span><p><b>सफाइ:</b> पुराना firebase-config.js र news.js आफैं मेटिन्छन्।</p></div>
-          <div><span>👁</span><p><b>जाँच:</b> Commit अघि के-के बदलिन्छ भन्ने सूची देखिन्छ।</p></div>
-        </div>`;
+        `;
       btns.innerHTML = close;
     }
     else if (S.phase === 'scan') {
-      body.innerHTML = `<div class="zu-center"><div class="zu-spin"></div><b>जाँच्दैछ…</b><span class="zu-sub">${esc(S.file ? S.file.name : '')} (${S.file ? kb(S.file.size) : ''})<br>Zip पढ्दै र GitHub सँग तुलना गर्दै</span></div>`;
+      body.innerHTML = `<div class="zu-center"><div class="zu-spin"></div><b>जाँच्दैछ…</b><span class="zu-sub">${esc(S.file ? S.file.name : '')} (${S.file ? kb(S.file.size) : ''})<br>Zip पढ्दै…</span></div>`;
       btns.innerHTML = '';
     }
     else if (S.phase === 'plan') {

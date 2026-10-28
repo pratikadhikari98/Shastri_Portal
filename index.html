@@ -303,7 +303,7 @@
       <div class="sett-row" onclick="openAdminLogin()">
         <div class="sett-left">
           <div class="sett-ico" style="background:#fff3e0">🔐</div>
-          <div><div class="sett-name">Admin Login</div><div class="sett-desc">GitHub token राखेर सबै content सम्पादन गर्नुस्</div></div>
+          <div><div class="sett-name">Admin Login</div></div>
         </div><span style="color:var(--text-3)">→</span>
       </div>
     </div>
@@ -313,31 +313,31 @@
       <div class="sett-row" onclick="openOv('adminNoticesModal')">
         <div class="sett-left">
           <div class="sett-ico" style="background:#e8f5e9">📢</div>
-          <div><div class="sett-name">सूचना व्यवस्थापन</div><div class="sett-desc">थप्नुस् / सम्पादन / मेटाउनुस्</div></div>
+          <div><div class="sett-name">सूचना व्यवस्थापन</div></div>
         </div><span style="color:var(--text-3)">→</span>
       </div>
       <div class="sett-row" onclick="adminBooksOpen()">
         <div class="sett-left">
           <div class="sett-ico" style="background:#f3e5f5">📚</div>
-          <div><div class="sett-name">किताब व्यवस्थापन</div><div class="sett-desc">थप्नुस् / सम्पादन / मेटाउनुस्</div></div>
+          <div><div class="sett-name">किताब व्यवस्थापन</div></div>
         </div><span style="color:var(--text-3)">→</span>
       </div>
             <div class="sett-row" onclick="adminSuggestOpen()">
         <div class="sett-left">
           <div class="sett-ico" style="background:#fff3e0">📨</div>
-          <div><div class="sett-name">User Request <span class="sg-badge" id="sgBadge" hidden>0</span></div><div class="sett-desc">पाठकका सुधार सुझाव — स्वीकार / अस्वीकार</div></div>
+          <div><div class="sett-name">User Request <span class="sg-badge" id="sgBadge" hidden>0</span></div></div>
         </div><span style="color:var(--text-3)">›</span>
       </div>
 <div class="sett-row" onclick="adminSubjectsOpen()">
         <div class="sett-left">
           <div class="sett-ico" style="background:#e0f2f1">🏷️</div>
-          <div><div class="sett-name">विषय (Subject) व्यवस्थापन</div><div class="sett-desc">नाम थप्नुस् / सम्पादन गर्नुस्</div></div>
+          <div><div class="sett-name">विषय (Subject) व्यवस्थापन</div></div>
         </div><span style="color:var(--text-3)">→</span>
       </div>
       <div class="sett-row" onclick="zipUploadOpen()">
         <div class="sett-left">
           <div class="sett-ico" style="background:#e3f2fd">📦</div>
-          <div><div class="sett-name">Zip बाट साइट अपडेट</div><div class="sett-desc">नयाँ संस्करणको zip एकै चोटि GitHub मा हाल्नुस्</div></div>
+          <div><div class="sett-name">Zip बाट साइट अपडेट</div></div>
         </div><span style="color:var(--text-3)">→</span>
       </div>
       <div class="sett-row" onclick="adminLogout()">
@@ -561,19 +561,15 @@
   </div>
 </div>
 
-<!-- Admin Login — GitHub token -->
+<!-- Admin Login -->
 <div class="overlay" id="adminLoginModal" onclick="if(event.target===this)closeOv('adminLoginModal')">
   <div class="modal-sheet">
     <div class="m-handle"></div>
-    <div class="m-title">🔐 Admin Login (GitHub)</div>
-    <div style="font-size:0.76rem;color:var(--text-3);line-height:1.6;margin-bottom:12px">
-      GitHub मा <b>Fine-grained token</b> बनाउनुस् — यही repo मात्र छानेर, <b>Contents: Read and write</b> अनुमति दिनुस्। Token यही फोन/browser मा मात्र बस्छ।
-      <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="color:var(--accent);font-weight:700">Token बनाउने →</a>
-    </div>
+    <div class="m-title">🔐 Admin Login</div>
     <div class="form-panel">
-      <div class="f-group"><label class="f-label">GitHub username</label><input class="f-input" id="adminGhOwner" type="text" autocapitalize="off" autocomplete="off"></div>
+      <div class="f-group"><label class="f-label">Username</label><input class="f-input" id="adminGhOwner" type="text" autocapitalize="off" autocomplete="off"></div>
       <div class="f-group"><label class="f-label">Repository नाम</label><input class="f-input" id="adminGhRepo" type="text" autocapitalize="off" autocomplete="off"></div>
-      <div class="f-group"><label class="f-label">Token</label><input class="f-input" id="adminGhToken" type="password" placeholder="github_pat_..." autocomplete="off"></div>
+      <div class="f-group"><label class="f-label">Token</label><input class="f-input" id="adminGhToken" type="password" autocomplete="off"></div>
       <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;margin-bottom:8px"><input type="checkbox" id="adminGhRemember" checked style="width:16px;height:16px"> यो फोनमा याद राख्नुस्</label>
       <div id="adminGhError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;display:none"></div>
     </div>
@@ -774,7 +770,6 @@
       <label class="f-label">📄 PDF (ऐच्छिक)</label>
       <div class="pdf-adm">
         <button type="button" class="btn-s" id="chapterPdfBtn" onclick="adminChapterPdfPick()">📄 PDF अपलोड गर्नुहोस्</button>
-        <div class="pdf-adm-hint">PDF का पृष्ठहरू अध्यायको अन्त्यमा चित्र जस्तै देखिन्छन् · २० MB सम्म</div>
         <div id="chapterPdfList"></div>
       </div>
     </div>
