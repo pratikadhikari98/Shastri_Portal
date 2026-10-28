@@ -1055,7 +1055,7 @@ function loadBookChaptersOnce(bookId) {
     // खाली/असफल नतिजा कहिल्यै cache नगर्ने (ढिलो नेटले ६ सेकेन्डमा abort भए "अध्याय छैन" नदेखियोस्) — null फर्काउँछ
     App._chPromises[bookId] = loadChaptersForBook(bookId).then(r => {
       delete App._chPromises[bookId];
-      if (Array.isArray(r) && r.length) { App.chaptersCache[bookId] = r; try { r.forEach(_chIdx); } catch (e) {} return r; }
+      if (Array.isArray(r) && r.length) { App.chaptersCache[bookId] = r; _warmIdx(r); return r; }
       return null;
     }).catch(() => { delete App._chPromises[bookId]; return null; });
   }
@@ -1065,7 +1065,7 @@ window.loadBookChaptersOnce = loadBookChaptersOnce;
 
 /* सूचीमा देखिएका किताबहरूको अध्याय पहिल्यै (खाली समयमा) लोड गरिराख्ने — ताकि छुँदा लोडर नघुमोस् */
 function prefetchVisibleBooks() {
-  if (navigator.connection && navigator.connection.saveData) return;
+  const cn = navigator.connection; if (cn && (cn.saveData || (cn.effectiveType && cn.effectiveType !== '4g'))) return;   // धीमा/डेटा-सेभर नेटमा अघिल्लै लोड नगर्ने
   clearTimeout(App._pfT);
   App._pfT = setTimeout(() => {
     const ids = [...document.querySelectorAll('.book-item[data-bid]')].map(e => e.dataset.bid).filter(id => id && id !== 'pv' && !(App.chaptersCache && App.chaptersCache[id]));
@@ -1268,7 +1268,7 @@ function _renderChapterListHtmlRaw(bookId) {
           <button class="neu-btn neu-btn--round" title="अर्को अध्याय" ${i>=chs.length-1?'disabled':''} onclick="chJump('${bookId}',${i},'next')">⏭</button>
           <div class="ch-jump-menu" hidden></div>
         </div>
-        <div class="ch-read-content" lang="hi" ondblclick="toggleCh('${bookId}',${i})" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${renderMd(ch.content||'')}</div>
+        <div class="ch-read-content" lang="hi"${(ch.content||'').length > LAZY_AT ? ' data-lazy="1"' : ''} ondblclick="toggleCh('${bookId}',${i})" style="${ch.font && typeof fontCssFor==='function' ? `font-family:${fontCssFor(ch.font)}` : ''}">${(ch.content||'').length > LAZY_AT ? '<div class="ch-lazy-ph">⏳ लोड हुँदैछ…</div>' : renderMd(ch.content||'')}</div>
       </div>
     </div>`;}).join('')}</div>`;
 }
@@ -1289,7 +1289,12 @@ function renderChapterListHtml(bookId) {
     } catch (e) {}
   }
   const it = document.getElementById(`chi-${bookId}-${idx}`);
-  if (it) it.classList.add('open');
+  if (it) {
+    it.classList.add('open');
+    const _c0 = it.querySelector('.ch-read-content');            // पहिले खुल्ने अध्याय पनि क्रमशः देखाउने (लामो हुँदा नअड्किन)
+    _chLimit(_c0);
+    if (_c0 && _c0._hi !== undefined) requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => _chRevealMore(_c0), 0)));
+  }
   if (_jump && it) {
     try { saveLastLocation(); } catch (e) {}
     // अध्यायको सुरुमै पुर्‍याउने: टाँसिने हेडर (र जम्प-बार) मुनि नलुकोस्; smooth scroll र ढिलो layout ले बीचमै नरोकियोस्
@@ -1382,6 +1387,7 @@ function chJump(bookId, idx, what) {
 window.chJump = chJump;
 function _chHeads(bookId, k) {
   const c = _chContent(bookId, k);
+  if (c && c._pieces) _chRevealAll(c);          // लामो अध्यायमा शीर्षक-सूचीका लागि बाँकी भाग पनि चाहिन्छ
   return c ? [...c.querySelectorAll('h1,h2,h3,h4,h5')] : [];
 }
 /* ☰ मेनु: अध्यायहरू (हरेकमा 🔖 🖨️ ✏️ 🗑️); अध्यायमा छुँदा मात्र त्यसका भाग खुल्छन् */
@@ -1458,8 +1464,51 @@ function _chSplit(c) {
   });
   flushRun();
 }
+/* ═══ धेरै लामो अध्याय (लाखौँ अक्षर): एकैपटक renderMd/layout गर्दा पूरै साइट अड्किन्थ्यो → markdown लाई ~१२ हजार अक्षरका टुक्रामा
+   बाँडेर पहिला २ टुक्रा तुरुन्तै, बाँकी हरेक frame मा क्रमशः देखाइन्छ। टुक्रा नयाँ लाइन (वा खाली लाइन) मा मात्र काटिन्छ —
+   बक्स (:::), तालिका (|) र सूची (- ) को बीचमा कहिल्यै काटिँदैन। ═══ */
+const LAZY_AT = 50000, LAZY_PIECE = 12000;
+function _mdPieces(md) {
+  const lines = String(md).split('\n'), out = [];
+  let cur = [], len = 0, inBox = false;
+  for (let i = 0; i < lines.length; i++) {
+    const ln = lines[i]; cur.push(ln); len += ln.length + 1;
+    if (!inBox && /^\s*:::\w/.test(ln)) { inBox = ln.indexOf(':::', ln.indexOf(':::') + 3) < 0; }
+    else if (inBox && ln.indexOf(':::') >= 0) inBox = false;
+    const nx = lines[i + 1];
+    if (len >= LAZY_PIECE && !inBox && nx !== undefined && !/^\|/.test(ln) && !/^\|/.test(nx) && !/^- /.test(ln) && !/^- /.test(nx)) {
+      let j = i + 1, gap = false;
+      while (j < lines.length && lines[j].trim() === '') { gap = true; j++; }   // खाली लाइनहरू = अनुच्छेदको अन्तर
+      if (j >= lines.length) { cur = cur.concat(lines.slice(i + 1)); i = lines.length; break; }
+      out.push({ t: cur.join('\n').replace(/\s+$/, ''), gap }); cur = []; len = 0; i = j - 1;
+    }
+  }
+  if (cur.length) out.push({ t: cur.join('\n'), gap: false });
+  return out;
+}
+function _chLazyInit(c) {
+  const it = c.closest('.chapter-item'); if (!it) return false;
+  const p = it.id.lastIndexOf('-'), bookId = it.id.slice(4, p), idx = parseInt(it.id.slice(p + 1), 10);
+  const ch = (App.chaptersCache[bookId] || [])[idx]; if (!ch) return false;
+  c._pieces = _mdPieces(ch.content || ''); c._pi = 0; c.innerHTML = '';
+  c._hi = 1;                                   // "सीमित" अवस्था — अन्य कोडले यही झन्डा हेर्छन्
+  _chLazyMore(c, 2);
+  return true;
+}
+function _chLazyMore(c, n) {
+  const ps = c._pieces; if (!ps) return true;
+  let html = '';
+  for (let k = 0; k < n && c._pi < ps.length; k++, c._pi++) {
+    const pc = ps[c._pi]; if (!pc.t.trim()) continue;
+    html += `<div class="ch-chunk${pc.gap ? ' ch-gap' : ''}">${renderMd(pc.t)}</div>`;
+  }
+  if (html) c.insertAdjacentHTML('beforeend', html);
+  if (c._pi >= ps.length) { c._pieces = null; c._hi = undefined; c.removeAttribute('data-lazy'); clearTimeout(c._rt); return true; }
+  return false;
+}
 function _chLimit(c) {
   if (!c || c._hi !== undefined) return;
+  if (c.getAttribute('data-lazy') === '1' && !c._pieces) { try { if (_chLazyInit(c)) return; } catch (e) { console.error('lazy', e); } }
   try { _chSplit(c); } catch (e) { console.error('chSplit', e); }
   const kids = c.children;
   if (kids.length <= CH_FIRST + 30) return;
@@ -1468,12 +1517,19 @@ function _chLimit(c) {
 }
 function _chRevealAll(c) {
   if (!c || c._hi === undefined) return;
+  if (c._pieces) { _chLazyMore(c, 1e9); const it0 = c.closest('.chapter-item'); if (it0) { chMarkCurPart(it0); window._updateChProgress && window._updateChProgress(); } return; }
   const ks = c._kids; for (let i = c._hi; i < ks.length; i++) ks[i].style.display = '';
   c._hi = undefined; c._kids = null; clearTimeout(c._rt);
   const it = c.closest('.chapter-item'); if (it) { chMarkCurPart(it); window._updateChProgress && window._updateChProgress(); }
 }
 function _chRevealMore(c) {
   if (!c || c._hi === undefined) return;
+  if (c._pieces) {
+    const done = _chLazyMore(c, 2);
+    window._updateChProgress && window._updateChProgress();
+    if (done) { const it1 = c.closest('.chapter-item'); if (it1) chMarkCurPart(it1); } else c._rt = setTimeout(() => requestAnimationFrame(() => _chRevealMore(c)), 16);
+    return;
+  }
   const ks = c._kids, end = Math.min(ks.length, c._hi + CH_STEP);
   for (let i = c._hi; i < end; i++) ks[i].style.display = '';
   c._hi = end;
@@ -1906,6 +1962,13 @@ function _plainMd(s) {         // markdown/रङ चिन्ह हटाए�
     .replace(/[#*_`>\-\[\]()|~]/g, ' ')
     .replace(/\s+/g, ' ').trim();
 }
+/* खोज-सूची एक-एक अध्याय, खाली-समयमा मात्र (धेरै लामो अध्याय छोडेर — ती खोज्दा मात्र बन्छन्) */
+function _warmIdx(list) {
+  const idle = window.requestIdleCallback || (cb => setTimeout(cb, 200));
+  let i = 0;
+  const step = () => { if (i >= list.length) return; const ch = list[i++]; try { if ((ch.content || '').length < 250000) _chIdx(ch); } catch (e) {} idle(step); };
+  idle(step);
+}
 function _chIdx(ch) {
   let r = _sIdx.get(ch);
   if (!r) { const plain = _plainMd(ch.content), title = _plainMd(ch.title); r = { plain, low: plain.toLowerCase(), tl: title.toLowerCase() }; _sIdx.set(ch, r); }
@@ -1989,7 +2052,7 @@ function ensureAllChaptersLoaded(onProgress) {
   const worker = async () => {
     while (k < todo.length) {
       const id = todo[k++];
-      try { if (!App.chaptersCache[id]) { const r = await loadChaptersForBook(id); if (Array.isArray(r)) { App.chaptersCache[id] = r; r.forEach(_chIdx); } } } catch (e) { /* यो किताब छोडेर अगाडि */ }   // खोज्ने सूची अहिल्यै बनाउने (पहिलो खोज नअड्कियोस्)
+      try { if (!App.chaptersCache[id]) { const r = await loadChaptersForBook(id); if (Array.isArray(r)) { App.chaptersCache[id] = r; _warmIdx(r); } } } catch (e) { /* यो किताब छोडेर अगाडि */ }   // खोज्ने सूची अहिल्यै बनाउने (पहिलो खोज नअड्कियोस्)
       st.done++; if (onProgress) onProgress();
     }
   };
@@ -2018,6 +2081,7 @@ function docHiliteClear(root) {
   root.normalize();
 }
 function docHilite(root, q) {
+  if (root && root._pieces) _chRevealAll(root);
   const re = _qRegex(q); if (!re) return 0;
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode: n => n.parentElement && n.parentElement.closest('mark.s-hit-doc,script,style') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
