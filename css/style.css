@@ -2809,6 +2809,7 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .ch-jm-act:active { box-shadow: inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 20px var(--shadow) !important; }
 .ch-jm-act:active::before { box-shadow: none; }
 
+<<<<<<< Updated upstream
 /* ✏️ सुधार सुझाव (पाठक फारम) + 📨 User Request (एडमिन) */
 .tr-ico-sg { font-size: 1.05rem; line-height: 1; }
 .sg-sheet { max-height: 92dvh; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -2831,3 +2832,192 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .sg-ctx ins { background: color-mix(in srgb, #2E9E5B 22%, transparent); text-decoration: none; font-weight: 700; }
 .sg-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; } .sg-acts .btn-p { flex: 1; padding: 10px; }
 .sg-badge { display: inline-block; min-width: 18px; padding: 0 6px; margin-left: 6px; border-radius: 99px; background: #E53935; color: #fff; font-size: 0.68rem; font-weight: 800; text-align: center; line-height: 18px; vertical-align: middle; }
+=======
+/* ═══════════════════════════════════════════════════════════════
+   🫧 LIQUID GLASS — केवल "सेटिङ" पेज (#p-profile) मा मात्र लागू हुन्छ। अरू पेजमा कुनै असर छैन।
+   आधार: liquid-glass-edges (Mattia Astorino, MIT) — tint · ridge · frost · edge highlight
+   • ठूला कार्डमा पूरा प्रभाव (backdrop blur + किनारा-उज्यालो), साना आइकन-टाइलमा हल्का संस्करण
+   • html.lite (कमजोर फोन) मा blur/blend बन्द
+   ═══════════════════════════════════════════════════════════════ */
+#p-profile {
+  /* नमूना कोडका चलहरू — यहीँबाट मिलाउन सकिन्छ */
+  --tint: white;
+  --tint-strength: 0.8;      /* 0 - 1 */
+  --top-strength: 1;         /* 0 - 1 */
+  --bottom-strength: 0.5;    /* 0 - 1 */
+  --ridge: 2px;
+  --shadow-strength: 0.1;    /* 0 - 1 */
+  --roundness: 0.2;          /* 0 - 1 */
+  --lg-radius: 34px;
+
+  position: relative; isolation: isolate;
+  padding-bottom: 90px; margin-bottom: -90px;   /* तलको nav-ठाउँसम्म पृष्ठभूमि फैलाउने */
+}
+
+/* रङ्गीन पृष्ठभूमि — glass ले यसैलाई refract गर्छ (स्थिर gradient, कुनै animation छैन) */
+#p-profile::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(ellipse 72% 200px at 6%  18%, rgba(255,214,102,.95), transparent),
+    radial-gradient(ellipse 66% 200px at 96% 34%, rgba(255,128,170,.85), transparent),
+    radial-gradient(ellipse 76% 200px at 6%  51%, rgba(64,214,160,.90),  transparent),
+    radial-gradient(ellipse 70% 200px at 94% 67%, rgba(74,168,255,.90),  transparent),
+    radial-gradient(ellipse 80% 200px at 30% 82%, rgba(184,124,255,.80), transparent),
+    linear-gradient(180deg, #d9f1ff, #e7f8d8 50%, #d9f1ff);
+  background-size: 100% 1150px;
+  background-repeat: repeat-y;
+}
+[data-theme="dark"] #p-profile {
+  --tint: #c7d2ff; --tint-strength: 0.17; --shadow-strength: 0.02;
+  --text-2: #E2D2AE; --text-3: #BCA784;   /* गाढा पृष्ठभूमिमा पढ्न सजिलो */
+}
+[data-theme="dark"] #p-profile::before {
+  background:
+    radial-gradient(ellipse 72% 200px at 6%  18%, rgba(255,140,60,.50), transparent),
+    radial-gradient(ellipse 66% 200px at 96% 34%, rgba(190,70,210,.55), transparent),
+    radial-gradient(ellipse 76% 200px at 6%  51%, rgba(30,170,150,.55), transparent),
+    radial-gradient(ellipse 70% 200px at 94% 67%, rgba(50,110,255,.60), transparent),
+    radial-gradient(ellipse 80% 200px at 30% 82%, rgba(130,70,230,.50), transparent),
+    linear-gradient(180deg, #0a1030, #111a3c 50%, #0a1030);
+  background-size: 100% 1150px;
+  background-repeat: repeat-y;
+}
+
+/* ── ठूला glass कार्ड ── */
+#p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList) {
+  position: relative; overflow: hidden; isolation: isolate;
+  margin-left: 0; margin-right: 0;
+  border: 0 !important; outline: none !important;
+  border-radius: var(--lg-radius) !important;
+  background: rgba(255,255,255,.64) !important;
+  -webkit-backdrop-filter: blur(10px) brightness(110%) saturate(180%);
+          backdrop-filter: blur(10px) brightness(110%) saturate(180%);
+  box-shadow: inset 0 0 50px rgba(0,0,0,.08), 0 10px 30px -12px rgba(30,40,80,.28) !important;
+}
+[data-theme="dark"] #p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList) {
+  background: rgba(199,210,255,.14) !important;
+  box-shadow: inset 0 0 50px rgba(255,255,255,.05), 0 10px 30px -12px rgba(0,0,0,.6) !important;
+}
+#p-profile #histList { margin-bottom: 4px; }
+#p-profile #histList:not(:has(.hist-item)) { padding: 6px 0; }
+
+/* किनारा-उज्यालो (ridge): माथि-बायाँ बलियो, तल-दायाँ हल्का */
+#p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList)::before {
+  content: ''; position: absolute; inset: var(--ridge); pointer-events: none; z-index: 2;
+  border-radius: inherit;
+  filter: blur(calc(var(--roundness) * 10px)) brightness(300%);
+  mix-blend-mode: screen;
+  box-shadow:
+    -80px -100px 200px rgba(166,166,166,calc(var(--top-strength))),
+    80px 60px 70px rgba(150,150,150,calc(var(--bottom-strength)));
+}
+
+/* ── कार्डभित्रका पंक्ति ── */
+#p-profile .sett-grp-lbl { position: relative; z-index: 1; padding: 14px 18px 6px; color: var(--text-2); }
+#p-profile .sett-row {
+  position: relative; z-index: 1; padding: 12px 18px;
+  border-bottom: 1px solid rgba(255,255,255,.55);
+  transition: background .2s, transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+[data-theme="dark"] #p-profile .sett-row { border-bottom-color: rgba(255,255,255,.10); }
+#p-profile .sett-row:last-child { border-bottom: 0; }
+#p-profile .sett-row:hover, #p-profile .sett-row:active { background: rgba(255,255,255,.28); }
+#p-profile .sett-row:active { transform: scale(.985); }
+
+/* ── आइकन टाइल: साना glass (tint = हरेकको आफ्नै रङ) ── */
+#p-profile .sett-ico {
+  --tint-strength: 0.75; --ridge: 1.5px; --roundness: 0.1;
+  position: relative; overflow: hidden; isolation: isolate;
+  width: 42px; height: 42px; border-radius: 15px; font-size: 20px;
+  border: 0 !important; outline: none !important;
+  background: rgba(255,255,255,.6) !important;
+  -webkit-backdrop-filter: blur(6px) brightness(110%) saturate(180%);
+          backdrop-filter: blur(6px) brightness(110%) saturate(180%);
+  box-shadow: inset 0 0 14px rgba(0,0,0,.07), 0 4px 10px -4px rgba(30,40,80,.3) !important;
+  transition: transform .6s linear(0, .008 .8%, .034 1.7%, .144 3.7%, .76 10.9%, .978 14%, 1.056 15.5%, 1.119 17.1%, 1.162 18.7%, 1.186 20.3%, 1.194 22.3%, 1.181 24.5%, 1.012 35.4%, .98 38.6%, .964 42%, .965 46.5%, .997 57.2%, 1.007 63.4%, 1);
+}
+#p-profile .sett-ico::before {
+  content: ''; position: absolute; inset: var(--ridge); pointer-events: none; border-radius: inherit;
+  filter: blur(calc(var(--roundness) * 10px)) brightness(300%); mix-blend-mode: screen;
+  box-shadow: -16px -20px 40px rgba(166,166,166,1), 16px 12px 14px rgba(150,150,150,.5);
+}
+#p-profile .sett-row:hover .sett-ico, #p-profile .sett-row:active .sett-ico { transform: scale(.9); }
+#p-profile .sett-name { font-weight: 700; }
+#p-profile .sett-row > span { position: relative; z-index: 1; }
+
+/* ── पढ्ने इतिहास (एउटै glass कार्डभित्र) ── */
+#p-profile .hist-item {
+  position: relative; z-index: 1; margin: 0; padding: 12px 18px;
+  background: none !important; border: 0 !important; outline: none !important; border-radius: 0 !important;
+  box-shadow: none !important; border-bottom: 1px solid rgba(255,255,255,.55) !important;
+  margin-left: 0; margin-right: 0;
+}
+#p-profile .hist-item:last-child { border-bottom: 0 !important; }
+#p-profile .hist-item:hover { transform: none; background: rgba(255,255,255,.28) !important; }
+#p-profile #histList .empty { position: relative; z-index: 1; padding: 26px 20px; }
+
+/* ── "सफा" बटन: साना glass गोली ── */
+#p-profile .sec-head button {
+  padding: 6px 14px !important; border-radius: 99px !important; font-weight: 700; color: var(--text-2) !important;
+  background: rgba(255,255,255,.6) !important; border: 0 !important;
+  -webkit-backdrop-filter: blur(6px) saturate(180%); backdrop-filter: blur(6px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 0 rgba(255,255,255,.35), 0 3px 8px -3px rgba(30,40,80,.3);
+}
+[data-theme="dark"] #p-profile .sec-head button { background: rgba(199,210,255,.16) !important; }
+
+/* ── copyright / निर्माता / सहयोगी भित्र ── */
+#p-profile .copyright-block { margin: 20px 0 10px; padding: 22px 18px; }
+#p-profile .creator-block, #p-profile .contrib-block { margin: 12px 0 0; padding: 20px 18px; }
+#p-profile :is(.copyright-block, .creator-block, .contrib-block) > * { position: relative; z-index: 1; }
+#p-profile .copy-notice {
+  background: rgba(255,255,255,.38); border: 0; border-radius: 22px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), inset 0 -1px 0 rgba(255,255,255,.3);
+}
+[data-theme="dark"] #p-profile .copy-notice { background: rgba(199,210,255,.10); }
+#p-profile .contrib-item {
+  background: rgba(255,255,255,.4); border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), inset 0 -1px 0 rgba(255,255,255,.3);
+}
+[data-theme="dark"] #p-profile .contrib-item { background: rgba(199,210,255,.12); }
+#p-profile .social-ico { box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 6px 14px -5px rgba(0,0,0,.45); }
+
+/* ── आधुनिक browser: squircle कुना + oklab tint (नमूना कोडको जस्तै) ── */
+@supports (corner-shape: squircle) {
+  #p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList, .sett-ico, .copy-notice, .contrib-item) { corner-shape: squircle; }
+  #p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList)::before,
+  #p-profile .sett-ico::before { corner-shape: inherit; }
+}
+@supports (color: oklab(from red l a b)) {
+  #p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList) {
+    background: oklab(from var(--tint) l a b / calc(var(--tint-strength) * 80%)) !important;
+    box-shadow:
+      inset 0 0 50px oklab(from var(--tint) calc(l - var(--shadow-strength)) a b / calc(var(--tint-strength) * 80%)),
+      0 10px 30px -12px rgba(30,40,80,.28) !important;
+  }
+  #p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList)::before {
+    box-shadow:
+      -80px -100px 200px oklab(from var(--tint, white) 0.7 a b / calc(var(--top-strength) * 100%)),
+      80px 60px 70px oklab(from var(--tint, white) 0.6 a b / calc(var(--bottom-strength) * 100%));
+  }
+  #p-profile .sett-ico {
+    background: oklab(from var(--tint) l a b / calc(var(--tint-strength) * 80%)) !important;
+    box-shadow:
+      inset 0 0 14px oklab(from var(--tint) calc(l - var(--shadow-strength)) a b / calc(var(--tint-strength) * 80%)),
+      0 4px 10px -4px rgba(30,40,80,.3) !important;
+  }
+  #p-profile .sett-ico::before {
+    box-shadow:
+      -16px -20px 40px oklab(from var(--tint, white) 0.7 a b / calc(var(--top-strength) * 100%)),
+      16px 12px 14px oklab(from var(--tint, white) 0.6 a b / calc(var(--bottom-strength) * 100%));
+  }
+}
+
+/* ── कमजोर फोन: भारी blur/blend बन्द, सरल glass मात्र ── */
+html.lite #p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList, .sett-ico, .sec-head button) {
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+html.lite #p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList, .sett-ico)::before { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  #p-profile :is(.sett-group, .copyright-block, .creator-block, .contrib-block, #histList, .sett-ico)::before { filter: none; }
+}
+>>>>>>> Stashed changes
