@@ -411,6 +411,8 @@
       /* हाम्रै Undo/Redo (हाम्रा बोल्ड/हाइलाइट/बक्स जस्ता कामले browser को undo बिगार्ने भएकाले) */
       snap() {
         const html = el.innerHTML, cur = this.hist[this.hi];
+        this.size = html.length;
+        el.classList.toggle('rte-big', html.length > 40000);          // लामो लेखमा बाहिर-देखिने नभएका भाग नबनाउने (CSS content-visibility)
         if (cur && cur.html === html) { cur.sel = selPath(el); return; }
         this.hist.length = this.hi + 1;
         this.hist.push({ html, sel: selPath(el) });
@@ -424,7 +426,16 @@
         protoValue.set.call(ta, htmlToMd(el));
         el.focus({ preventScroll: true }); restoreSel(el, s.sel) || placeCaret(el, true);
       },
-      markDirty() { this.dirty = true; clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 160); },
+      /* लामो लेखमा हरेक रोकाइमा पूरै DOM→markdown गर्दा editor अड्किन्थ्यो: लेखको आकारअनुसार ढिलो र खाली-समय (idle) मा मात्र */
+      markDirty() {
+        this.dirty = true; clearTimeout(this.timer);
+        if (this._idle && window.cancelIdleCallback) cancelIdleCallback(this._idle);
+        const d = this.size > 150000 ? 1200 : this.size > 60000 ? 700 : this.size > 20000 ? 320 : 160;
+        this.timer = setTimeout(() => {
+          const run = () => { this._idle = 0; if (this.dirty) this.flush(); };
+          if (window.requestIdleCallback && this.size > 20000) this._idle = requestIdleCallback(run, { timeout: 1500 }); else run();
+        }, d);
+      },
       syncFont() { if (ta.dataset.fontKey === 'eczar') el.setAttribute('lang', 'hi'); else el.removeAttribute('lang'); el.style.fontFamily = ta.style.fontFamily || (typeof fontCssFor === 'function' ? fontCssFor(ta.dataset.fontKey || 'siddhanta') : ''); },
       focus(end) {
         el.focus({ preventScroll: true });
@@ -557,8 +568,9 @@
     // browser ले थपेका बेकारका style हटाउने (हाम्रा rte-hl/rte-fc/img/बक्स बाहेक)।
     // नोट: node सार्ने/हटाउने काम गर्दैनौं (selection बिग्रन्छ) — attribute मात्र हटाउँछौं।
     root.querySelectorAll('font').forEach(f => { f.removeAttribute('face'); f.removeAttribute('size'); f.removeAttribute('color'); });
-    root.querySelectorAll('span, h1,h2,h3,h4,h5,blockquote,ul,ol,li,div,p,b,i,u,s,strike,strong,em').forEach(x => {
-      if (!x.hasAttribute('style') && !x.hasAttribute('align')) return;
+    const CS_TAGS = cleanStyles._t || (cleanStyles._t = new Set(['SPAN','H1','H2','H3','H4','H5','BLOCKQUOTE','UL','OL','LI','DIV','P','B','I','U','S','STRIKE','STRONG','EM']));
+    root.querySelectorAll('[style],[align]').forEach(x => {          // style/align भएका element मात्र (पूरै दस्तावेज नछान्ने → छिटो)
+      if (!CS_TAGS.has(x.tagName)) return;
       if (x.classList.contains('rte-hl') || x.classList.contains('rte-fc') || x.classList.contains('rte-fs') || x.classList.contains('rte-box') ||
           x.classList.contains('rte-box-head') || x.closest('.rte-box-head')) return;
       if (x.hasAttribute('style')) {

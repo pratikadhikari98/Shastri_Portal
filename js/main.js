@@ -1314,6 +1314,9 @@ function toggleCh(bookId, idx, fromHistory=false) {
   document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
   if (!wasOpen) {
     item.classList.add('open');
+    const _c = item.querySelector('.ch-read-content');           // लामो अध्याय: पहिलो स्क्रिन तुरुन्तै, बाँकी क्रमशः (अड्किन्न)
+    _chLimit(_c);
+    if (_c && _c._hi !== undefined) requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => _chRevealMore(_c), 0)));
     // अध्याय खोल्दा history मा थप्ने — ताकि back गर्दा पहिले यो बन्द होस्, अनि मात्र माथिको ट्याब/पेजमा जाओस्
     if (!fromHistory) history.pushState({ chOpen: { bookId, idx } }, '');
   }
@@ -1422,8 +1425,42 @@ function chShowMenu(bookId, idx, expK) {
 /* ठूलो अध्याय: पहिलो पटक पहिलो भाग (~एक स्क्रिन) मात्र देखाएर बाँकी थोरै-थोरै गर्दै खोल्ने —
    ताकि अध्याय छान्नासाथ कार्ड + पाठ तुरुन्तै देखियोस् (भाग छान्दा जस्तै), भारी layout पछाडि चुपचाप हुने */
 const CH_FIRST = 40, CH_STEP = 60;
+/* लामो अनुच्छेद टुक्र्याउने: नयाँ लाइन (<br>) ले जोडिएका हजारौँ लाइन एउटै अनुच्छेद/खुला text मा भए browser ले
+   सबैलाई एकैपटक layout गर्छ (अध्याय अड्कन्छ) र तल _chLimit ले लुकाउन पनि सक्दैन। यहाँ ~६० लाइनका टुक्रा (block) बनाइन्छ —
+   <br> मा मात्र काटिन्छ (मास्थिका inline tag चिर्दैन), त्यसैले देखिने रूप उस्तै रहन्छ। */
+function _chSplit(c) {
+  if (!c || c._split) return; c._split = true;
+  const MAXN = 120, GROUP = 60;
+  const BLOCK = /^(P|DIV|H[1-6]|UL|OL|BLOCKQUOTE|TABLE|HR|PRE|FIGURE)$/;
+  const groups = nodes => {                       // <br> मा टुक्रा पार्ने (लगभग GROUP node प्रति टुक्रा)
+    const out = []; let cur = [];
+    nodes.forEach(n => { cur.push(n); if (n.nodeName === 'BR' && cur.length >= GROUP) { out.push(cur); cur = []; } });
+    if (cur.length) out.push(cur);
+    return out;
+  };
+  const kids = Array.prototype.slice.call(c.childNodes);
+  let run = [];
+  const flushRun = () => {
+    if (run.length > MAXN) groups(run).forEach(g => { const d = document.createElement('div'); d.className = 'ch-chunk'; g[0].parentNode.insertBefore(d, g[0]); g.forEach(n => d.appendChild(n)); });
+    run = [];
+  };
+  kids.forEach(n => {
+    if (n.nodeType === 1 && BLOCK.test(n.tagName)) {
+      flushRun();
+      if (n.tagName === 'P' && n.childNodes.length > MAXN * 2) {
+        const gs = groups(Array.prototype.slice.call(n.childNodes));
+        if (gs.length > 1) {
+          let prev = n; n.classList.add('ch-sp');
+          gs.slice(1).forEach((g, i) => { const np = document.createElement('p'); if (n.getAttribute('style')) np.setAttribute('style', n.getAttribute('style')); if (i < gs.length - 2) np.className = 'ch-sp'; prev.after(np); g.forEach(x => np.appendChild(x)); prev = np; });
+        }
+      }
+    } else run.push(n);
+  });
+  flushRun();
+}
 function _chLimit(c) {
   if (!c || c._hi !== undefined) return;
+  try { _chSplit(c); } catch (e) { console.error('chSplit', e); }
   const kids = c.children;
   if (kids.length <= CH_FIRST + 30) return;
   c._kids = Array.prototype.slice.call(kids); c._hi = CH_FIRST;
