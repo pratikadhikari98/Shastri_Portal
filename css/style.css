@@ -2752,7 +2752,8 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .book-ch-panel[hidden] { display: none; }
 @keyframes bcpIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .bcp-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 8px; border: 0; background: transparent; border-radius: 10px; cursor: pointer; color: var(--text-1); font: inherit; font-size: .86rem; -webkit-tap-highlight-color: transparent; }
-.bcp-item + .bcp-item { border-top: 1px solid var(--divider); border-radius: 0; }
+.bcp-item { position: relative; }
+.bcp-item + .bcp-item::before { content: ''; position: absolute; top: 0; left: 10px; right: 10px; height: 1px; background: var(--divider); pointer-events: none; }   /* विभाजक रेखा — सबै पङ्क्तिको गोलो कुना एउटै रहोस् */
 .bcp-item:active { background: var(--accent-glow, rgba(0,0,0,.06)); }
 .bcp-num { flex: 0 0 auto; min-width: 26px; height: 26px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: .78rem; font-weight: 700; color: var(--accent); border: 1px solid var(--divider); background: var(--bg); }
 .bcp-title { flex: 1; min-width: 0; font-weight: 600; }
