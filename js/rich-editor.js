@@ -1058,6 +1058,14 @@
   function foreignHtmlToMd(html) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     const out = document.createElement('div');
+    /* अनुच्छेदबीचको खाली ठाउँ (Docs/Word को space before/after) → खाली लाइन; line-height भने सारिँदैन */
+    let prevMb = 0;
+    const ptOf = v => {
+      const m = String(v || '').trim().match(/^(-?[\d.]+)(pt|px|in|cm|mm|em|rem)?$/i); if (!m) return 0;
+      const n = parseFloat(m[1]), u = (m[2] || 'px').toLowerCase();
+      return u === 'pt' ? n : u === 'px' ? n * 0.75 : u === 'in' ? n * 72 : u === 'cm' ? n * 28.35 : u === 'mm' ? n * 2.835 : n * 11;
+    };
+    const isBlankLine = el => !!el && el.nodeType === 1 && el.tagName === 'DIV' && !el.textContent.trim() && !el.querySelector('img');
     const alignOf = el => { const a = String((el.style && el.style.textAlign) || el.getAttribute('align') || '').toLowerCase(); return a === 'center' || a === 'right' || a === 'justify' ? a : ''; };
     const setAl = (el, al) => { if (al) el.setAttribute('data-al', al); return el; };
     function listInto(list, f, container, ordered) {
@@ -1098,6 +1106,7 @@
         if (c.nodeType === 3) { if (c.nodeValue.trim() || line) { const t = c.nodeValue.replace(/[\s\u00a0]+/g, ' '); if (t.trim() || line) putRun(ensure(), wrapsOf(f), t); } continue; }
         if (c.nodeType !== 1 || SKIP_TAG.test(c.tagName)) continue;
         const tag = c.tagName, link = tag === 'A', g = fmtFrom(c, f, link);
+        if (/^(H[1-6]|UL|OL|TABLE|HR|BLOCKQUOTE|BR)$/.test(tag)) prevMb = 0;
         if (/^H[1-6]$/.test(tag)) {
           flush();
           const h = setAl(document.createElement('h' + Math.min(5, +tag[1])), alignOf(c) || al);
@@ -1116,7 +1125,19 @@
         } else if (tag === 'BR') {
           if (line) line.appendChild(document.createElement('br')); else { const d = document.createElement('div'); d.innerHTML = '<br>'; out.appendChild(d); }
         } else if (tag === 'IMG') { /* चित्र छोडिन्छ */ }
-        else if (/^(P|DIV|SECTION|ARTICLE|HEADER|FOOTER|FIGURE|PRE|THEAD|TBODY|TFOOT|TR|TD|TH|LI)$/.test(tag)) { flush(); blockInto(c, g, alignOf(c) || al); }
+        else if (tag === 'P') {
+          flush();
+          const before = out.childNodes.length, mt = ptOf(c.style && c.style.marginTop), mb = ptOf(c.style && c.style.marginBottom);
+          blockInto(c, g, alignOf(c) || al);
+          if (out.childNodes.length > before) {
+            const gap = prevMb + mt, blanks = gap >= 24 ? 2 : gap >= 6 ? 1 : 0, first = out.childNodes[before];
+            if (before > 0 && !isBlankLine(out.childNodes[before - 1]) && !isBlankLine(first)) {
+              for (let k = 0; k < blanks; k++) { const d = document.createElement('div'); d.innerHTML = '<br>'; out.insertBefore(d, first); }
+            }
+            prevMb = mb;
+          }
+        }
+        else if (/^(DIV|SECTION|ARTICLE|HEADER|FOOTER|FIGURE|PRE|THEAD|TBODY|TFOOT|TR|TD|TH|LI)$/.test(tag)) { flush(); blockInto(c, g, alignOf(c) || al); }
         else { const hasBlock = [...c.querySelectorAll('*')].some(x => BLOCK_TAG.test(x.tagName)); if (hasBlock) { flush(); blockInto(c, g, al); } else inlineInto(ensure(), { childNodes: [c] }, f, false, ' '); }
       }
       flush();
