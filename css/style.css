@@ -2720,7 +2720,13 @@ mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-
 @keyframes npWind { 0%, 58% { opacity: 0; transform: translate3d(-35%, 0, 0); } 66% { opacity: .85; } 80% { opacity: .7; transform: translate3d(25%, 0, 0); } 92%, 100% { opacity: 0; transform: translate3d(90%, 0, 0); } }
 .np-scene.np-paused * { animation-play-state: paused !important; }              /* स्क्रिनबाहिर हुँदा नचल्ने (ब्याट्री) */
 /* कमजोर फोन (html.lite) वा Reduce-motion मा चल्ने तह नदेखाउने — सफा तस्बिर मात्र */
-html.lite .np-fx { display: none; }
+/* lite मोडमा पनि बादल/चरा/हावा देखाउने — यी GPU मा चल्छन्, फोनलाई भार हुँदैन (generic lite नियमलाई यहाँ फिर्ता) */
+html.lite .np-fx .np-cl { animation-duration: var(--dur) !important; animation-delay: var(--del) !important; }
+html.lite .np-fx .np-cl u { animation-duration: 11s !important; animation-delay: var(--gd) !important; }
+html.lite .np-fx .np-b { animation-duration: var(--dur) !important; animation-delay: var(--del) !important; }
+html.lite .np-fx .np-b s { animation-duration: 11s !important; animation-delay: var(--gd) !important; }
+html.lite .np-fx .np-b em { animation-duration: var(--fd) !important; animation-delay: 0s !important; }
+html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: var(--wd) !important; }
 @media (prefers-reduced-motion: reduce) { .np-fx { display: none; } }
 @media (min-width: 700px) {
   /* चौडा स्क्रिन: तस्बिरको ३:१ अनुपात राखी बीचमा, दुवैतिर बिस्तारै हराउने */
