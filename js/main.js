@@ -1345,8 +1345,23 @@ function _chOff() {
 }
 function _chContent(bookId, idx) { return document.querySelector(`#chi-${bookId}-${idx} .ch-read-content`); }
 function _chScrollTo(y, smooth) { window.scrollTo({ top: Math.max(0, y), behavior: smooth ? 'smooth' : 'auto' }); }
+/* लामो छलाङपछि (zipper) कहिले काहीँ मोबाइल Chrome ले sticky हेडर/पट्टी गलत ठाउँमा देखाउँछ (हेडर हराएर बीचमा पट्टी तैरिने) —
+   स्क्रोल रोकिएपछि एकपटक सानो instant स्क्रोल-चलाइ गरी compositor लाई sticky स्थिति फेरि गणना गर्न लगाउने */
+let _chStickyT = 0;
+function _chStickyFix() {
+  clearTimeout(_chStickyT);
+  _chStickyT = setTimeout(() => {
+    const y = window.scrollY;
+    if (y < 2) return;
+    window.scrollTo({ top: y + 1, behavior: 'instant' });
+    window.scrollTo({ top: y, behavior: 'instant' });
+    const h = document.querySelector('.site-header');
+    if (h) { h.style.willChange = 'transform'; requestAnimationFrame(() => { h.style.willChange = ''; }); }
+  }, 140);
+}
 function chZipTo(bookId, idx, val) {
   const c = _chContent(bookId, idx); if (!c) return;
+  _chStickyFix();
   _chRevealAll(c);
   const top = c.getBoundingClientRect().top + window.scrollY - _chOff();
   const max = Math.max(0, c.offsetHeight - window.innerHeight + _chOff());
@@ -1357,6 +1372,7 @@ function chJump(bookId, idx, what) {
   if (what === 'prev') return prevCh(bookId, idx);
   if (what === 'next') return nextCh(bookId, idx);
   const c = _chContent(bookId, idx); if (!c) return;
+  _chStickyFix();
   _chRevealAll(c);
   const r = c.getBoundingClientRect();
   if (what === 'top' || what === 'end') {
