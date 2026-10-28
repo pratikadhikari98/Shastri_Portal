@@ -176,7 +176,9 @@
     const off = (n, o) => { const r = document.createRange(); r.setStart(ra, 0); r.setEnd(n, o); return r.toString().length; };
     let st = 0, en = 0;
     if (key) { try { st = off(rg.startContainer, rg.startOffset); en = off(rg.endContainer, rg.endOffset); } catch (e) { st = en = 0; } }
-    return { text, rect, el: ra, key: key && en > st ? key : '', s: st, e: en };
+    let before = '', after = '', total = 0;
+    if (key && en > st) { try { const tc = ra.textContent; total = tc.length; before = tc.slice(Math.max(0, st - 40), st); after = tc.slice(en, en + 40); } catch (e) {} }
+    return { text, raw: rg.toString(), before, after, total, rect, el: ra, key: key && en > st ? key : '', s: st, e: en };
   }
 
   /* ── तैरिने पट्टी (zipper-बटन .neu-btn जस्तै; बोर्डर थिम अनुसार) ── */
@@ -193,7 +195,7 @@
       b.innerHTML = grip +
         '<div class="tr-grp">' + tlBtn('ne', 'नेपालीमा अनुवाद', 'ने') + tlBtn('en', 'English मा अनुवाद', 'अं') + tlBtn('sa', 'संस्कृतमा अनुवाद', 'सं') + '</div>' +
         (cur.el && cur.key ? '<div class="tr-grp">' + nb('data-mk="fc"', 'अक्षर रङ्गिन बनाउने', '<span class="tr-ico-fc">अ</span>') + nb('data-mk="hl"', 'हाइलाइट गर्ने', '<span class="tr-ico-hl">अ</span>') + '</div>' : '') +
-        '<div class="tr-grp">' + nb('data-act="copy"', 'कपी गर्ने', ICO_COPY) + nb('data-act="all"', 'सबै पाठ छान्ने', 'सब') + '</div>' + outHtml();
+        '<div class="tr-grp">' + nb('data-act="copy"', 'कपी गर्ने', ICO_COPY) + nb('data-act="all"', 'सबै पाठ छान्ने', 'सब') + '</div>' + (cur.el && cur.key ? '<div class="tr-grp">' + nb('data-act="suggest"', 'सुधार सुझाव (पाठ बदल्न)', '<span class="tr-ico-sg">✏️</span>') + '</div>' : '') + outHtml();
     } else {
       b.innerHTML = grip + nb('data-back="1"', 'फर्कनुहोस्', '‹') +
         PAL.map(c => `<button type="button" class="tr-sw" data-c="${c}" style="background:${c}" title="${view === 'fc' ? 'अक्षरको रङ' : 'हाइलाइट'}" aria-label="${c}"></button>`).join('') +
@@ -236,7 +238,8 @@
     bar.addEventListener('mousedown', e => e.preventDefault());
     bar.addEventListener('click', e => {
       const t = e.target.closest('button'); if (!t) return;
-      const info = selInfo(); if (info) { cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e; }
+      const info = selInfo(); if (info) { cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e; cur.raw = info.raw; cur.before = info.before; cur.after = info.after; cur.total = info.total; }
+      if (t.dataset.act === 'suggest') { openSuggestFromSel(); return; }
       if (t.dataset.tl) { if (cur.text) showOut(t.dataset.tl); return; }
       if (t.dataset.act === 'closeout') { closeOut(); return; }
       if (t.dataset.act === 'copyout') { copyOut(); return; }
@@ -249,6 +252,12 @@
     });
     document.body.appendChild(bar);
     return bar;
+  }
+  function openSuggestFromSel() {
+    if (!window.openSuggest || !cur.key) return;
+    const info = { key: cur.key, old: cur.raw || cur.text, before: cur.before, after: cur.after, s: cur.s, total: cur.total };
+    done();                                                           // छनौट/टुलबार हटाउने (फारम खुल्छ)
+    window.openSuggest(info);
   }
   function hide() { if (bar) { bar.hidden = true; view = 'main'; out = null; outText = ''; showOut._n = (showOut._n || 0) + 1; } }
   function place() {

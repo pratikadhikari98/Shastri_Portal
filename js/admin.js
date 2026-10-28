@@ -101,6 +101,7 @@ async function activateAdmin(login) {
   App.adminUser = { login };
   toast('✅ Admin जोडियो — @' + login);
   renderAdminUI();
+  adminSuggestCount();                           // User Request को संख्या (badge)
   await adminRefreshFromGitHub();
 }
 
@@ -1094,3 +1095,149 @@ window.adminDraftsDiscard = adminDraftsDiscard;
 
 /* ── सुरु ── */
 window.addEventListener('load', () => { adminAutoLogin(); });
+
+
+/* ════════════════════════════════════════════════
+   📨 User Request — पाठकले पठाएको सुधार सुझाव (GitHub Issues, label: suggestion)
+   स्वीकार → अध्यायमा पुरानो पाठ हटेर नयाँ पाठ commit हुन्छ; अस्वीकार → Issue बन्द
+   ════════════════════════════════════════════════ */
+const SG_LABEL = 'suggestion';
+App._sgList = []; App._sgPending = {};
+
+function _sgParse(issue) {
+  const m = /<!--SP-REQ\s+([A-Za-z0-9+\/=]+)\s*-->/.exec((issue && issue.body) || '');
+  if (!m) return null;
+  try { return JSON.parse(GH.fromB64(m[1])); } catch (e) { return null; }
+}
+async function _sgFetch() {
+  const res = await GH.req(`issues?labels=${SG_LABEL}&state=open&per_page=50&sort=created&direction=desc`);
+  if (!res.ok) throw new Error(await GH.errMsg(res));
+  return (await res.json()).filter(i => !i.pull_request);
+}
+function _sgBadge() {
+  const b = document.getElementById('sgBadge'); if (!b) return;
+  const n = App._sgList.length; b.textContent = n; b.hidden = !n;
+}
+async function adminSuggestCount() {
+  if (!App.isAdmin) return;
+  try { App._sgList = await _sgFetch(); _sgBadge(); } catch (e) { /* चुपचाप */ }
+}
+window.adminSuggestCount = adminSuggestCount;
+
+async function adminSuggestOpen() {
+  if (!App.isAdmin) return;
+  openOv('adminSuggestModal');
+  const box = document.getElementById('adminSuggestList');
+  box.innerHTML = '<div class="sg-empty">⏳ लोड हुँदैछ…</div>';
+  try { App._sgList = await _sgFetch(); _sgBadge(); renderAdminSuggest(); }
+  catch (e) { box.innerHTML = '<div class="sg-empty">⚠️ ' + escapeHtml(e.message) + '</div>'; }
+}
+window.adminSuggestOpen = adminSuggestOpen;
+
+function renderAdminSuggest() {
+  const box = document.getElementById('adminSuggestList');
+  if (!App._sgList.length) { box.innerHTML = '<div class="sg-empty">📭 कुनै नयाँ सुझाव छैन</div>'; return; }
+  box.innerHTML = App._sgList.map(is => {
+    const d = _sgParse(is), n = is.number;
+    if (!d) return `<div class="sg-card"><div class="sg-meta">#${n} · ${escapeHtml(is.title || '')}</div><div class="sg-note">यो Issue को ढाँचा मिलेन (हातले हेर्नुहोस्)।</div><div class="sg-acts"><a class="btn-s" href="${escapeHtml(is.html_url)}" target="_blank" rel="noopener">GitHub मा खोल्नुहोस्</a><button class="btn-s" onclick="adminSuggestReject(${n})">बन्द गर्नुहोस्</button></div></div>`;
+    const when = new Date(is.created_at).toLocaleString('ne-NP', { dateStyle: 'medium', timeStyle: 'short' });
+    return `<div class="sg-card" id="sgc-${n}">
+      <div class="sg-meta"><b>${escapeHtml(d.bookTitle || d.bookId)}</b> › ${escapeHtml(d.chTitle || '')}</div>
+      <div class="sg-meta2">${d.name ? '👤 ' + escapeHtml(d.name) + ' · ' : ''}${escapeHtml(when)}</div>
+      <div class="sg-lbl">पुरानो पाठ</div><div class="sg-old">${escapeHtml(d.old)}</div>
+      <div class="sg-lbl">नयाँ पाठ</div><div class="sg-new">${escapeHtml(d.new)}</div>
+      ${d.note ? `<div class="sg-note">💬 ${escapeHtml(d.note)}</div>` : ''}
+      <div class="sg-pv" id="sgp-${n}"></div>
+      <div class="sg-acts"><button class="btn-p" onclick="adminSuggestApprove(${n})">✅ स्वीकार</button><button class="btn-s" onclick="adminSuggestReject(${n})">❌ अस्वीकार</button></div>
+    </div>`;
+  }).join('');
+}
+
+function _sgFindChapter(list, d) {
+  if (!Array.isArray(list)) return -1;
+  if (list[d.idx] && list[d.idx].title === d.chTitle) return d.idx;              // अनुक्रम र शीर्षक दुवै मिल्यो
+  const byTitle = list.findIndex(c => c.title === d.chTitle);                    // अनुक्रम सारिएको हुन सक्छ
+  if (byTitle >= 0) return byTitle;
+  return list[d.idx] ? d.idx : -1;
+}
+/* पुरानो पाठ markdown मा खोज्ने: पहिले ठ्याक्कै, नभए खाली-ठाउँ/markup (** == आदि) सहने तरिका */
+function _sgLocate(content, d) {
+  const old = String(d.old || ''); if (!old) return null;
+  let cand = [], loose = false, i = -1;
+  while ((i = content.indexOf(old, i + 1)) >= 0 && cand.length < 50) cand.push({ start: i, end: i + old.length });
+  if (!cand.length) {
+    const toks = old.split(/\s+/).filter(Boolean).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    if (!toks.length || toks.length > 400) return null;
+    const re = new RegExp(toks.join('(?:[\\s*_=~`>|#-]|<[^>]{0,60}>|\\{\\{[^:{}\\n]{0,24}:|\\}\\})*'), 'g');
+    let m; loose = true;
+    while ((m = re.exec(content)) && cand.length < 50) { if (!m[0].length) { re.lastIndex++; continue; } cand.push({ start: m.index, end: m.index + m[0].length }); }
+  }
+  if (!cand.length) return null;
+  let best = cand[0];
+  if (cand.length > 1) {                                                          // सन्दर्भ र अनुमानित स्थानले नजिकको छान्ने
+    const bf = (d.before || '').trim().slice(-8), af = (d.after || '').trim().slice(0, 8);
+    const hint = d.total ? (d.s / d.total) * content.length : 0;
+    cand.map(c => ({ c, sc: (bf && content.slice(Math.max(0, c.start - 40), c.start).includes(bf) ? 2 : 0) + (af && content.slice(c.end, c.end + 40).includes(af) ? 2 : 0), dist: Math.abs(c.start - hint) }))
+        .sort((a, b) => b.sc - a.sc || a.dist - b.dist).forEach((x, k) => { if (!k) best = x.c; });
+  }
+  if (loose && !_sgBalanced(content.slice(best.start, best.end))) return null;     // markdown चिन्ह (** == {{ }}) आधा काटिने भए स्वतः नबदल्ने
+  return { start: best.start, end: best.end, count: cand.length, loose };
+}
+function _sgBalanced(t) {
+  const c = (re) => (t.match(re) || []).length;
+  return c(/\*\*/g) % 2 === 0 && c(/==/g) % 2 === 0 && c(/~~/g) % 2 === 0 && c(/__/g) % 2 === 0 && c(/`/g) % 2 === 0 && c(/\{\{/g) === c(/\}\}/g);
+}
+
+async function adminSuggestApprove(n) {
+  const is = App._sgList.find(x => x.number === n), d = _sgParse(is), box = document.getElementById('sgp-' + n);
+  if (!d || !box) return;
+  box.innerHTML = '<div class="sg-warn">⏳ अध्यायमा पुरानो पाठ खोज्दैछु…</div>';
+  let list; try { list = await adminSyncChapters(d.bookId); } catch (e) { box.innerHTML = '<div class="sg-warn">⚠️ ' + escapeHtml(e.message) + '</div>'; return; }
+  const ci = _sgFindChapter(list, d);
+  if (ci < 0) { box.innerHTML = '<div class="sg-warn">⚠️ अध्याय भेटिएन (मेटिएको वा नाम फेरिएको हुन सक्छ)।</div>'; return; }
+  const content = list[ci].content || '', m = _sgLocate(content, d);
+  if (!m) {
+    box.innerHTML = '<div class="sg-warn">⚠️ पुरानो पाठ अध्यायमा सुरक्षित रूपमा भेटिएन (अध्याय पछि सम्पादन भएको, वा पाठ बोल्ड/हाइलाइट जस्ता चिन्हको बीचमा परेको हुन सक्छ)। अध्याय हातले सम्पादन गर्नुहोस् — नयाँ पाठ माथि छ।</div>';
+    return;
+  }
+  App._sgPending[n] = { bookId: d.bookId, ci, start: m.start, end: m.end, old: content.slice(m.start, m.end), neu: d.new };
+  const ctxB = content.slice(Math.max(0, m.start - 50), m.start), ctxA = content.slice(m.end, m.end + 50);
+  box.innerHTML =
+    (m.count > 1 ? `<div class="sg-warn">⚠️ यो पाठ अध्यायमा ${m.count} ठाउँमा भेटियो — सबैभन्दा मिल्दो ठाउँ मात्र बदलिन्छ।</div>` : '') +
+    (m.loose ? '<div class="sg-warn">ℹ️ पाठ ठ्याक्कै मिलेन (markdown चिन्ह वा खाली-ठाउँ फरक) — तल हेरेर पुष्टि गर्नुहोस्।</div>' : '') +
+    `<div class="sg-lbl">लागू भएपछि (${escapeHtml(list[ci].title)})</div><div class="sg-ctx">…${escapeHtml(ctxB)}<del>${escapeHtml(content.slice(m.start, m.end))}</del><ins>${escapeHtml(d.new)}</ins>${escapeHtml(ctxA)}…</div>` +
+    `<div class="sg-acts"><button class="btn-p" onclick="adminSuggestConfirm(${n})">✔ पुष्टि गरी लागू गर्नुहोस्</button><button class="btn-s" onclick="document.getElementById('sgp-${n}').innerHTML='';delete App._sgPending[${n}]">रद्द</button></div>`;
+}
+window.adminSuggestApprove = adminSuggestApprove;
+
+async function _sgClose(n, reason, comment) {
+  try {
+    if (comment) await GH.req(`issues/${n}/comments`, { method: 'POST', body: JSON.stringify({ body: comment }) });
+    const r = await GH.req(`issues/${n}`, { method: 'PATCH', body: JSON.stringify({ state: 'closed', state_reason: reason }) });
+    return r.ok;
+  } catch (e) { return false; }
+}
+function _sgDone(n) {
+  App._sgList = App._sgList.filter(x => x.number !== n); delete App._sgPending[n]; _sgBadge(); renderAdminSuggest();
+}
+
+async function adminSuggestConfirm(n) {
+  const p = App._sgPending[n]; if (!p) return;
+  const list = App.chaptersCache[p.bookId], ch = list && list[p.ci];
+  if (!ch || (ch.content || '').slice(p.start, p.end) !== p.old) { toast('⚠️ अध्याय बीचमा बदलियो — फेरि स्वीकार थिच्नुहोस्'); adminSuggestApprove(n); return; }
+  const backup = ch.content;
+  ch.content = backup.slice(0, p.start) + p.neu + backup.slice(p.end);               // पुरानो पाठ हटेर नयाँ पाठ
+  if (!(await saveChapters(p.bookId, list, 'User suggestion approved: ' + ch.title))) { ch.content = backup; return; }
+  await _sgClose(n, 'completed', '✅ स्वीकार गरियो र अध्यायमा लागू गरियो। धन्यवाद!');
+  try { if (typeof refreshInlineChapterView === 'function') refreshInlineChapterView(p.bookId); } catch (e) {}
+  toast('✅ सुझाव लागू भयो — अध्याय अपडेट भयो');
+  _sgDone(n);
+}
+window.adminSuggestConfirm = adminSuggestConfirm;
+
+async function adminSuggestReject(n) {
+  if (!(await showConfirm('यो सुझाव अस्वीकार गरेर बन्द गर्ने?', 'अस्वीकार गर्नुहोस्', 'सुझाव अस्वीकार'))) return;
+  await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!');
+  toast('सुझाव अस्वीकार गरियो'); _sgDone(n);
+}
+window.adminSuggestReject = adminSuggestReject;

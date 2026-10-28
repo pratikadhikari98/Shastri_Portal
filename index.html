@@ -322,7 +322,13 @@
           <div><div class="sett-name">किताब व्यवस्थापन</div><div class="sett-desc">थप्नुस् / सम्पादन / मेटाउनुस्</div></div>
         </div><span style="color:var(--text-3)">→</span>
       </div>
-      <div class="sett-row" onclick="adminSubjectsOpen()">
+            <div class="sett-row" onclick="adminSuggestOpen()">
+        <div class="sett-left">
+          <div class="sett-ico" style="background:#fff3e0">📨</div>
+          <div><div class="sett-name">User Request <span class="sg-badge" id="sgBadge" hidden>0</span></div><div class="sett-desc">पाठकका सुधार सुझाव — स्वीकार / अस्वीकार</div></div>
+        </div><span style="color:var(--text-3)">›</span>
+      </div>
+<div class="sett-row" onclick="adminSubjectsOpen()">
         <div class="sett-left">
           <div class="sett-ico" style="background:#e0f2f1">🏷️</div>
           <div><div class="sett-name">विषय (Subject) व्यवस्थापन</div><div class="sett-desc">नाम थप्नुस् / सम्पादन गर्नुस्</div></div>
@@ -579,6 +585,16 @@
 </div>
 
 <!-- Admin: सूचना list -->
+<!-- 📨 User Request (पाठकका सुधार सुझाव) -->
+<div class="overlay" id="adminSuggestModal" onclick="if(event.target===this)closeOv('adminSuggestModal')">
+  <div class="modal-sheet">
+    <div class="m-handle"></div>
+    <div class="m-title">📨 User Request</div>
+    <div id="adminSuggestList" style="margin:6px 0 12px;max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+    <div class="m-btns"><button class="btn-s" style="width:100%" onclick="closeOv('adminSuggestModal')">बन्द गर्नुहोस्</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="adminNoticesModal" onclick="if(event.target===this)closeOv('adminNoticesModal')">
   <div class="modal-sheet">
     <div class="m-handle"></div>
@@ -807,6 +823,7 @@
 
 <script src="js/main.js"></script>
 <script src="js/translate.js"></script>
+<script src="js/suggest.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/rich-editor.js"></script>
 <script src="js/editor-toolbar.js"></script>
