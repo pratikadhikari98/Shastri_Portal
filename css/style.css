@@ -2501,7 +2501,7 @@ body { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .borders-on .hist-item, .borders-on .form-panel, .borders-on .tr-bar, .borders-on .news-board, .borders-on .modal-sheet,
 .borders-on .neu-btn, .borders-on .hdr-btn, .borders-on .back-btn, .borders-on .subj-tab-ico, .borders-on .book-row-cover,
 .borders-on .book-row-info, .borders-on .yc-badge, .borders-on .yc-arrow, .borders-on .sett-ico, .borders-on .subj-mgr-ico,
-.borders-on .dm-item-ico, .borders-on .nav-fab-item, .borders-on .nav-fab-ico, .borders-on .m-x, .borders-on .ch-list {
+.borders-on .dm-item-ico, .borders-on .nav-fab-item, .borders-on .nav-fab-ico, .borders-on .m-x, .borders-on .ch-list, .borders-on .ch-jm-act {
   outline: 0.5px solid color-mix(in srgb, var(--bd-color, var(--accent)) 70%, transparent); outline-offset: -0.5px;
 }
 .borders-on .nav-fab-btn { outline: 1px solid #fff; outline-offset: -4px; }
@@ -2534,7 +2534,7 @@ html.borders-on.bd-grad-on :is(.year-card,.book-row,.book-card,.info-card,.note-
   outline: none !important; border: 1px solid transparent !important;
   background: linear-gradient(var(--surface-opaque), var(--surface-opaque)) padding-box, var(--bd-grad) border-box !important;
 }
-html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x) {
+html.borders-on.bd-grad-on :is(.neu-btn,.hdr-btn,.back-btn,.subj-tab-ico,.book-row-cover,.book-row-info,.yc-badge,.yc-arrow,.sett-ico,.subj-mgr-ico,.dm-item-ico,.nav-fab-item,.nav-fab-ico,.m-x,.ch-jm-act) {
   outline: none !important; border: 1px solid transparent !important;
   background: linear-gradient(135deg, var(--bg), var(--surface-high)) padding-box, var(--bd-grad) border-box !important;
 }
