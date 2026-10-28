@@ -2720,6 +2720,9 @@ mark.s-hit-doc { background: rgba(255, 193, 7, .22); color: var(--accent); font-
 @keyframes npWind { 0%, 58% { opacity: 0; transform: translate3d(-35%, 0, 0); } 66% { opacity: .85; } 80% { opacity: .7; transform: translate3d(25%, 0, 0); } 92%, 100% { opacity: 0; transform: translate3d(90%, 0, 0); } }
 .np-scene.np-paused * { animation-play-state: paused !important; }              /* स्क्रिनबाहिर हुँदा नचल्ने (ब्याट्री) */
 /* कमजोर फोन (html.lite) वा Reduce-motion मा चल्ने तह नदेखाउने — सफा तस्बिर मात्र */
+
+/* बादल हिमालको पछाडि: बादलको तहलाई आकाशको आकारको mask (sky-mask.webp) — तस्बिरसँगै cover/position मिल्ने */
+.np-cfx { position: absolute; inset: 0; -webkit-mask: url(../images/sky-mask.webp) 56% 100% / cover no-repeat; mask: url(../images/sky-mask.webp) 56% 100% / cover no-repeat; }
 /* lite मोडमा पनि बादल/चरा/हावा देखाउने — यी GPU मा चल्छन्, फोनलाई भार हुँदैन (generic lite नियमलाई यहाँ फिर्ता) */
 html.lite .np-fx .np-cl { animation-duration: var(--dur) !important; animation-delay: var(--del) !important; }
 html.lite .np-fx .np-cl u { animation-duration: 11s !important; animation-delay: var(--gd) !important; }
