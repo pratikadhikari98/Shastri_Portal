@@ -2897,3 +2897,10 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .dots-menu .lang-chip:hover { transform: none; }
 .dots-menu .lang-chip:active, .dots-menu .lang-chip.active { transform: scale(.985); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
 .dots-menu .lang-chip.active { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+
+/* ⋮ बटन: मेनु खुल्दा ✕ (दुई रेखा) */
+#dotsBtn { position: relative; }
+#dotsBtn.x-on { font-size: 0; color: transparent; }
+#dotsBtn.x-on::before, #dotsBtn.x-on::after { content: ''; position: absolute; left: 50%; top: 50%; width: 18px; height: 2.5px; border-radius: 2px; background: var(--accent); }
+#dotsBtn.x-on::before { transform: translate(-50%, -50%) rotate(45deg); }
+#dotsBtn.x-on::after  { transform: translate(-50%, -50%) rotate(-45deg); }

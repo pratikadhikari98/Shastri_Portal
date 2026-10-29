@@ -373,8 +373,12 @@ function initDotsMenu() {
   const menu = document.getElementById('dotsMenu');
   if (!btn||!menu) return;
 
+  /* मेनु खुल्दा ⋮ को ठाउँमा ✕ देखिने; ✕ छुँदा मेनु बन्द भई होममा फर्किने */
+  new MutationObserver(() => { const o = menu.classList.contains('open'); btn.classList.toggle('x-on', o); btn.setAttribute('aria-expanded', o ? 'true' : 'false'); })
+    .observe(menu, { attributes: true, attributeFilter: ['class'] });
   btn.addEventListener('click', e => {
     e.stopPropagation();
+    if (menu.classList.contains('open')) { menu.classList.remove('open'); go('home'); return; }
     menu.classList.toggle('open');
     if (menu.classList.contains('open')) setThemeOpts(false);      // हरेक पटक मेनु खुल्दा थिम बन्द अवस्थामा
   });
