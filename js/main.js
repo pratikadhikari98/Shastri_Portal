@@ -2493,8 +2493,30 @@ window.importData=importData;
 /* ════════════════════════════════════
    OVERLAY HELPERS
    ════════════════════════════════════ */
+/* Admin Panel को पङ्क्ति थिच्दा तलबाट कार्ड नआई, किताबको अध्याय जस्तै त्यही पङ्क्तिको ठीक तल खुल्ने (inline) */
+const INLINE_OV = { adminNoticesModal: 'adminNoticesModal', adminBooksModal: 'adminBooksModal', adminSuggestModal: 'adminSuggestModal', adminSubjectsModal: 'adminSubjectsModal', zipUploadModal: 'zipUploadModal' };
+function initAdminInline() {
+  const box = document.getElementById('adminPanelBox'); if (!box || box.dataset.inl) return;
+  box.dataset.inl = '1';
+  box.querySelectorAll('.sett-row').forEach(row => {
+    const m = /(?:openOv\('(\w+)'\)|(adminBooksOpen|adminSuggestOpen|adminSubjectsOpen|zipUploadOpen)\(\))/.exec(row.getAttribute('onclick') || '');
+    if (!m) return;
+    const ovId = m[1] || { adminBooksOpen: 'adminBooksModal', adminSuggestOpen: 'adminSuggestModal', adminSubjectsOpen: 'adminSubjectsModal', zipUploadOpen: 'zipUploadModal' }[m[2]];
+    const ov = document.getElementById(ovId); if (!ov || !INLINE_OV[ovId]) return;
+    const open = row.getAttribute('onclick'); row.removeAttribute('onclick');
+    ov.classList.add('ov-inline'); ov.removeAttribute('onclick');
+    row.after(ov); row.classList.add('sett-row-exp');
+    row.addEventListener('click', () => {
+      if (ov.classList.contains('open')) { closeOv(ovId); row.classList.remove('exp'); return; }
+      row.classList.add('exp'); (new Function(open))();
+      setTimeout(() => ov.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
+    });
+  });
+}
+window.initAdminInline = initAdminInline;
 function openOv(id){
   document.getElementById(id)?.classList.add('open');
+  if (INLINE_OV[id]) return;                                  // inline पङ्क्तिले history entry थप्दैन
   // Modal खुल्दा एउटा छुट्टै history entry थपिन्छ, ताकि back/swipe गर्दा
   // सिधै पेज नबदलिई पहिले modal मात्र बन्द होस्।
   if (!App_navigatingFromPopstate) history.pushState({ modal: id }, '');
@@ -2503,6 +2525,7 @@ function closeOv(id){
   const ov = document.getElementById(id);
   ov?.classList.remove('open');
   ov?.querySelector('.modal-sheet')?.classList.remove('sheet-expanded'); // अर्को पटक सामान्य आकारमै खुल्ने
+  if (INLINE_OV[id]) { document.querySelectorAll('#adminPanelBox .sett-row-exp').forEach(r => { if (r.nextElementSibling === ov) r.classList.remove('exp'); }); return; }
   // यदि यो modal ले नै history मा entry थपेको हो भने, त्यो entry हटाउने
   if (!App_navigatingFromPopstate && history.state && history.state.modal === id) {
     App_closingModalId = id;
@@ -2892,6 +2915,7 @@ function initNavFab() {
 }
 window.initNavFab = initNavFab;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNavFab); else initNavFab();
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAdminInline); else initAdminInline();
 
 /* हेडरको उचाइ CSS मा (--hdr-h): ३ डट्स मेनु, टाँसिने पट्टी आदिका लागि */
 (function () {

@@ -2864,3 +2864,12 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 /* Admin Panel को आइकन — गृह/पछाडि/खोज (नेभ बटन) जस्तै: निलो रेखा-आइकन, भित्र धसिएको गोलो-कुने बाकस */
 .sett-group .sett-ico.sett-ico-line { background: var(--bg) !important; color: var(--accent); border: 1px solid var(--divider);
   box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--surface-high) !important; border-radius: 11px; }
+
+/* Admin Panel — पङ्क्तिको ठीक तल खुल्ने (inline) विस्तार, तलबाट आउने कार्ड होइन */
+.overlay.ov-inline { position: static; inset: auto; z-index: auto; display: none; padding: 0; background: none; opacity: 1; pointer-events: auto; visibility: visible !important; transition: none !important; }
+.overlay.ov-inline.open { display: block; }
+.ov-inline .modal-sheet { max-width: none; width: 100%; max-height: none !important; height: auto; transform: none !important; opacity: 1 !important; border: 0; border-radius: 0; box-shadow: none; background: transparent; margin: 0; padding: 4px 12px 14px; }
+.ov-inline .m-handle, .ov-inline .m-title { display: none; }
+.ov-inline [style*="max-height"] { max-height: none !important; }
+.sett-row-exp > span:last-child { transition: transform .2s; }
+.sett-row-exp.exp > span:last-child { transform: rotate(90deg); }
