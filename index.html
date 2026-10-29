@@ -126,7 +126,7 @@
         <!-- थिम — छुँदा मात्र सबै विकल्प खुल्ने / फेरि छुँदा बन्द हुने -->
         <div class="dm-section" style="padding-top:6px">
           <div class="dm-item" id="themeToggleRow" role="button" tabindex="0" aria-expanded="false" aria-controls="themeOpts" onclick="toggleThemeOpts()">
-            <div class="dm-item-ico">🎨</div>
+            <div class="dm-item-ico dm-ico-line"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 2-.9 2-1.8 0-1.2-1-1.5-1-2.6 0-.9.8-1.6 1.8-1.6H17a3.5 3.5 0 0 0 3.5-3.5C20.5 6.7 16.7 3.5 12 3.5z"/><circle cx="8" cy="11" r="1"/><circle cx="11" cy="7.6" r="1"/><circle cx="15.2" cy="8.6" r="1"/></svg></div>
             <div style="flex:1"><div class="dm-item-name" data-i18n="dm_theme">थिम</div><div class="dm-item-sub" data-i18n="dm_theme_sub">बोर्डर र रङ छान्नुस्</div></div>
             <span class="dm-chev" aria-hidden="true">▾</span>
           </div>
@@ -134,7 +134,7 @@
         <div class="theme-opts" id="themeOpts"><div class="theme-opts-in">
         <div class="dm-section" style="padding-top:6px">
           <div class="dm-item" id="borderToggle" onclick="toggleBorders()">
-            <div class="dm-item-ico">🔲</div>
+            <div class="dm-item-ico dm-ico-line"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><rect x="8.5" y="8.5" width="7" height="7" rx="1.5"/></svg></div>
             <div style="flex:1"><div class="dm-item-name">नीलो बोर्डर</div><div class="dm-item-sub" id="borderToggleSub">चालु</div></div>
             <span class="dm-switch" id="borderSwitch"></span>
           </div>
@@ -160,15 +160,15 @@
         <!-- Other actions -->
         <div class="dm-section" style="padding-top:4px;border-top:1px solid var(--divider)">
           <div class="dm-item" id="shareBtn">
-            <div class="dm-item-ico">🔗</div>
+            <div class="dm-item-ico dm-ico-line"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></div>
             <div><div class="dm-item-name" data-i18n="dm_share">Website Share गर्नुस्</div></div>
           </div>
           <div class="dm-item" onclick="go('profile');document.getElementById('dotsMenu').classList.remove('open')">
-            <div class="dm-item-ico">⚙️</div>
+            <div class="dm-item-ico dm-ico-line"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></div>
             <div><div class="dm-item-name" data-i18n="dm_settings_profile">सेटिङ र Profile</div></div>
           </div>
           <div class="dm-item" onclick="exportData();document.getElementById('dotsMenu').classList.remove('open')">
-            <div class="dm-item-ico">💾</div>
+            <div class="dm-item-ico dm-ico-line"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3.5h11l3.5 3.5v13.5H5z"/><path d="M8 3.5v5h7v-5"/><rect x="8" y="13" width="8" height="7.5" rx="1"/></svg></div>
             <div><div class="dm-item-name" data-i18n="backup_export">Backup Export</div></div>
           </div>
         </div>
@@ -177,11 +177,11 @@
         <div class="dm-section" style="padding-top:4px;border-top:1px solid var(--divider)">
           <div class="dm-label">📡 <span data-i18n="dm_offline">अफलाइन</span></div>
           <div class="dm-item" id="offlineSaveBtn" onclick="saveOfflineData()">
-            <div class="dm-item-ico">📥</div>
+            <div class="dm-item-ico dm-ico-line"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v10"/><path d="M8 10.5l4 4 4-4"/><path d="M4.5 15v4.5h15V15"/></svg></div>
             <div><div class="dm-item-name" data-i18n="dm_offline_save">अफलाइनको लागि Save गर्नुस्</div><div style="font-size:0.68rem;color:var(--text-3);margin-top:1px" data-i18n="dm_offline_save_sub">सबै अध्याय फोनमै राख्नुस्</div></div>
           </div>
           <div class="dm-item" onclick="deleteOfflineData()">
-            <div class="dm-item-ico">🗑️</div>
+            <div class="dm-item-ico dm-ico-line"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V4.5h6V7"/><path d="M6.5 7l1 13h9l1-13"/><path d="M10 11v5.5M14 11v5.5"/></svg></div>
             <div><div class="dm-item-name" data-i18n="dm_offline_delete">अफलाइन डाटा हटाउनुस्</div></div>
           </div>
         </div>
@@ -190,7 +190,7 @@
         <div class="dm-section" style="padding-top:4px;border-top:1px solid var(--divider)">
           <div class="dm-label">ℹ️ <span data-i18n="dm_app_info">एप जानकारी</span></div>
           <div class="dm-item" id="updateAppBtn" onclick="updateApp()">
-            <div class="dm-item-ico">🔄</div>
+            <div class="dm-item-ico dm-ico-line"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4"/><path d="M5.5 3v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4"/><path d="M18.5 21v-4h-4"/></svg></div>
             <div>
               <div class="dm-item-name" data-i18n="dm_update">एप अपडेट गर्नुस्</div>
               <div class="dm-item-sub"><span data-i18n="dm_version">भर्जन</span> <span id="appVersionLbl"></span> · <span id="appUpdateDateLbl"></span></div>

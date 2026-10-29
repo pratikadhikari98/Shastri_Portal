@@ -2880,3 +2880,12 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 #adminPanelBox .sett-row.sett-row-exp .sett-name { text-shadow: 0 1px 0 var(--surface-high); }
 #adminPanelBox .sett-row.sett-row-exp:active, #adminPanelBox .sett-row.sett-row-exp.exp { transform: scale(.985); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
 #adminPanelBox .sett-row.sett-row-exp:active .sett-name, #adminPanelBox .sett-row.sett-row-exp.exp .sett-name { text-shadow: none; }
+
+/* ⋮ मेनु — आइकन गृह/पछाडि/खोज जस्तै रेखा-आइकन, पङ्क्ति उठेको (छुँदा दबेको), मेनु तलसम्म फैलिएको */
+.dm-item-ico.dm-ico-line { width: 34px; height: 34px; border-radius: 11px; color: var(--accent); font-size: 0; background: var(--bg);
+  box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--surface-high); }
+.dots-menu .dm-item { margin: 6px 10px; padding: 10px 10px; border-radius: 16px; border: 1px solid var(--divider); background: var(--bg);
+  box-shadow: 3px 3px 8px var(--shadow), -3px -3px 8px var(--surface-high); transition: transform .12s ease-out, box-shadow .12s ease-out !important; }
+.dots-menu .dm-item:hover { background: var(--bg); }
+.dots-menu .dm-item:active { transform: scale(.985); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
+.dots-menu.open { height: calc(100dvh - var(--hdr-h, 62px)); }
