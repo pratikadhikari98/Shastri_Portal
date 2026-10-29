@@ -1289,7 +1289,7 @@ function renderChapterListHtml(bookId) {
     } catch (e) {}
   }
   const it = document.getElementById(`chi-${bookId}-${idx}`);
-  if (it) it.classList.add('open');
+  if (it) { it.classList.add('open'); window.spApplyFixes && spApplyFixes(it); }
   if (_jump && it) {
     try { saveLastLocation(); } catch (e) {}
     // अध्यायको सुरुमै पुर्‍याउने: टाँसिने हेडर (र जम्प-बार) मुनि नलुकोस्; smooth scroll र ढिलो layout ले बीचमै नरोकियोस्
@@ -1313,7 +1313,7 @@ function toggleCh(bookId, idx, fromHistory=false) {
   // Close all first
   document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
   if (!wasOpen) {
-    item.classList.add('open');
+    item.classList.add('open'); window.spApplyFixes && spApplyFixes(item);
     // अध्याय खोल्दा history मा थप्ने — ताकि back गर्दा पहिले यो बन्द होस्, अनि मात्र माथिको ट्याब/पेजमा जाओस्
     if (!fromHistory) history.pushState({ chOpen: { bookId, idx } }, '');
   }
@@ -1464,7 +1464,7 @@ function _chSwitch(bookId, k) {
   const c = it.querySelector('.ch-read-content');
   document.querySelectorAll('.chapter-item.open').forEach(el => el.classList.remove('open'));
   _chLimit(c);                                                       // पहिलो भाग मात्र layout हुन्छ
-  it.classList.add('open');
+  it.classList.add('open'); window.spApplyFixes && spApplyFixes(it);
   const h = document.querySelector('.site-header');
   const y = it.getBoundingClientRect().top + window.scrollY - (h ? h.offsetHeight : 56);   // ठ्याक्कै हेडरमुनि — टाँसिएको जम्प-बार/मेनु उही ठाउँमा रहोस् (९px सर्ने झिलमिल नहोस्)
   window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });   // 'auto' ले html{scroll-behavior:smooth} अनुसार सर्थ्यो

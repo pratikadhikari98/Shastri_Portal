@@ -1,19 +1,24 @@
 /* ================================================
-   शास्त्री पोर्टल — पाठकको "सुधार सुझाव"
-   अध्यायको पाठ छानेर ✏️ थिचेपछि: पुरानो पाठ देखिन्छ, पाठकले नयाँ पाठ लेख्छ, एडमिनलाई "User Request" को रूपमा पुग्छ।
-   एडमिनले स्वीकार गरेमा पुरानो पाठ हटेर नयाँ पाठ नै अध्यायमा commit हुन्छ (Admin Panel → User Request)।
-   सर्भर: functions/api/suggest.js (Cloudflare Pages Function)
+   शास्त्री पोर्टल — "त्रुटि सच्याउनुहोस्" (पाठकको सानो सुधार)
+   पाठकले अध्यायको शब्द छानेर ✏️ थिच्छ → सानो पप-अपमा आफ्नो शब्द लेख्छ → तुरुन्तै उसकै फोनमा त्यो शब्द देखिन्छ
+   (फोनमै सुरक्षित रहन्छ)। साथै सुधार एडमिनको "User Request" मा जान्छ (functions/api/suggest.js → GitHub Issue);
+   एडमिनले स्वीकार गरे अध्यायमै स्थायी रूपमा बदलिन्छ। पठाउन नसकिए पछि आफैं फेरि प्रयास हुन्छ।
    ================================================ */
 (function () {
   'use strict';
-  const EP = '/api/suggest', MAIL = 'apratik055@gmail.com';
-  const LIM_OLD = 1500, LIM_NEW = 3000;
-  const LOG = 'sp_sg_log';
-  let ctx = null, sending = false;
-
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const EP = '/api/suggest', FX = 'sp_fixes', QK = 'sp_sg_q', LOG = 'sp_sg_log';
+  const LIM_OLD = 600, LIM_NEW = 1200;
+  let ctx = null;
   const $ = id => document.getElementById(id);
+  const jget = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') || d; } catch (e) { return d; } };
+  const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const norm = s => String(s).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
 
+  function parseKey(key) {                                    // chi-<bookId>-<idx>
+    const p = key.lastIndexOf('-');
+    return { bookId: key.slice(key.indexOf('-') + 1, p), idx: parseInt(key.slice(p + 1), 10) };
+  }
+  function chapterOf(bookId, idx) { return ((window.App && App.chaptersCache && App.chaptersCache[bookId]) || [])[idx] || {}; }
   function bookTitleOf(bookId) {
     try {
       for (const y of (window.App && App.data && App.data.years) || [])
@@ -21,84 +26,130 @@
     } catch (e) {}
     return '';
   }
-  const recent = () => { try { const a = JSON.parse(localStorage.getItem(LOG) || '[]'); return a.filter(t => Date.now() - t < 3600e3); } catch (e) { return []; } };
-  const logSent = () => { try { const a = recent(); a.push(Date.now()); localStorage.setItem(LOG, JSON.stringify(a)); } catch (e) {} };
 
+  /* ── DOM मा पाठ बदल्ने: textContent को [s,e) भाग → नयाँ पाठ (धेरै text node मा फैलिएको भए पनि) ── */
+  function replaceByOffsets(root, s, e, txt) {
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const hit = []; let pos = 0, n;
+    while ((n = w.nextNode())) {
+      const L = n.nodeValue.length;
+      if (pos + L > s && pos < e) hit.push({ n, from: Math.max(s - pos, 0), to: Math.min(e - pos, L) });
+      pos += L; if (pos >= e) break;
+    }
+    if (!hit.length) return false;
+    hit.forEach((x, i) => { const v = x.n.nodeValue; x.n.nodeValue = v.slice(0, x.from) + (i === 0 ? txt : '') + v.slice(x.to); });
+    return true;
+  }
+  /* old (सन्दर्भ before/after सहित) खोजेर बदल्ने */
+  function replaceByText(root, f) {
+    const tc = root.textContent;
+    let at = -1;
+    if (f.before || f.after) { const k = tc.indexOf((f.before || '') + f.old + (f.after || '')); if (k >= 0) at = k + (f.before || '').length; }
+    if (at < 0 && f.before) { const k = tc.indexOf(f.before + f.old); if (k >= 0) at = k + f.before.length; }
+    if (at < 0) at = tc.indexOf(f.old);
+    if (at < 0) return false;
+    return replaceByOffsets(root, at, at + f.old.length, f.neu);
+  }
+
+  /* ── पाठकको फोनमा सुरक्षित सुधारहरू: अध्याय खुल्दा लागू ── */
+  window.spApplyFixes = function (item) {
+    try {
+      if (!item) return;
+      const c = item.querySelector('.ch-read-content'); if (!c || c._fxDone) return;
+      c._fxDone = true;
+      const p = item.id.lastIndexOf('-'), bookId = item.id.slice(4, p), idx = parseInt(item.id.slice(p + 1), 10);
+      const title = chapterOf(bookId, idx).title || '';
+      const all = jget(FX, []), keep = [];
+      all.forEach(f => {
+        if (f.b !== bookId || f.t !== title) { keep.push(f); return; }
+        if (replaceByText(c, f)) keep.push(f);                                  // लागू भयो — राख्ने
+        else if (c.textContent.indexOf(f.neu) >= 0) { /* एडमिनले स्थायी बदलिसक्यो — अब चाहिँदैन */ }
+        else keep.push(f);                                                       // पाठ भेटिएन (अहिलेलाई राख्ने)
+      });
+      if (keep.length !== all.length) jset(FX, keep);
+    } catch (e) {}
+  };
+
+  /* ── एडमिनलाई पठाउने (चुपचाप): असफल भए queue मा राखेर पछि फेरि प्रयास ── */
+  async function flushQueue() {
+    let q = jget(QK, []); if (!q.length || !navigator.onLine) return;
+    const rest = [];
+    for (const it of q) {
+      try {
+        const ac = new AbortController(), to = setTimeout(() => ac.abort(), 15000);
+        const res = await fetch(EP, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(it.d), signal: ac.signal });
+        clearTimeout(to);
+        if (res.ok) continue;                                                    // पुग्यो
+        if (res.status >= 400 && res.status < 500 && res.status !== 404 && res.status !== 405) continue;   // अमान्य/सीमा — फेरि नपठाउने
+        it.n = (it.n || 0) + 1; if (it.n < 8) rest.push(it);                      // सेवा अझै तयार छैन — पछि फेरि
+      } catch (e) { it.n = (it.n || 0) + 1; if (it.n < 8) rest.push(it); }
+    }
+    jset(QK, rest);
+  }
+  function enqueue(d) {
+    const recent = jget(LOG, []).filter(t => Date.now() - t < 3600e3);
+    if (recent.length >= 8) return;                                              // स्प्याम सीमा (चुपचाप)
+    recent.push(Date.now()); jset(LOG, recent);
+    const q = jget(QK, []); q.push({ d, n: 0, t: Date.now() }); jset(QK, q.slice(-20));
+    flushQueue();
+  }
+  window.addEventListener('online', flushQueue);
+  setTimeout(flushQueue, 4000);
+
+  /* ── सानो पप-अप ── */
   function ensureOv() {
     if ($('sgOv')) return;
     const ov = document.createElement('div');
-    ov.className = 'overlay overlay-top'; ov.id = 'sgOv';
-    ov.addEventListener('click', e => { if (e.target === ov && !sending) closeOv('sgOv'); });
+    ov.className = 'overlay overlay-top sg-ovc'; ov.id = 'sgOv';
+    ov.addEventListener('click', e => { if (e.target === ov) closeOv('sgOv'); });
     ov.innerHTML =
-      '<div class="modal-sheet sg-sheet">' +
-        '<div class="m-title">✏️ सुधार सुझाव</div>' +
-        '<div class="sg-hint">तपाईंले छानेको पाठ बदल्न सुझाव पठाउनुहोस्। एडमिनले जाँचेर स्वीकार गरेपछि मात्र अध्यायमा परिवर्तन हुन्छ।</div>' +
-        '<label class="f-label">पुरानो पाठ (तपाईंले छानेको)</label><div class="sg-old" id="sgOld"></div>' +
-        '<label class="f-label" for="sgNew">नयाँ पाठ (तपाईंको सुझाव)</label><textarea class="f-textarea sg-new" id="sgNew" rows="4" maxlength="' + LIM_NEW + '"></textarea>' +
-        '<label class="f-label" for="sgNote">कारण / टिप्पणी (वैकल्पिक)</label><input class="f-input" id="sgNote" maxlength="300" placeholder="जस्तै: वर्णविन्यास सच्याएको">' +
-        '<label class="f-label" for="sgName">तपाईंको नाम (वैकल्पिक)</label><input class="f-input" id="sgName" maxlength="80" autocomplete="name">' +
+      '<div class="modal-sheet sg-pop">' +
+        '<div class="sg-pop-t">✏️ त्रुटि सच्याउनुहोस्</div>' +
+        '<input class="f-input sg-pop-in" id="sgNew" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="' + LIM_NEW + '" enterkeyhint="done">' +
         '<input type="text" id="sgHp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">' +
-        '<div class="sg-msg" id="sgMsg" role="status"></div>' +
-        '<div class="m-btns"><button type="button" class="btn-s" id="sgCancel">रद्द</button><button type="button" class="btn-p" id="sgSend">पठाउनुहोस्</button></div>' +
+        '<div class="sg-pop-err" id="sgMsg" role="status"></div>' +
+        '<div class="sg-pop-btns"><button type="button" class="btn-s" id="sgCancel">रद्द</button><button type="button" class="btn-p" id="sgSend">ठीक छ</button></div>' +
       '</div>';
     document.body.appendChild(ov);
-    $('sgCancel').onclick = () => { if (!sending) closeOv('sgOv'); };
+    $('sgCancel').onclick = () => closeOv('sgOv');
     $('sgSend').onclick = submit;
-  }
-  const msg = (t, kind, html) => { const m = $('sgMsg'); m.className = 'sg-msg ' + (kind || ''); if (html) m.innerHTML = t; else m.textContent = t || ''; };
-
-  function mailFallback() {
-    const c = ctx; if (!c) return '';
-    const body = 'पुस्तक: ' + c.bookTitle + '\nअध्याय: ' + c.chTitle + '\n\nपुरानो पाठ:\n' + c.old + '\n\nनयाँ पाठ:\n' + ($('sgNew').value || '');
-    return 'mailto:' + MAIL + '?subject=' + encodeURIComponent('सुधार सुझाव: ' + c.chTitle) + '&body=' + encodeURIComponent(body);
+    $('sgNew').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
   }
 
   window.openSuggest = function (info) {
-    if (!info || !info.key || !info.old) return;
-    const p = info.key.lastIndexOf('-');                                   // chi-<bookId>-<idx>
-    const bookId = info.key.slice(info.key.indexOf('-') + 1, p), idx = parseInt(info.key.slice(p + 1), 10);
-    const ch = (window.App && App.chaptersCache && App.chaptersCache[bookId] || [])[idx] || {};
-    let old = String(info.old).replace(/\u00a0/g, ' ').replace(/^\s+|\s+$/g, '');
+    if (!info || !info.key || !info.el) return;
+    const old = String(info.old || '').replace(/\u00a0/g, ' ').replace(/^\s+|\s+$/g, '');
     if (!old) return;
-    if (old.length > LIM_OLD) { if (window.toast) toast('⚠️ छोटो भाग छान्नुहोस् (अधिकतम ' + LIM_OLD + ' अक्षर)'); return; }
-    ctx = { bookId, idx, chTitle: ch.title || '', bookTitle: bookTitleOf(bookId), old, before: info.before || '', after: info.after || '', s: info.s || 0, total: info.total || 0 };
+    if (old.length > LIM_OLD) { if (window.toast) toast('⚠️ छोटो भाग (शब्द/वाक्य) छान्नुहोस्'); return; }
+    const k = parseKey(info.key), ch = chapterOf(k.bookId, k.idx);
+    ctx = { el: info.el, key: info.key, bookId: k.bookId, idx: k.idx, chTitle: ch.title || '', bookTitle: bookTitleOf(k.bookId),
+            old, before: info.before || '', after: info.after || '', s: info.s || 0, e: info.e != null ? info.e : (info.s || 0) + old.length, total: info.total || 0 };
     ensureOv();
-    $('sgOld').textContent = old; $('sgNew').value = old; $('sgNote').value = ''; msg('');
-    try { $('sgName').value = localStorage.getItem('sp_sg_name') || ''; } catch (e) {}
-    $('sgSend').disabled = false; sending = false;
+    $('sgNew').value = old; $('sgMsg').textContent = '';
     openOv('sgOv');
-    setTimeout(() => { const t = $('sgNew'); try { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } catch (e) {} }, 320);
+    setTimeout(() => { const t = $('sgNew'); try { t.focus(); t.select(); } catch (e) {} }, 300);
   };
 
-  async function submit() {
-    if (sending || !ctx) return;
+  function submit() {
+    if (!ctx) return;
     const nw = $('sgNew').value.replace(/\u00a0/g, ' ').trim();
-    if (!nw) return msg('नयाँ पाठ लेख्नुहोस्।', 'err');
-    if (nw === ctx.old) return msg('नयाँ पाठ पुरानोभन्दा फरक हुनुपर्छ।', 'err');
-    if (recent().length >= 5) return msg('एक घण्टामा ५ सुझावसम्म मात्र पठाउन मिल्छ। केहीबेरपछि प्रयास गर्नुहोस्।', 'err');
-    sending = true; $('sgSend').disabled = true; msg('⏳ पठाउँदैछु…');
-    const name = $('sgName').value.trim();
-    try { localStorage.setItem('sp_sg_name', name); } catch (e) {}
-    const body = Object.assign({}, ctx, { new: nw, note: $('sgNote').value.trim(), name, hp: $('sgHp').value });
+    if (!nw) { $('sgMsg').textContent = 'शब्द लेख्नुहोस्।'; return; }
+    if (nw === ctx.old) { $('sgMsg').textContent = 'पुरानोभन्दा फरक लेख्नुहोस्।'; return; }
+    const c = ctx; ctx = null;
+    // १) तुरुन्तै पाठकको फोनमा देखाउने
+    let ok = false;
     try {
-      const ac = new AbortController(), to = setTimeout(() => ac.abort(), 15000);
-      const res = await fetch(EP, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: ac.signal });
-      clearTimeout(to);
-      let j = null; try { j = await res.json(); } catch (e) {}
-      if (res.ok && j && j.ok) {
-        logSent(); sending = false; closeOv('sgOv');
-        if (window.toast) toast('✅ सुझाव पठाइयो — एडमिनको स्वीकृतिपछि लागू हुन्छ');
-        return;
-      }
-      const code = (j && j.error) || String(res.status);
-      let t = 'सुझाव पठाउन सकिएन।';
-      if (code === 'not_configured' || res.status === 404 || res.status === 405) t = 'सुझाव सेवा अहिले चालु भएको छैन।';
-      else if (code === 'rate_limited') t = 'आजको सीमा पुग्यो। भोलि फेरि प्रयास गर्नुहोस्।';
-      else if (code === 'invalid') t = 'सुझाव मिलेन — पाठ जाँच्नुहोस्।';
-      msg(esc(t) + ' <a href="' + esc(mailFallback()) + '">इमेलबाट पठाउनुहोस्</a>', 'err', true);
-    } catch (e) {
-      msg((e && e.name === 'AbortError' ? 'ढिलो भयो। ' : 'इन्टरनेट जाँच्नुहोस्। ') + '<a href="' + esc(mailFallback()) + '">इमेलबाट पठाउनुहोस्</a>', 'err', true);
-    }
-    sending = false; $('sgSend').disabled = false;
+      const cur = c.el.textContent.slice(c.s, c.e);
+      if (norm(cur) === norm(c.old)) ok = replaceByOffsets(c.el, c.s, c.s + cur.length, nw);
+      if (!ok) ok = replaceByText(c.el, { old: c.old, neu: nw, before: c.before, after: c.after });
+    } catch (e) {}
+    // २) फोनमा सुरक्षित (अध्याय फेरि खोल्दा पनि रहोस्)
+    const fx = jget(FX, []); fx.push({ b: c.bookId, t: c.chTitle, old: c.old, neu: nw, before: c.before, after: c.after, at: Date.now() });
+    jset(FX, fx.slice(-200));
+    // ३) एडमिनलाई चुपचाप
+    enqueue({ v: 1, bookId: c.bookId, idx: c.idx, chTitle: c.chTitle, bookTitle: c.bookTitle, old: c.old, new: nw,
+              before: c.before, after: c.after, s: c.s, total: c.total, hp: $('sgHp').value });
+    closeOv('sgOv');
+    if (window.toast) toast(ok ? '✅ सच्याइयो' : '✅ सुरक्षित भयो');
   }
 })();

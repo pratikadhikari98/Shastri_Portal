@@ -126,7 +126,7 @@
   }
   function openSuggestFromSel() {
     if (!window.openSuggest || !cur.key) return;
-    const info = { key: cur.key, old: cur.raw || cur.text, before: cur.before, after: cur.after, s: cur.s, total: cur.total };
+    const info = { key: cur.key, el: cur.el, old: cur.raw || cur.text, before: cur.before, after: cur.after, s: cur.s, e: cur.e, total: cur.total };
     done();                                                           // छनौट/टुलबार हटाउने (फारम खुल्छ)
     window.openSuggest(info);
   }

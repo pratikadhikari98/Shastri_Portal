@@ -2822,3 +2822,14 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .sg-ctx ins { background: color-mix(in srgb, #2E9E5B 22%, transparent); text-decoration: none; font-weight: 700; }
 .sg-acts { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; } .sg-acts .btn-p { flex: 1; padding: 10px; }
 .sg-badge { display: inline-block; min-width: 18px; padding: 0 6px; margin-left: 6px; border-radius: 99px; background: #E53935; color: #fff; font-size: 0.68rem; font-weight: 800; text-align: center; line-height: 18px; vertical-align: middle; }
+
+/* ✏️ त्रुटि सच्याउनुहोस् — सानो पप-अप (बीचमा) */
+.overlay.sg-ovc { align-items: center; justify-content: center; padding: 20px; }
+.overlay.sg-ovc .modal-sheet.sg-pop { max-width: 330px; width: 100%; border-radius: 20px; border: 1px solid var(--border); padding: 16px 16px 14px; transform: scale(0.96); max-height: none; }
+.overlay.sg-ovc.open .modal-sheet.sg-pop { transform: none; }
+.sg-pop-t { font-weight: 800; font-size: 1rem; color: var(--text-1); margin-bottom: 10px; }
+.sg-pop-in { font-size: 1rem; margin-bottom: 4px; }
+.sg-pop-err { min-height: 1.1em; font-size: 0.76rem; color: #D6303F; margin-bottom: 6px; }
+.sg-pop-btns { display: flex; gap: 8px; }
+.sg-pop-btns .btn-p { flex: 1; padding: 10px; }
+.sg-pop-btns .btn-s { padding: 10px 16px; }
