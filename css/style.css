@@ -2868,8 +2868,13 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 /* Admin Panel — पङ्क्तिको ठीक तल खुल्ने (inline) विस्तार, तलबाट आउने कार्ड होइन */
 .overlay.ov-inline { position: static; inset: auto; z-index: auto; display: none; padding: 0; background: none; opacity: 1; pointer-events: auto; visibility: visible !important; transition: none !important; }
 .overlay.ov-inline.open { display: block; }
-.ov-inline .modal-sheet { max-width: none; width: 100%; max-height: none !important; height: auto; transform: none !important; opacity: 1 !important; border: 0; border-radius: 0; box-shadow: none; background: transparent; margin: 0; padding: 4px 12px 14px; }
+.ov-inline .modal-sheet { max-width: none; width: 100%; max-height: none !important; height: auto; transform: none; opacity: 1; border: 0; border-radius: 0; box-shadow: none; background: transparent; margin: 0; padding: 4px 12px 14px; }
 .ov-inline .m-handle, .ov-inline .m-title { display: none; }
 .ov-inline [style*="max-height"] { max-height: none !important; }
 .sett-row-exp > span:last-child { transition: transform .2s; }
 .sett-row-exp.exp > span:last-child { transform: rotate(90deg); }
+
+/* inline खुल्दा: ठाउँ झटपट बन्छ, भित्रको सामग्री मात्र हल्का माथि उठेर आउने (transform/opacity — GPU, झट्का नहुने) */
+.overlay.ov-inline.open .modal-sheet { animation: ovRise .32s cubic-bezier(.2,.8,.25,1) both; }
+@keyframes ovRise { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
+@media (prefers-reduced-motion: reduce) { .overlay.ov-inline.open .modal-sheet { animation: none; } }
