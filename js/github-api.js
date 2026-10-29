@@ -3,6 +3,7 @@
    ================================================
    - Firebase पूरै हटाइयो। Admin = GitHub token भएको व्यक्ति मात्र।
    - Token तपाईंको browser (localStorage) मा मात्र बस्छ — कोड/GitHub मा कहिल्यै जाँदैन।
+   - वा (सिफारिस): PIN/Fingerprint लगइन — token Cloudflare को Secret मा बस्छ, फोनमा हुँदैन (functions/api/admin)।
    - सबै परिवर्तन यही repo मा commit बनेर जान्छ (GitHub Pages ले १–२ मिनेटमा देखाउँछ)।
    ================================================ */
 'use strict';
@@ -18,6 +19,8 @@ const GITHUB_CONFIG = {
 const GH = {
   TOKEN_KEY: 'sp_gh_token',
   REPO_KEY:  'sp_gh_repo',
+  MODE_KEY:  'sp_gh_mode',      // 'proxy' = PIN/Fingerprint लगइन (token Cloudflare मा, फोनमा छैन)
+  SESS_KEY:  'sp_admin_sess',   // { token, exp } — १२ घण्टाको सेसन
   _queue: Promise.resolve(),
 
   /* ── Repo config ── */
@@ -40,8 +43,22 @@ const GH = {
     localStorage.setItem(GH.REPO_KEY, JSON.stringify({ owner, repo, branch: branch || 'main' }));
   },
 
+  /* ── PIN/Fingerprint सेसन (proxy मोड): सबै GitHub कल /api/admin/gh/ मार्फत जान्छ ── */
+  proxy() { return localStorage.getItem(GH.MODE_KEY) === 'proxy'; },
+  sessionToken() {
+    try { const s = JSON.parse(localStorage.getItem(GH.SESS_KEY) || 'null'); if (s && s.token && s.exp * 1000 > Date.now()) return s.token; } catch (e) {}
+    return '';
+  },
+  setSession(token, exp) {
+    GH.clearToken();
+    localStorage.setItem(GH.MODE_KEY, 'proxy');
+    localStorage.setItem(GH.SESS_KEY, JSON.stringify({ token, exp }));
+  },
+  base() { return GH.proxy() ? '/api/admin/gh/' : 'https://api.github.com/'; },
+
   /* ── Token ── */
   token() {
+    if (GH.proxy()) return GH.sessionToken();
     return localStorage.getItem(GH.TOKEN_KEY) || sessionStorage.getItem(GH.TOKEN_KEY) || '';
   },
   setToken(t, remember = true) {
@@ -51,13 +68,16 @@ const GH = {
   clearToken() {
     localStorage.removeItem(GH.TOKEN_KEY);
     sessionStorage.removeItem(GH.TOKEN_KEY);
+    localStorage.removeItem(GH.MODE_KEY);
+    localStorage.removeItem(GH.SESS_KEY);
   },
 
   /* ── Low-level request ── */
   async req(path, opts = {}, tokenOverride) {
     const { owner, repo } = GH.cfg();
     if (!owner || !repo) throw new Error('GitHub repo (username/repo) राखिएको छैन');
-    const url = path.startsWith('http') ? path : `https://api.github.com/repos/${owner}/${repo}/${path}`;
+    let url = path.startsWith('http') ? path : `${GH.base()}repos/${owner}/${repo}/${path}`;
+    if (GH.proxy() && url.startsWith('https://api.github.com/')) url = '/api/admin/gh/' + url.slice('https://api.github.com/'.length);
     const t = tokenOverride || GH.token();
     const res = await fetch(url, {
       ...opts,
@@ -74,7 +94,7 @@ const GH = {
   async errMsg(res) {
     let m = '';
     try { m = (await res.json()).message || ''; } catch (e) {}
-    if (res.status === 401) return 'Token गलत वा म्याद सकिएको छ';
+    if (res.status === 401) return GH.proxy() ? 'सेसन सकियो — PIN वा Fingerprint ले फेरि खोल्नुस्' : 'Token गलत वा म्याद सकिएको छ';
     if (res.status === 403) return 'अनुमति छैन वा rate limit पुग्यो — ' + m;
     if (res.status === 404) return 'फाइल/repo भेटिएन (token मा यो repo को access छ?)';
     return `GitHub ${res.status}: ${m}`;
@@ -86,7 +106,7 @@ const GH = {
     const o = owner || cfg.owner, r = repo || cfg.repo;
     if (!o || !r) return { ok: false, error: 'GitHub username र repo नाम आवश्यक छ' };
     try {
-      const res = await fetch(`https://api.github.com/repos/${o}/${r}`, {
+      const res = await fetch(`${GH.base()}repos/${o}/${r}`, {
         cache: 'no-store',
         headers: { 'Accept': 'application/vnd.github+json', 'Authorization': 'Bearer ' + token }
       });

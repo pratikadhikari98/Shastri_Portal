@@ -1,7 +1,7 @@
 // शास्त्री पोर्टल — Service Worker v25
 // ⚡ Speed: app shell/फन्ट/फोटो = STALE-WHILE-REVALIDATE (cache बाट तुरुन्तै, पछाडि ताजा तान्ने)
 //    data/* = network-first तर ढिलो नेटवर्कमा २.५s पछि cache। कोड अपडेट गर्दा APP_CACHE को नम्बर बढाउनुस्।
-const APP_CACHE      = 'shastri-app-v236-20261029'; // App shell — नम्बर + मिति (YYYYMMDD)
+const APP_CACHE      = 'shastri-app-v237-20261029'; // App shell — नम्बर + मिति (YYYYMMDD)
 const OFFLINE_CACHE  = 'shastri-offline-v2';  // User-triggered "Save for offline" content
 const DATA_CACHE     = 'shastri-data-v2';     // data/* (अध्याय आदि) — app version बदलिँदा पनि मेटिँदैन
 
@@ -59,6 +59,7 @@ self.addEventListener('fetch', e => {
   // GitHub API (Admin को सम्पादन) र लेख्ने (PUT/POST/DELETE) request लाई कहिल्यै नछेक्ने
   if (e.request.method !== 'GET') return;
   if (new URL(e.request.url).hostname === 'api.github.com') return;
+  if (new URL(e.request.url).pathname.startsWith('/api/')) return;      // Cloudflare Functions (/api/admin, /api/suggest) कहिल्यै cache नगर्ने
   const url = e.request.url;
   const isData = url.includes('/data/');
 

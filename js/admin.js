@@ -60,11 +60,129 @@ function openAdminLogin() {
   document.getElementById('adminGhOwner').value = cfg.owner || '';
   document.getElementById('adminGhRepo').value  = cfg.repo  || '';
   document.getElementById('adminGhToken').value = '';
-  const err = document.getElementById('adminGhError');
-  err.style.display = 'none';
+  document.getElementById('adminGhError').style.display = 'none';
+  document.getElementById('adminPin').value = '';
+  document.getElementById('adminPinError').style.display = 'none';
+  /* सर्भर (Cloudflare) मा PIN/Fingerprint सेटअप भएको छ भने त्यही देखाउने, नत्र पुरानो token फारम */
+  window.__adminModeChosen = false;
+  adminLoginMode(localStorage.getItem('sp_admin_fn') === '1' ? 'pin' : 'token');
   openOv('adminLoginModal');
+  fetch('/api/admin/status', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
+    const on = !!(j && j.configured);
+    localStorage.setItem('sp_admin_fn', on ? '1' : '0');
+    document.getElementById('adminToPin').style.display = on ? '' : 'none';
+    if (on && !window.__adminModeChosen) adminLoginMode('pin');
+    if (!on) adminLoginMode('token');
+  }).catch(() => {});
 }
 window.openAdminLogin = openAdminLogin;
+
+/* 'pin' (PIN/Fingerprint) वा 'token' (पुरानो) फारम */
+function adminLoginMode(m, byUser) {
+  const pin = m === 'pin';
+  if (byUser) window.__adminModeChosen = true;                 // हातले छानेको मोड सर्भरको जवाफले नबदलियोस्
+  const show = (id, on) => { const e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; };
+  show('adminPinBox', pin); show('adminPinBtns', pin); show('adminTokenBox', !pin); show('adminTokenBtns', !pin);
+  show('adminToPin', !pin && localStorage.getItem('sp_admin_fn') === '1');
+  show('adminFpBtn', pin && !!localStorage.getItem(FP_KEY) && !!window.PublicKeyCredential);
+  if (pin) setTimeout(() => { const e = document.getElementById('adminPin'); if (e) e.focus(); }, 150);
+}
+window.adminLoginMode = adminLoginMode;
+
+/* ── PIN लगइन ── */
+async function adminPinLogin() {
+  const pin = document.getElementById('adminPin').value.trim();
+  const err = document.getElementById('adminPinError'), btn = document.getElementById('adminPinBtn');
+  const bad = m => { err.textContent = '❌ ' + m; err.style.display = 'block'; };
+  err.style.display = 'none';
+  if (!pin) return bad('PIN लेख्नुस्');
+  btn.disabled = true; btn.textContent = 'जाँच्दैछ…';
+  try {
+    const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }) });
+    const j = await res.json().catch(() => ({}));
+    if (res.ok && j.token) return await adminProxyIn(j);
+    if (j.error === 'wrong_pin') bad('PIN गलत छ — ' + j.left + ' प्रयास बाँकी');
+    else if (res.status === 429) bad('धेरै गलत प्रयास — ' + adminWait(j.retry) + ' पछि फेरि प्रयास गर्नुस्');
+    else if (res.status === 503) bad('Cloudflare मा सेटअप पूरा भएको छैन');
+    else bad('सर्भर समस्या (' + res.status + ')');
+  } catch (e) { bad('नेटवर्क समस्या'); }
+  finally { btn.disabled = false; btn.textContent = '🔓 खोल्नुस्'; document.getElementById('adminPin').value = ''; }
+}
+window.adminPinLogin = adminPinLogin;
+const adminWait = s => s >= 3600 ? Math.ceil(s / 3600) + ' घण्टा' : Math.ceil(s / 60) + ' मिनेट';
+
+async function adminProxyIn(j) {
+  GH.setSession(j.token, j.exp);
+  GH.saveCfg(j.owner, String(j.repo).split('/')[1], 'main');
+  document.getElementById('adminPin').value = '';
+  closeOv('adminLoginModal');
+  await activateAdmin(j.owner);
+}
+
+/* ── Fingerprint (फोनको आफ्नै स्क्यानर — WebAuthn; सर्भरले सार्वजनिक कुञ्जीले जाँच्छ) ── */
+const FP_KEY = 'sp_fp_id';
+const _b64u = buf => { const b = new Uint8Array(buf); let s = ''; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+const _unb64u = t => { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; const bin = atob(t), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+
+async function adminFpLogin() {
+  const err = document.getElementById('adminPinError');
+  const bad = m => { err.textContent = '❌ ' + m; err.style.display = 'block'; };
+  err.style.display = 'none';
+  const id = localStorage.getItem(FP_KEY);
+  if (!id || !window.PublicKeyCredential) return bad('यो फोनमा Fingerprint राखिएको छैन — PIN प्रयोग गर्नुस्');
+  try {
+    const c = await (await fetch('/api/admin/challenge', { method: 'POST' })).json();
+    const cred = await navigator.credentials.get({ publicKey: {
+      challenge: new TextEncoder().encode(c.challenge), rpId: location.hostname,
+      allowCredentials: [{ type: 'public-key', id: _unb64u(id) }], userVerification: 'required', timeout: 60000
+    } });
+    const r = cred.response;
+    const res = await fetch('/api/admin/fp-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      id: _b64u(cred.rawId), clientDataJSON: _b64u(r.clientDataJSON), authenticatorData: _b64u(r.authenticatorData), signature: _b64u(r.signature)
+    }) });
+    const j = await res.json().catch(() => ({}));
+    if (res.ok && j.token) return await adminProxyIn(j);
+    bad('Fingerprint मिलेन — PIN प्रयोग गर्नुस्');
+  } catch (e) {
+    bad(e && e.name === 'NotAllowedError' ? 'Fingerprint रद्द भयो वा मिलेन — फेरि प्रयास गर्नुस् वा PIN प्रयोग गर्नुस्' : 'Fingerprint चलेन — PIN प्रयोग गर्नुस्');
+  }
+}
+window.adminFpLogin = adminFpLogin;
+
+async function adminFpRegister() {
+  const t = GH.sessionToken();
+  if (!t) { toast('⚠️ पहिले PIN ले Admin खोल्नुस्'); return; }
+  if (!window.PublicKeyCredential) { toast('⚠️ यो फोन/browser मा Fingerprint समर्थन छैन'); return; }
+  try {
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'शास्त्री पोर्टल', id: location.hostname },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'admin', displayName: 'Admin' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+      attestation: 'none', timeout: 60000
+    } });
+    const pk = cred.response.getPublicKey && cred.response.getPublicKey();
+    if (!pk) { toast('⚠️ यो फोनले Fingerprint कुञ्जी दिन सकेन'); return; }
+    const id = _b64u(cred.rawId);
+    const res = await fetch('/api/admin/fp-register', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t }, body: JSON.stringify({ id, publicKey: _b64u(pk) }) });
+    if (!res.ok) { toast('⚠️ Fingerprint राख्न सकिएन (' + res.status + ')'); return; }
+    localStorage.setItem(FP_KEY, id);
+    toast('✅ Fingerprint राखियो — अब यसले खोल्न मिल्छ');
+    renderAdminUI();
+  } catch (e) {
+    toast(e && e.name === 'NotAllowedError' ? 'Fingerprint राख्न रद्द भयो' : '⚠️ Fingerprint राख्न सकिएन');
+  }
+}
+async function adminFpRemove() {
+  const id = localStorage.getItem(FP_KEY), t = GH.sessionToken();
+  if (t) { try { await fetch('/api/admin/fp-remove', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t }, body: JSON.stringify({ id }) }); } catch (e) {} }
+  localStorage.removeItem(FP_KEY);
+  toast('🗑️ Fingerprint हटाइयो');
+  renderAdminUI();
+}
+function adminFpToggle() { return localStorage.getItem(FP_KEY) ? adminFpRemove() : adminFpRegister(); }
+window.adminFpToggle = adminFpToggle;
 
 async function adminConnect() {
   const owner  = document.getElementById('adminGhOwner').value.trim();
@@ -107,6 +225,16 @@ async function activateAdmin(login) {
 
 /* पेज खुल्दा — पहिले नै token सुरक्षित छ भने चुपचाप जाँचेर Admin बनाउने */
 async function adminAutoLogin() {
+  if (GH.proxy()) {                                   // PIN/Fingerprint को सेसन (१२ घण्टा)
+    const st = GH.sessionToken();
+    if (!st) { GH.clearToken(); return; }              // सेसन सकियो — चुपचाप; Login थिचेर PIN/Fingerprint
+    try {
+      const r = await fetch('/api/admin/session', { headers: { 'Authorization': 'Bearer ' + st }, cache: 'no-store' });
+      if (r.ok) { const j = await r.json(); await activateAdmin(j.owner); }
+      else { GH.clearToken(); toast('⚠️ सेसन सकियो — PIN वा Fingerprint ले फेरि खोल्नुस्'); }
+    } catch (e) {}
+    return;
+  }
   const t = GH.token();
   if (!t) return;
   const r = await GH.verify(t);
@@ -124,6 +252,12 @@ function renderAdminUI() {
     if (nameEl) nameEl.textContent = App.adminUser ? '@' + App.adminUser.login : '';
   }
   document.body.classList.toggle('is-admin', App.isAdmin);
+  const fpRow = document.getElementById('adminFpRow');                        // Fingerprint राख्ने/हटाउने पंक्ति
+  if (fpRow) {
+    fpRow.style.display = (App.isAdmin && GH.proxy() && window.PublicKeyCredential) ? '' : 'none';
+    const fpName = document.getElementById('adminFpName');
+    if (fpName) fpName.textContent = localStorage.getItem(FP_KEY) ? 'Fingerprint हटाउनुस्' : 'Fingerprint राख्नुस्';
+  }
   renderAdminNoticeList();
 }
 

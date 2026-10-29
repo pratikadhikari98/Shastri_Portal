@@ -7,6 +7,20 @@
 const DEFAULT_REPO = 'pratikadhikari98/Shastri_Portal';
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' } });
 
+/* Admin सेसन (functions/api/admin/[[path]].js ले बनाएको spa1.<exp>.<how>.<sig>) जाँच */
+async function validSession(env, token) {
+  if (!env.SESSION_SECRET) return false;
+  const p = token.split('.'), exp = parseInt(p[1], 10);
+  if (p.length !== 4 || !exp || exp * 1000 < Date.now()) return false;
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(env.SESSION_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(p.slice(0, 3).join('.'))));
+  let b = ''; for (let i = 0; i < sig.length; i++) b += String.fromCharCode(sig[i]);
+  const want = btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  let d = want.length ^ p[3].length; for (let i = 0; i < want.length; i++) d |= want.charCodeAt(i) ^ (p[3].charCodeAt(i) || 0);
+  return d === 0;
+}
+
 export async function onRequestPost({ request, env }) {
   try {
     const url = new URL(request.url), origin = request.headers.get('Origin');
@@ -22,11 +36,15 @@ export async function onRequestPost({ request, env }) {
     const repo = env.GH_REPO || DEFAULT_REPO, api = 'https://api.github.com/repos/' + repo;
     const ua = { 'Accept': 'application/vnd.github+json', 'User-Agent': 'shastri-portal-suggest' };
 
-    // १) माग गर्ने साँच्चै admin (push अनुमति) हो?
-    const who = await fetch(api, { headers: { ...ua, 'Authorization': 'Bearer ' + m[1] } });
-    if (!who.ok) return json({ error: 'forbidden' }, 403);
-    const wj = await who.json();
-    if (!wj.permissions || !wj.permissions.push) return json({ error: 'forbidden' }, 403);
+    // १) माग गर्ने साँच्चै admin हो? — PIN/Fingerprint को सेसन (/api/admin) वा GitHub token (push अनुमति) दुवै चल्छ
+    if (/^spa1\.\d+\.(pin|fp)\./.test(m[1])) {
+      if (!(await validSession(env, m[1]))) return json({ error: 'forbidden' }, 403);
+    } else {
+      const who = await fetch(api, { headers: { ...ua, 'Authorization': 'Bearer ' + m[1] } });
+      if (!who.ok) return json({ error: 'forbidden' }, 403);
+      const wj = await who.json();
+      if (!wj.permissions || !wj.permissions.push) return json({ error: 'forbidden' }, 403);
+    }
 
     // २) "suggestion" label भएको सामान्य Issue हो? (अरू कुनै Issue/PR बन्द नगर्ने)
     const gh = { ...ua, 'Authorization': 'Bearer ' + env.GH_TOKEN, 'Content-Type': 'application/json' };
