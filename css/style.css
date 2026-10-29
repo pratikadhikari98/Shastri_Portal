@@ -2919,3 +2919,5 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 #adminLoginBox .sett-row { position: relative; margin: 8px 10px; border-radius: 16px; border: 1px solid var(--divider); background: var(--bg);
   box-shadow: 3px 3px 8px var(--shadow), -3px -3px 8px var(--surface-high); transition: transform .12s ease-out, box-shadow .12s ease-out; }
 #adminLoginBox .sett-row:active { transform: scale(.985); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
+
+.sett-grp-lbl .grp-ico { vertical-align: -3px; color: var(--accent); margin-right: 2px; }
