@@ -150,7 +150,7 @@
   }
 
   window.openSuggest = function (info) {
-    if (!info || !info.key || !info.el) return;
+    if (!info || !info.key || !info.el || (window.App && App.isAdmin)) return;
     const old = String(info.old || '').replace(/\u00a0/g, ' ').replace(/^\s+|\s+$/g, '');
     if (!old) return;
     if (old.length > LIM_OLD) { if (window.toast) toast('⚠️ छोटो भाग (शब्द/वाक्य) छान्नुहोस्'); return; }

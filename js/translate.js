@@ -73,7 +73,7 @@
       b.innerHTML = grip +
         '<div class="tr-grp">' + tlBtn('ne', 'नेपालीमा अनुवाद', 'ने') + tlBtn('en', 'English मा अनुवाद', 'अं') + tlBtn('sa', 'संस्कृतमा अनुवाद', 'सं') + '</div>' +
         (cur.el && cur.key ? '<div class="tr-grp">' + nb('data-mk="fc"', 'अक्षर रङ्गिन बनाउने', '<span class="tr-ico-fc">अ</span>') + nb('data-mk="hl"', 'हाइलाइट गर्ने', '<span class="tr-ico-hl">अ</span>') + '</div>' : '') +
-        '<div class="tr-grp">' + nb('data-act="copy"', 'कपी गर्ने', ICO_COPY) + nb('data-act="all"', 'सबै पाठ छान्ने', 'सब') + '</div>' + (cur.el && cur.key ? '<div class="tr-grp">' + nb('data-act="suggest"', 'सुधार सुझाव (पाठ बदल्न)', '<span class="tr-ico-sg">✏️</span>') + '</div>' : '') + outHtml();
+        '<div class="tr-grp">' + nb('data-act="copy"', 'कपी गर्ने', ICO_COPY) + nb('data-act="all"', 'सबै पाठ छान्ने', 'सब') + '</div>' + (cur.el && cur.key && !(window.App && App.isAdmin) ? '<div class="tr-grp">' + nb('data-act="suggest"', 'सुधार सुझाव (पाठ बदल्न)', '<span class="tr-ico-sg">✏️</span>') + '</div>' : '') + outHtml();
     } else {
       b.innerHTML = grip + nb('data-back="1"', 'फर्कनुहोस्', '‹') +
         PAL.map(c => `<button type="button" class="tr-sw" data-c="${c}" style="background:${c}" title="${view === 'fc' ? 'अक्षरको रङ' : 'हाइलाइट'}" aria-label="${c}"></button>`).join('') +
@@ -132,7 +132,7 @@
     return bar;
   }
   function openSuggestFromSel() {
-    if (!window.openSuggest || !cur.key) return;
+    if (!window.openSuggest || !cur.key || (window.App && App.isAdmin)) return;      // एडमिनले सिधै सम्पादन गर्छ — सुझाव विकल्प पाठकका लागि मात्र
     const info = { key: cur.key, el: cur.el, old: cur.raw || cur.text, oldNl: cur.rawNl, before: cur.before, after: cur.after, s: cur.s, e: cur.e, total: cur.total };
     done();                                                           // छनौट/टुलबार हटाउने (फारम खुल्छ)
     window.openSuggest(info);
