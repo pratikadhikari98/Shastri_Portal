@@ -2860,3 +2860,7 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .sg-ra { display: flex; gap: 4px; flex-shrink: 0; }
 .sg-ib { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--divider); background: var(--surface); font-size: 1rem; cursor: pointer; }
 .sg-ib.ok { background: color-mix(in srgb, #2E9E5B 14%, var(--surface)); }
+
+/* Admin Panel को आइकन — गृह/पछाडि/खोज (नेभ बटन) जस्तै: निलो रेखा-आइकन, भित्र धसिएको गोलो-कुने बाकस */
+.sett-group .sett-ico.sett-ico-line { background: var(--bg) !important; color: var(--accent); border: 1px solid var(--divider);
+  box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--surface-high) !important; border-radius: 11px; }
