@@ -1124,9 +1124,38 @@ async function adminSuggestCount() {
 }
 window.adminSuggestCount = adminSuggestCount;
 
+/* सुझाव-सेवा (Cloudflare Function) को अवस्था: के चालु छ, token छ कि छैन */
+async function adminSuggestStatus() {
+  const el = document.getElementById('sgStatus'); if (!el) return;
+  el.className = 'sg-status'; el.textContent = '⏳ सेवा जाँच्दैछु…';
+  try {
+    const res = await fetch('/api/suggest', { cache: 'no-store' });
+    let j = null; try { j = await res.json(); } catch (e) {}
+    if (!j || !j.service) { el.classList.add('bad'); el.innerHTML = '❌ सुझाव सेवा (functions/api/suggest.js) साइटमा चलिरहेको छैन। Cloudflare Pages मा Git बाट deploy भएको र <b>functions</b> फोल्डर पुगेको जाँच्नुहोस्।'; return; }
+    if (!j.configured) { el.classList.add('bad'); el.innerHTML = '⚠️ सेवा चलेको छ तर <b>GH_TOKEN</b> राखिएको छैन (वा राखेपछि फेरि Deploy गरिएको छैन)। Cloudflare → Settings → Variables and Secrets मा राखेर Retry deployment गर्नुहोस्।'; return; }
+    if (j.github === 200 && j.issues) { el.classList.add('ok'); el.innerHTML = '✅ सेवा ठीक छ — token ले <b>' + escapeHtml(j.repo) + '</b> पाएको छ।'; return; }
+    el.classList.add('bad');
+    el.innerHTML = j.github === 200 ? '⚠️ repo मा Issues बन्द छ — GitHub → repo Settings → Features → Issues खोल्नुहोस्।'
+      : '⚠️ GH_TOKEN ले GitHub मा काम गरेन (कोड ' + j.github + '): ' + (j.github === 401 ? 'token गलत वा म्याद सकिएको।' : 'token ले यो repo (' + escapeHtml(j.repo) + ') पाएन — Repository access र Issues अनुमति जाँच्नुहोस्।');
+  } catch (e) { el.classList.add('bad'); el.textContent = '⚠️ सेवा जाँच्न सकिएन: ' + e.message; }
+}
+/* परीक्षण: एउटा नक्कली सुझाव पठाएर नतिजा (त्रुटि सहित) सिधै देखाउने */
+async function adminSuggestTest() {
+  const el = document.getElementById('sgStatus'); if (el) { el.className = 'sg-status'; el.textContent = '⏳ परीक्षण सुझाव पठाउँदैछु…'; }
+  try {
+    const res = await fetch('/api/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ v: 1, bookId: 'test', idx: 0, chTitle: 'परीक्षण', bookTitle: 'परीक्षण', old: 'पुरानो', new: 'नयाँ', before: '', after: '', s: 0, total: 0 }) });
+    let j = null; try { j = await res.json(); } catch (e) {}
+    if (res.ok && j && j.ok) { toast('✅ परीक्षण सुझाव पुग्यो (#' + j.id + ')'); await adminSuggestOpen(); return; }
+    if (el) { el.className = 'sg-status bad'; el.textContent = '❌ परीक्षण असफल: HTTP ' + res.status + ' · ' + ((j && j.error) || 'जवाफ आएन'); }
+  } catch (e) { if (el) { el.className = 'sg-status bad'; el.textContent = '❌ परीक्षण असफल: ' + e.message; } }
+}
+window.adminSuggestTest = adminSuggestTest;
+
 async function adminSuggestOpen() {
   if (!App.isAdmin) return;
   openOv('adminSuggestModal');
+  adminSuggestStatus();
   const box = document.getElementById('adminSuggestList');
   box.innerHTML = '<div class="sg-empty">⏳ लोड हुँदैछ…</div>';
   try { App._sgList = await _sgFetch(); _sgBadge(); renderAdminSuggest(); }

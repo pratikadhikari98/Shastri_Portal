@@ -2833,3 +2833,8 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .sg-pop-btns { display: flex; gap: 8px; }
 .sg-pop-btns .btn-p { flex: 1; padding: 10px; }
 .sg-pop-btns .btn-s { padding: 10px 16px; }
+
+.sg-status { font-size: 0.78rem; line-height: 1.6; padding: 8px 10px; border-radius: 10px; margin: 4px 0 10px; background: var(--surface); border: 1px solid var(--divider); color: var(--text-2); }
+.sg-status:empty { display: none; }
+.sg-status.ok { background: color-mix(in srgb, #2E9E5B 12%, var(--surface)); }
+.sg-status.bad { background: color-mix(in srgb, #E53935 10%, var(--surface)); }

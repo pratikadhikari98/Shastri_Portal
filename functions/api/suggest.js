@@ -80,4 +80,17 @@ export async function onRequestPost({ request, env }) {
     return json({ error: 'server' }, 500);
   }
 }
+/* GET /api/suggest → सेवा चालु छ कि छैन जाँच (Admin Panel मा देखिन्छ; token आफैं कहिल्यै देखाइँदैन) */
+export async function onRequestGet({ env }) {
+  const repo = env.GH_REPO || DEFAULT_REPO;
+  const out = { service: true, configured: !!env.GH_TOKEN, repo };
+  if (env.GH_TOKEN) {
+    try {
+      const r = await fetch('https://api.github.com/repos/' + repo, { headers: { 'Authorization': 'Bearer ' + env.GH_TOKEN, 'Accept': 'application/vnd.github+json', 'User-Agent': 'shastri-portal-suggest' } });
+      out.github = r.status;                                       // 200 = token ठीक; 401 = token गलत/म्याद सकियो; 404 = repo/अनुमति मिलेन
+      if (r.ok) { const j = await r.json(); out.issues = !!j.has_issues; }
+    } catch (e) { out.github = 0; }
+  }
+  return json(out);
+}
 export const onRequest = () => json({ error: 'method_not_allowed' }, 405);
