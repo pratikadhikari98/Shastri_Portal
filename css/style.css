@@ -2924,3 +2924,5 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 
 /* Admin Login / Admin Panel बाकस — स्क्रिनको दुवै कुना नछुने (किनारा खाली, गोलो कुना) */
 #adminLoginBox.sett-group, #adminPanelBox.sett-group { margin-left: 0; margin-right: 0; border-radius: 22px !important; border-left-width: 1px; border-right-width: 1px; }
+
+.sg-stale { font-size: 0.74rem; line-height: 1.5; color: #B26A00; margin-top: 3px; }

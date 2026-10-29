@@ -1137,7 +1137,11 @@ async function adminSuggestStatus() {
     let j = null; try { j = await res.json(); } catch (e) {}
     if (!j || !j.service) { el.classList.add('bad'); el.innerHTML = '❌ सुझाव सेवा (functions/api/suggest.js) साइटमा चलिरहेको छैन। Cloudflare Pages मा Git बाट deploy भएको र <b>functions</b> फोल्डर पुगेको जाँच्नुहोस्।'; return; }
     if (!j.configured) { el.classList.add('bad'); el.innerHTML = '⚠️ सेवा चलेको छ तर <b>GH_TOKEN</b> राखिएको छैन (वा राखेपछि फेरि Deploy गरिएको छैन)। Cloudflare → Settings → Variables and Secrets मा राखेर Retry deployment गर्नुहोस्।'; return; }
-    if (j.github === 200 && j.issues) { el.classList.add('ok'); el.textContent = '✅ सेवा ठीक छ'; return; }
+    if (j.github === 200 && j.issues) {
+      let cl = '';
+      try { const r2 = await fetch('/api/suggest-close', { cache: 'no-store' }); const j2 = await r2.json(); cl = j2 && j2.error === 'method_not_allowed' ? '' : ' · ⚠️ बन्द गर्ने सेवा (suggest-close) तैनाथ भएको छैन'; } catch (e) { cl = ' · ⚠️ बन्द गर्ने सेवा (suggest-close) तैनाथ भएको छैन'; }
+      el.classList.add(cl ? 'bad' : 'ok'); el.textContent = '✅ सेवा ठीक छ' + cl; return;
+    }
     el.classList.add('bad');
     el.innerHTML = j.github === 200 ? '⚠️ repo मा Issues बन्द छ — GitHub → repo Settings → Features → Issues खोल्नुहोस्।'
       : '⚠️ GH_TOKEN ले GitHub मा काम गरेन (कोड ' + j.github + '): ' + (j.github === 401 ? 'token गलत वा म्याद सकिएको।' : 'token ले यो repo (' + escapeHtml(j.repo) + ') पाएन — Repository access र Issues अनुमति जाँच्नुहोस्।');
@@ -1184,6 +1188,7 @@ function renderAdminSuggest() {
       <div class="sg-rb" onclick="this.previousElementSibling.click()">
         <div class="sg-rt">${escapeHtml(d.bookTitle || d.bookId)} › ${escapeHtml(d.chTitle || '')}</div>
         <div class="sg-rd"><del>${escapeHtml(d.old)}</del> → ${_sgStyled(d)}</div>
+        ${App._sgStale[n] ? `<div class="sg-stale">⚠️ ${escapeHtml(App._sgStale[n])} — पहिल्यै लागू भएको वा अध्याय बदलिएको हुन सक्छ। ❌ थिचेर हटाउनुहोस्।</div>` : ''}
       </div>
       <div class="sg-ra"><button class="sg-ib ok" onclick="adminSuggestApprove(${n})" aria-label="स्वीकार">✅</button><button class="sg-ib" onclick="adminSuggestReject(${n})" aria-label="अस्वीकार">❌</button></div>
     </div>`;
@@ -1240,19 +1245,21 @@ function _sgBalanced(t) {
 
 /* Issue बन्द: पहिले सिधै GitHub बाट; token मा "Issues: write" छैन (403) भने /api/suggest-close (सर्भर फङ्सन) बाट। जे भए पनि यो फोनको सूचीबाट हटाइन्छ */
 async function _sgClose(n, reason, comment) {
-  let ok = false;
+  let ok = false, why = [];
   try {
-    const c = comment ? await GH.req(`issues/${n}/comments`, { method: 'POST', body: JSON.stringify({ body: comment }) }) : { ok: true };
-    const r = c.ok ? await GH.req(`issues/${n}`, { method: 'PATCH', body: JSON.stringify({ state: 'closed', state_reason: reason }) }) : { ok: false };
-    ok = r.ok;
-  } catch (e) {}
+    const c = comment ? await GH.req(`issues/${n}/comments`, { method: 'POST', body: JSON.stringify({ body: comment }) }) : { ok: true, status: 200 };
+    if (!c.ok) why.push('टिप्पणी ' + c.status);
+    const r = c.ok ? await GH.req(`issues/${n}`, { method: 'PATCH', body: JSON.stringify({ state: 'closed', state_reason: reason }) }) : { ok: false, status: c.status };
+    ok = r.ok; if (!r.ok && c.ok) why.push('बन्द ' + r.status);
+  } catch (e) { why.push('नेट'); }
   if (!ok) {
     try {
       const r = await fetch('/api/suggest-close', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GH.token() }, body: JSON.stringify({ number: n, reason, comment }) });
-      ok = r.ok;
-    } catch (e) {}
+      ok = r.ok; if (!r.ok) { let e = ''; try { e = (await r.json()).error || ''; } catch (x) {} why.push('सेवा ' + r.status + (e ? ' ' + e : '')); }
+    } catch (e) { why.push('सेवा नेट'); }
   }
   _sgMarkDone(n);
+  App._sgWhy = ok ? '' : why.join(' · ');
   return ok;
 }
 /* पाठकको सुझावलाई markdown बनाउने: बोल्ड → **पाठ**, रङ → {{#रङ:पाठ}} (साइटकै चिन्ह) */
@@ -1266,37 +1273,52 @@ function _sgMd(d, content, m) {
   }
   return t;
 }
-/* एक वा धेरै सुझाव लागू: किताब अनुसार एकैचोटि commit। interactive=true भए शंकास्पद (धेरै ठाउँ/अस्पष्ट) मा सोध्छ, होइन भने छोडिदिन्छ */
+/* पहिल्यै लागू भइसकेको (नयाँ पाठ अध्यायमा छ) कि? */
+function _sgHasNew(content, d) { const t = String(d.new || '').trim(); return t.length >= 2 && content.indexOf(t) >= 0; }
+App._sgStale = App._sgStale || {};
+
+/* एक वा धेरै सुझाव लागू: किताब अनुसार एकैचोटि commit। interactive=true भए शंकास्पद (कुन ठाउँ पक्का नभएको) मा सोध्छ, होइन भने छोडिदिन्छ */
 async function _sgApply(nums, interactive) {
   const byBook = {};
   nums.forEach(n => { const d = _sgParse(App._sgList.find(x => x.number === n)); if (d) (byBook[d.bookId] = byBook[d.bookId] || []).push({ n, d }); });
-  const applied = [], skipped = [];
+  const applied = [], already = [], stale = [], unsure = [];
   for (const bookId of Object.keys(byBook)) {
-    let list; try { list = await adminSyncChapters(bookId); } catch (e) { byBook[bookId].forEach(x => skipped.push(x.n)); continue; }
+    let list; try { list = await adminSyncChapters(bookId); } catch (e) { byBook[bookId].forEach(x => { stale.push(x.n); App._sgStale[x.n] = 'किताब/अध्याय लोड हुन सकेन'; }); continue; }
     const backup = list.map(c => c.content), done = [], titles = [];
     for (const { n, d } of byBook[bookId]) {
-      const ci = _sgFindChapter(list, d); if (ci < 0) { skipped.push(n); continue; }
+      const ci = _sgFindChapter(list, d); if (ci < 0) { stale.push(n); App._sgStale[n] = 'अध्याय भेटिएन'; continue; }
       const content = list[ci].content || '', m = _sgLocate(content, d);
-      if (!m) { skipped.push(n); continue; }
+      if (!m) {
+        if (_sgHasNew(content, d)) { already.push(n); continue; }                  // नयाँ पाठ पहिल्यै अध्यायमा छ → लागू भइसकेको
+        stale.push(n); App._sgStale[n] = 'पुरानो पाठ अध्यायमा छैन'; continue;
+      }
       if (!m.confident) {
-        if (!interactive) { skipped.push(n); continue; }
+        if (!interactive) { unsure.push(n); continue; }
         const ctx = '…' + content.slice(Math.max(0, m.start - 30), m.start) + '【' + content.slice(m.start, m.end) + ' → ' + d.new + '】' + content.slice(m.end, m.end + 30) + '…';
         const ok = await showConfirm('यो पाठ ' + m.count + ' ठाउँमा भेटियो र कुन हो भनी पक्का भएन; तलको ठाउँ मात्र बदलिन्छ।\n' + ctx, 'हो, बदल्नुहोस्', 'पुष्टि गर्नुहोस्');
-        if (!ok) { skipped.push(n); continue; }
+        if (!ok) { unsure.push(n); continue; }
       }
       list[ci].content = content.slice(0, m.start) + _sgMd(d, content, m) + content.slice(m.end);
       done.push(n); titles.push(list[ci].title);
     }
     if (done.length) {
       const ok = await saveChapters(bookId, list, 'User suggestions approved (' + done.length + '): ' + [...new Set(titles)].join(', '));
-      if (ok) applied.push(...done); else { list.forEach((c, i) => { c.content = backup[i]; }); done.forEach(n => skipped.push(n)); }
+      if (ok) applied.push(...done); else { list.forEach((c, i) => { c.content = backup[i]; }); done.forEach(n => { unsure.push(n); }); }
     }
   }
   let closeFail = 0;
   for (const n of applied) { if (!(await _sgClose(n, 'completed', '✅ स्वीकार गरियो र अध्यायमा लागू गरियो। धन्यवाद!'))) closeFail++; }
-  App._sgList = App._sgList.filter(x => !applied.includes(x.number)); _sgBadge(); renderAdminSuggest();
+  for (const n of already) { if (!(await _sgClose(n, 'completed', 'ℹ️ यो सुधार अध्यायमा पहिल्यै लागू भइसकेको थियो।'))) closeFail++; }
+  const gone = applied.concat(already);
+  App._sgList = App._sgList.filter(x => !gone.includes(x.number)); _sgBadge(); renderAdminSuggest();
   byBookRefresh(Object.keys(byBook));
-  toast(applied.length ? '✅ ' + applied.length + ' सुझाव लागू भयो' + (skipped.length ? ' · ' + skipped.length + ' एक-एक गरेर हेर्नुहोस्' : '') + (closeFail ? ' · ⚠️ GitHub मा बन्द हुन सकेन (यहाँबाट हटाइयो)' : '') : (skipped.length ? '⚠️ ' + skipped.length + ' स्वतः लागू भएन — ✅ एक-एक गरेर थिच्नुहोस्' : ''));
+  const parts = [];
+  if (applied.length) parts.push('✅ ' + applied.length + ' लागू भयो');
+  if (already.length) parts.push(already.length + ' पहिल्यै लागू (हटाइयो)');
+  if (stale.length) parts.push('⚠️ ' + stale.length + ' को पाठ अध्यायमा भेटिएन — ❌ थिचेर हटाउनुहोस्');
+  if (unsure.length) parts.push(unsure.length + ' ठाउँ पक्का भएन — ✅ एक-एक गरेर थिच्नुहोस्');
+  if (closeFail) parts.push('GitHub मा बन्द हुन सकेन (' + (App._sgWhy || '?') + ') — यहाँबाट हटाइयो');
+  toast(parts.join(' · ') || '—');
 }
 function byBookRefresh(ids) { ids.forEach(id => { try { if (typeof refreshInlineChapterView === 'function') refreshInlineChapterView(id); } catch (e) {} }); }
 
@@ -1306,11 +1328,11 @@ async function adminSuggestBulk(kind) {
   if (kind === 'ok') { await _sgApply(nums, false); return; }
   if (!(await showConfirm(nums.length + ' सुझाव अस्वीकार गरेर बन्द गर्ने?', 'अस्वीकार गर्नुहोस्', 'सुझाव अस्वीकार'))) return;
   let bad = 0; for (const n of nums) { if (!(await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!'))) bad++; }
-  App._sgList = App._sgList.filter(x => !nums.includes(x.number)); _sgBadge(); renderAdminSuggest(); toast(bad ? 'अस्वीकार गरियो · ⚠️ GitHub मा बन्द हुन सकेन (यहाँबाट हटाइयो)' : 'अस्वीकार गरियो');
+  App._sgList = App._sgList.filter(x => !nums.includes(x.number)); _sgBadge(); renderAdminSuggest(); toast(bad ? 'अस्वीकार गरियो · ⚠️ GitHub मा बन्द हुन सकेन (' + (App._sgWhy || '?') + ') — यहाँबाट हटाइयो' : 'अस्वीकार गरियो');
 }
 async function adminSuggestReject(n) {
   if (!(await showConfirm('यो सुझाव अस्वीकार गरेर बन्द गर्ने?', 'अस्वीकार गर्नुहोस्', 'सुझाव अस्वीकार'))) return;
   const okc = await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!');
-  App._sgList = App._sgList.filter(x => x.number !== n); _sgBadge(); renderAdminSuggest(); toast(okc ? 'अस्वीकार गरियो' : 'अस्वीकार गरियो · ⚠️ GitHub मा बन्द हुन सकेन (यहाँबाट हटाइयो)');
+  App._sgList = App._sgList.filter(x => x.number !== n); _sgBadge(); renderAdminSuggest(); toast(okc ? 'अस्वीकार गरियो' : 'अस्वीकार गरियो · ⚠️ GitHub मा बन्द हुन सकेन (' + (App._sgWhy || '?') + ') — यहाँबाट हटाइयो');
 }
 window.adminSuggestApprove = adminSuggestApprove; window.adminSuggestBulk = adminSuggestBulk; window.adminSuggestReject = adminSuggestReject;
