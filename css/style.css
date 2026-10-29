@@ -2904,3 +2904,13 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 #dotsBtn.x-on::before, #dotsBtn.x-on::after { content: ''; position: absolute; left: 50%; top: 50%; width: 18px; height: 2.5px; border-radius: 2px; background: var(--accent); }
 #dotsBtn.x-on::before { transform: translate(-50%, -50%) rotate(45deg); }
 #dotsBtn.x-on::after  { transform: translate(-50%, -50%) rotate(-45deg); }
+
+/* ⋮ मेनु खुल्दा फ्रेम नझर्न: बन्द हुँदा पूरै नदेखिने/नपेन्ट हुने, ठूलो छाया र scale हटाइएको — केवल opacity/translateY (GPU) */
+.dots-menu { box-shadow: none !important; visibility: hidden; will-change: transform, opacity; contain: layout paint; transform: translate3d(0, -14px, 0) !important;
+  transition: opacity .2s ease-out, transform .24s cubic-bezier(.2,.8,.25,1), visibility 0s linear .24s !important; }
+.dots-menu.open { visibility: visible; transform: translate3d(0, 0, 0) !important; transition: opacity .2s ease-out, transform .24s cubic-bezier(.2,.8,.25,1), visibility 0s !important; }
+
+/* ⋮ मेनुले पूरै स्क्रिन ढाक्छ — पछाडिको होमको बादल/चरा animation रोकेर लुकाउने (खुल्दा CPU घट्छ) */
+/* (.np-scene.menu-open) */
+.np-scene.menu-open .np-fx { visibility: hidden; }
+.np-scene.menu-open .np-fx * { animation-play-state: paused !important; }

@@ -374,7 +374,7 @@ function initDotsMenu() {
   if (!btn||!menu) return;
 
   /* मेनु खुल्दा ⋮ को ठाउँमा ✕ देखिने; ✕ छुँदा मेनु बन्द भई होममा फर्किने */
-  new MutationObserver(() => { const o = menu.classList.contains('open'); btn.classList.toggle('x-on', o); btn.setAttribute('aria-expanded', o ? 'true' : 'false'); })
+  new MutationObserver(() => { const o = menu.classList.contains('open'); btn.classList.toggle('x-on', o); document.querySelector('.np-scene')?.classList.toggle('menu-open', o); btn.setAttribute('aria-expanded', o ? 'true' : 'false'); })
     .observe(menu, { attributes: true, attributeFilter: ['class'] });
   btn.addEventListener('click', e => {
     e.stopPropagation();
