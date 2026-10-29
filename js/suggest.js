@@ -8,7 +8,8 @@
   'use strict';
   const EP = '/api/suggest', FX = 'sp_fixes', QK = 'sp_sg_q', LOG = 'sp_sg_log';
   const LIM_OLD = 600, LIM_NEW = 1200;
-  let ctx = null;
+  const COLORS = ['#F44336', '#FB8C00', '#4CAF50', '#2196F3', '#9C27B0', '#EC407A', '#8D6E63'];
+  let ctx = null, fmt = { b: false, c: '' };
   const $ = id => document.getElementById(id);
   const jget = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') || d; } catch (e) { return d; } };
   const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
@@ -28,7 +29,25 @@
   }
 
   /* ── DOM मा पाठ बदल्ने: textContent को [s,e) भाग → नयाँ पाठ (धेरै text node मा फैलिएको भए पनि) ── */
-  function replaceByOffsets(root, s, e, txt) {
+  function richSpan(txt, rich) {
+    const sp = document.createElement('span');
+    if (rich.c) sp.style.color = rich.c;
+    if (rich.b || rich.c) sp.style.fontWeight = rich.b ? '800' : '600';
+    sp.textContent = txt; return sp;
+  }
+  function replaceByOffsets(root, s, e, txt, rich) {
+    if (rich && (rich.b || rich.c)) {                                         // बोल्ड/रङ्गीन: Range ले बदल्ने
+      const w2 = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); let pos2 = 0, n2, sN = null, sO = 0, eN = null, eO = 0;
+      while ((n2 = w2.nextNode())) {
+        const L2 = n2.nodeValue.length;
+        if (!sN && pos2 + L2 > s) { sN = n2; sO = s - pos2; }
+        if (sN && pos2 + L2 >= e) { eN = n2; eO = e - pos2; break; }
+        pos2 += L2;
+      }
+      if (!sN || !eN) return false;
+      const r = document.createRange(); r.setStart(sN, sO); r.setEnd(eN, eO); r.deleteContents(); r.insertNode(richSpan(txt, rich));
+      return true;
+    }
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const hit = []; let pos = 0, n;
     while ((n = w.nextNode())) {
@@ -48,7 +67,7 @@
     if (at < 0 && f.before) { const k = tc.indexOf(f.before + f.old); if (k >= 0) at = k + f.before.length; }
     if (at < 0) at = tc.indexOf(f.old);
     if (at < 0) return false;
-    return replaceByOffsets(root, at, at + f.old.length, f.neu);
+    return replaceByOffsets(root, at, at + f.old.length, f.neu, { b: f.bold, c: f.color });
   }
 
   /* ── पाठकको फोनमा सुरक्षित सुधारहरू: अध्याय खुल्दा लागू ── */
@@ -106,6 +125,8 @@
       '<div class="modal-sheet sg-pop">' +
         '<div class="sg-pop-t">✏️ त्रुटि सच्याउनुहोस्</div>' +
         '<input class="f-input sg-pop-in" id="sgNew" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="' + LIM_NEW + '" enterkeyhint="done">' +
+        '<div class="sg-fmt" id="sgFmt"><button type="button" class="sg-b" id="sgB" aria-pressed="false" title="बोल्ड"><b>B</b></button>' +
+          COLORS.map(c => '<button type="button" class="sg-sw" data-c="' + c + '" style="background:' + c + '" aria-label="रङ" aria-pressed="false"></button>').join('') + '</div>' +
         '<input type="text" id="sgHp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">' +
         '<div class="sg-pop-err" id="sgMsg" role="status"></div>' +
         '<div class="sg-pop-btns"><button type="button" class="btn-s" id="sgCancel">रद्द</button><button type="button" class="btn-p" id="sgSend">ठीक छ</button></div>' +
@@ -113,7 +134,19 @@
     document.body.appendChild(ov);
     $('sgCancel').onclick = () => closeOv('sgOv');
     $('sgSend').onclick = submit;
+    $('sgFmt').addEventListener('click', e => {
+      const t = e.target.closest('button'); if (!t) return;
+      if (t.id === 'sgB') fmt.b = !fmt.b; else fmt.c = (fmt.c === t.dataset.c ? '' : t.dataset.c);
+      paintFmt();
+    });
     $('sgNew').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+  }
+
+  function paintFmt() {
+    const i = $('sgNew'); if (!i) return;
+    $('sgB').setAttribute('aria-pressed', fmt.b); $('sgB').classList.toggle('on', fmt.b);
+    document.querySelectorAll('#sgFmt .sg-sw').forEach(b => { const on = b.dataset.c === fmt.c; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    i.style.fontWeight = fmt.b ? '800' : ''; i.style.color = fmt.c || '';        // इनपुटमै नमूना देखिने
   }
 
   window.openSuggest = function (info) {
@@ -125,6 +158,7 @@
     ctx = { el: info.el, key: info.key, bookId: k.bookId, idx: k.idx, chTitle: ch.title || '', bookTitle: bookTitleOf(k.bookId),
             old, before: info.before || '', after: info.after || '', s: info.s || 0, e: info.e != null ? info.e : (info.s || 0) + old.length, total: info.total || 0 };
     ensureOv();
+    fmt = { b: false, c: '' }; paintFmt();
     $('sgNew').value = old; $('sgMsg').textContent = '';
     openOv('sgOv');
     setTimeout(() => { const t = $('sgNew'); try { t.focus(); t.select(); } catch (e) {} }, 300);
@@ -134,21 +168,21 @@
     if (!ctx) return;
     const nw = $('sgNew').value.replace(/\u00a0/g, ' ').trim();
     if (!nw) { $('sgMsg').textContent = 'शब्द लेख्नुहोस्।'; return; }
-    if (nw === ctx.old) { $('sgMsg').textContent = 'पुरानोभन्दा फरक लेख्नुहोस्।'; return; }
-    const c = ctx; ctx = null;
+    if (nw === ctx.old && !fmt.b && !fmt.c) { $('sgMsg').textContent = 'पुरानोभन्दा फरक लेख्नुहोस्।'; return; }
+    const c = ctx; ctx = null; const rich = { b: fmt.b, c: fmt.c };
     // १) तुरुन्तै पाठकको फोनमा देखाउने
     let ok = false;
     try {
       const cur = c.el.textContent.slice(c.s, c.e);
-      if (norm(cur) === norm(c.old)) ok = replaceByOffsets(c.el, c.s, c.s + cur.length, nw);
-      if (!ok) ok = replaceByText(c.el, { old: c.old, neu: nw, before: c.before, after: c.after });
+      if (norm(cur) === norm(c.old)) ok = replaceByOffsets(c.el, c.s, c.s + cur.length, nw, rich);
+      if (!ok) ok = replaceByText(c.el, { old: c.old, neu: nw, before: c.before, after: c.after, bold: rich.b, color: rich.c });
     } catch (e) {}
     // २) फोनमा सुरक्षित (अध्याय फेरि खोल्दा पनि रहोस्)
-    const fx = jget(FX, []); fx.push({ b: c.bookId, t: c.chTitle, old: c.old, neu: nw, before: c.before, after: c.after, at: Date.now() });
+    const fx = jget(FX, []); fx.push({ b: c.bookId, t: c.chTitle, old: c.old, neu: nw, before: c.before, after: c.after, bold: rich.b, color: rich.c, at: Date.now() });
     jset(FX, fx.slice(-200));
     // ३) एडमिनलाई चुपचाप
     enqueue({ v: 1, bookId: c.bookId, idx: c.idx, chTitle: c.chTitle, bookTitle: c.bookTitle, old: c.old, new: nw,
-              before: c.before, after: c.after, s: c.s, total: c.total, hp: $('sgHp').value });
+              before: c.before, after: c.after, s: c.s, total: c.total, bold: rich.b, color: rich.c, hp: $('sgHp').value });
     closeOv('sgOv');
     if (window.toast) toast(ok ? '✅ सच्याइयो' : '✅ सुरक्षित भयो');
   }

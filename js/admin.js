@@ -1133,7 +1133,7 @@ async function adminSuggestStatus() {
     let j = null; try { j = await res.json(); } catch (e) {}
     if (!j || !j.service) { el.classList.add('bad'); el.innerHTML = '❌ सुझाव सेवा (functions/api/suggest.js) साइटमा चलिरहेको छैन। Cloudflare Pages मा Git बाट deploy भएको र <b>functions</b> फोल्डर पुगेको जाँच्नुहोस्।'; return; }
     if (!j.configured) { el.classList.add('bad'); el.innerHTML = '⚠️ सेवा चलेको छ तर <b>GH_TOKEN</b> राखिएको छैन (वा राखेपछि फेरि Deploy गरिएको छैन)। Cloudflare → Settings → Variables and Secrets मा राखेर Retry deployment गर्नुहोस्।'; return; }
-    if (j.github === 200 && j.issues) { el.classList.add('ok'); el.innerHTML = '✅ सेवा ठीक छ — token ले <b>' + escapeHtml(j.repo) + '</b> पाएको छ।'; return; }
+    if (j.github === 200 && j.issues) { el.classList.add('ok'); el.textContent = '✅ सेवा ठीक छ'; return; }
     el.classList.add('bad');
     el.innerHTML = j.github === 200 ? '⚠️ repo मा Issues बन्द छ — GitHub → repo Settings → Features → Issues खोल्नुहोस्।'
       : '⚠️ GH_TOKEN ले GitHub मा काम गरेन (कोड ' + j.github + '): ' + (j.github === 401 ? 'token गलत वा म्याद सकिएको।' : 'token ले यो repo (' + escapeHtml(j.repo) + ') पाएन — Repository access र Issues अनुमति जाँच्नुहोस्।');
@@ -1163,24 +1163,39 @@ async function adminSuggestOpen() {
 }
 window.adminSuggestOpen = adminSuggestOpen;
 
+function _sgStyled(d) {                                   // नयाँ पाठ बोल्ड/रङ्गीन भए त्यसै देखाउने
+  const st = (d.color ? 'color:' + d.color + ';' : '') + (d.bold || d.color ? 'font-weight:' + (d.bold ? 800 : 600) : '');
+  return `<ins style="${escapeHtml(st)}">${escapeHtml(d.new)}</ins>`;
+}
 function renderAdminSuggest() {
   const box = document.getElementById('adminSuggestList');
-  if (!App._sgList.length) { box.innerHTML = '<div class="sg-empty">📭 कुनै नयाँ सुझाव छैन</div>'; return; }
+  const bar = document.getElementById('sgBar');
+  if (!App._sgList.length) { if (bar) bar.hidden = true; box.innerHTML = '<div class="sg-empty">📭 कुनै नयाँ सुझाव छैन</div>'; return; }
+  if (bar) bar.hidden = false;
   box.innerHTML = App._sgList.map(is => {
     const d = _sgParse(is), n = is.number;
-    if (!d) return `<div class="sg-card"><div class="sg-meta">#${n} · ${escapeHtml(is.title || '')}</div><div class="sg-note">यो Issue को ढाँचा मिलेन (हातले हेर्नुहोस्)।</div><div class="sg-acts"><a class="btn-s" href="${escapeHtml(is.html_url)}" target="_blank" rel="noopener">GitHub मा खोल्नुहोस्</a><button class="btn-s" onclick="adminSuggestReject(${n})">बन्द गर्नुहोस्</button></div></div>`;
-    const when = new Date(is.created_at).toLocaleString('ne-NP', { dateStyle: 'medium', timeStyle: 'short' });
-    return `<div class="sg-card" id="sgc-${n}">
-      <div class="sg-meta"><b>${escapeHtml(d.bookTitle || d.bookId)}</b> › ${escapeHtml(d.chTitle || '')}</div>
-      <div class="sg-meta2">${d.name ? '👤 ' + escapeHtml(d.name) + ' · ' : ''}${escapeHtml(when)}</div>
-      <div class="sg-lbl">पुरानो पाठ</div><div class="sg-old">${escapeHtml(d.old)}</div>
-      <div class="sg-lbl">नयाँ पाठ</div><div class="sg-new">${escapeHtml(d.new)}</div>
-      ${d.note ? `<div class="sg-note">💬 ${escapeHtml(d.note)}</div>` : ''}
-      <div class="sg-pv" id="sgp-${n}"></div>
-      <div class="sg-acts"><button class="btn-p" onclick="adminSuggestApprove(${n})">✅ स्वीकार</button><button class="btn-s" onclick="adminSuggestReject(${n})">❌ अस्वीकार</button></div>
+    if (!d) return `<div class="sg-row"><div class="sg-rb"><div class="sg-rt">#${n} · ढाँचा मिलेन</div><div class="sg-rd"><a href="${escapeHtml(is.html_url)}" target="_blank" rel="noopener">GitHub मा हेर्नुहोस्</a></div></div><div class="sg-ra"><button class="sg-ib" onclick="adminSuggestReject(${n})" aria-label="अस्वीकार">❌</button></div></div>`;
+    return `<div class="sg-row" id="sgc-${n}">
+      <input type="checkbox" class="sg-ck" value="${n}" onchange="adminSuggestSel()" aria-label="छान्नुहोस्">
+      <div class="sg-rb" onclick="this.previousElementSibling.click()">
+        <div class="sg-rt">${escapeHtml(d.bookTitle || d.bookId)} › ${escapeHtml(d.chTitle || '')}</div>
+        <div class="sg-rd"><del>${escapeHtml(d.old)}</del> → ${_sgStyled(d)}</div>
+      </div>
+      <div class="sg-ra"><button class="sg-ib ok" onclick="adminSuggestApprove(${n})" aria-label="स्वीकार">✅</button><button class="sg-ib" onclick="adminSuggestReject(${n})" aria-label="अस्वीकार">❌</button></div>
     </div>`;
   }).join('');
+  adminSuggestSel();
 }
+function adminSuggestSel() {
+  const cks = [...document.querySelectorAll('#adminSuggestList .sg-ck')], on = cks.filter(c => c.checked).length;
+  const all = document.getElementById('sgAll'); if (all) { all.checked = cks.length > 0 && on === cks.length; all.indeterminate = on > 0 && on < cks.length; }
+  const ok = document.getElementById('sgBulkOk'), no = document.getElementById('sgBulkNo');
+  if (ok) { ok.disabled = !on; ok.textContent = on ? '✅ स्वीकार (' + on + ')' : '✅ स्वीकार'; }
+  if (no) no.disabled = !on;
+}
+function adminSuggestSelAll(v) { document.querySelectorAll('#adminSuggestList .sg-ck').forEach(c => { c.checked = v; }); adminSuggestSel(); }
+window.adminSuggestSel = adminSuggestSel; window.adminSuggestSelAll = adminSuggestSelAll;
+function _sgSelected() { return [...document.querySelectorAll('#adminSuggestList .sg-ck:checked')].map(c => parseInt(c.value, 10)); }
 
 function _sgFindChapter(list, d) {
   if (!Array.isArray(list)) return -1;
@@ -1217,28 +1232,6 @@ function _sgBalanced(t) {
   return c(/\*\*/g) % 2 === 0 && c(/==/g) % 2 === 0 && c(/~~/g) % 2 === 0 && c(/__/g) % 2 === 0 && c(/`/g) % 2 === 0 && c(/\{\{/g) === c(/\}\}/g);
 }
 
-async function adminSuggestApprove(n) {
-  const is = App._sgList.find(x => x.number === n), d = _sgParse(is), box = document.getElementById('sgp-' + n);
-  if (!d || !box) return;
-  box.innerHTML = '<div class="sg-warn">⏳ अध्यायमा पुरानो पाठ खोज्दैछु…</div>';
-  let list; try { list = await adminSyncChapters(d.bookId); } catch (e) { box.innerHTML = '<div class="sg-warn">⚠️ ' + escapeHtml(e.message) + '</div>'; return; }
-  const ci = _sgFindChapter(list, d);
-  if (ci < 0) { box.innerHTML = '<div class="sg-warn">⚠️ अध्याय भेटिएन (मेटिएको वा नाम फेरिएको हुन सक्छ)।</div>'; return; }
-  const content = list[ci].content || '', m = _sgLocate(content, d);
-  if (!m) {
-    box.innerHTML = '<div class="sg-warn">⚠️ पुरानो पाठ अध्यायमा सुरक्षित रूपमा भेटिएन (अध्याय पछि सम्पादन भएको, वा पाठ बोल्ड/हाइलाइट जस्ता चिन्हको बीचमा परेको हुन सक्छ)। अध्याय हातले सम्पादन गर्नुहोस् — नयाँ पाठ माथि छ।</div>';
-    return;
-  }
-  App._sgPending[n] = { bookId: d.bookId, ci, start: m.start, end: m.end, old: content.slice(m.start, m.end), neu: d.new };
-  const ctxB = content.slice(Math.max(0, m.start - 50), m.start), ctxA = content.slice(m.end, m.end + 50);
-  box.innerHTML =
-    (m.count > 1 ? `<div class="sg-warn">⚠️ यो पाठ अध्यायमा ${m.count} ठाउँमा भेटियो — सबैभन्दा मिल्दो ठाउँ मात्र बदलिन्छ।</div>` : '') +
-    (m.loose ? '<div class="sg-warn">ℹ️ पाठ ठ्याक्कै मिलेन (markdown चिन्ह वा खाली-ठाउँ फरक) — तल हेरेर पुष्टि गर्नुहोस्।</div>' : '') +
-    `<div class="sg-lbl">लागू भएपछि (${escapeHtml(list[ci].title)})</div><div class="sg-ctx">…${escapeHtml(ctxB)}<del>${escapeHtml(content.slice(m.start, m.end))}</del><ins>${escapeHtml(d.new)}</ins>${escapeHtml(ctxA)}…</div>` +
-    `<div class="sg-acts"><button class="btn-p" onclick="adminSuggestConfirm(${n})">✔ पुष्टि गरी लागू गर्नुहोस्</button><button class="btn-s" onclick="document.getElementById('sgp-${n}').innerHTML='';delete App._sgPending[${n}]">रद्द</button></div>`;
-}
-window.adminSuggestApprove = adminSuggestApprove;
-
 async function _sgClose(n, reason, comment) {
   try {
     if (comment) await GH.req(`issues/${n}/comments`, { method: 'POST', body: JSON.stringify({ body: comment }) });
@@ -1246,27 +1239,61 @@ async function _sgClose(n, reason, comment) {
     return r.ok;
   } catch (e) { return false; }
 }
-function _sgDone(n) {
-  App._sgList = App._sgList.filter(x => x.number !== n); delete App._sgPending[n]; _sgBadge(); renderAdminSuggest();
+/* पाठकको सुझावलाई markdown बनाउने: बोल्ड → **पाठ**, रङ → {{#रङ:पाठ}} (साइटकै चिन्ह) */
+function _sgMd(d, content, m) {
+  let t = String(d.new || '');
+  if (d.bold || d.color) {
+    t = t.replace(/[{}*]/g, '');
+    if (/^#[0-9a-fA-F]{6}$/.test(d.color || '')) t = '{{' + d.color + ':' + t + '}}';
+    const inBold = content.slice(Math.max(0, m.start - 2), m.start) === '**' && content.slice(m.end, m.end + 2) === '**';
+    if (d.bold && !inBold) t = '**' + t + '**';
+  }
+  return t;
 }
-
-async function adminSuggestConfirm(n) {
-  const p = App._sgPending[n]; if (!p) return;
-  const list = App.chaptersCache[p.bookId], ch = list && list[p.ci];
-  if (!ch || (ch.content || '').slice(p.start, p.end) !== p.old) { toast('⚠️ अध्याय बीचमा बदलियो — फेरि स्वीकार थिच्नुहोस्'); adminSuggestApprove(n); return; }
-  const backup = ch.content;
-  ch.content = backup.slice(0, p.start) + p.neu + backup.slice(p.end);               // पुरानो पाठ हटेर नयाँ पाठ
-  if (!(await saveChapters(p.bookId, list, 'User suggestion approved: ' + ch.title))) { ch.content = backup; return; }
-  await _sgClose(n, 'completed', '✅ स्वीकार गरियो र अध्यायमा लागू गरियो। धन्यवाद!');
-  try { if (typeof refreshInlineChapterView === 'function') refreshInlineChapterView(p.bookId); } catch (e) {}
-  toast('✅ सुझाव लागू भयो — अध्याय अपडेट भयो');
-  _sgDone(n);
+/* एक वा धेरै सुझाव लागू: किताब अनुसार एकैचोटि commit। interactive=true भए शंकास्पद (धेरै ठाउँ/अस्पष्ट) मा सोध्छ, होइन भने छोडिदिन्छ */
+async function _sgApply(nums, interactive) {
+  const byBook = {};
+  nums.forEach(n => { const d = _sgParse(App._sgList.find(x => x.number === n)); if (d) (byBook[d.bookId] = byBook[d.bookId] || []).push({ n, d }); });
+  const applied = [], skipped = [];
+  for (const bookId of Object.keys(byBook)) {
+    let list; try { list = await adminSyncChapters(bookId); } catch (e) { byBook[bookId].forEach(x => skipped.push(x.n)); continue; }
+    const backup = list.map(c => c.content), done = [], titles = [];
+    for (const { n, d } of byBook[bookId]) {
+      const ci = _sgFindChapter(list, d); if (ci < 0) { skipped.push(n); continue; }
+      const content = list[ci].content || '', m = _sgLocate(content, d);
+      if (!m) { skipped.push(n); continue; }
+      if (m.count > 1 || m.loose) {
+        if (!interactive) { skipped.push(n); continue; }
+        const ctx = '…' + content.slice(Math.max(0, m.start - 30), m.start) + '【' + content.slice(m.start, m.end) + ' → ' + d.new + '】' + content.slice(m.end, m.end + 30) + '…';
+        const ok = await showConfirm((m.count > 1 ? 'यो पाठ ' + m.count + ' ठाउँमा भेटियो; सबैभन्दा मिल्दो ठाउँ मात्र बदलिन्छ।\n' : 'पाठ ठ्याक्कै मिलेन (चिन्ह/खाली-ठाउँ फरक)।\n') + ctx, 'हो, बदल्नुहोस्', 'पुष्टि गर्नुहोस्');
+        if (!ok) { skipped.push(n); continue; }
+      }
+      list[ci].content = content.slice(0, m.start) + _sgMd(d, content, m) + content.slice(m.end);
+      done.push(n); titles.push(list[ci].title);
+    }
+    if (done.length) {
+      const ok = await saveChapters(bookId, list, 'User suggestions approved (' + done.length + '): ' + [...new Set(titles)].join(', '));
+      if (ok) applied.push(...done); else { list.forEach((c, i) => { c.content = backup[i]; }); done.forEach(n => skipped.push(n)); }
+    }
+  }
+  for (const n of applied) await _sgClose(n, 'completed', '✅ स्वीकार गरियो र अध्यायमा लागू गरियो। धन्यवाद!');
+  App._sgList = App._sgList.filter(x => !applied.includes(x.number)); _sgBadge(); renderAdminSuggest();
+  byBookRefresh(Object.keys(byBook));
+  toast(applied.length ? '✅ ' + applied.length + ' सुझाव लागू भयो' + (skipped.length ? ' · ' + skipped.length + ' एक-एक गरेर हेर्नुहोस्' : '') : (skipped.length ? '⚠️ ' + skipped.length + ' स्वतः लागू भएन — ✅ एक-एक गरेर थिच्नुहोस्' : ''));
 }
-window.adminSuggestConfirm = adminSuggestConfirm;
+function byBookRefresh(ids) { ids.forEach(id => { try { if (typeof refreshInlineChapterView === 'function') refreshInlineChapterView(id); } catch (e) {} }); }
 
+async function adminSuggestApprove(n) { await _sgApply([n], true); }
+async function adminSuggestBulk(kind) {
+  const nums = _sgSelected(); if (!nums.length) return;
+  if (kind === 'ok') { await _sgApply(nums, false); return; }
+  if (!(await showConfirm(nums.length + ' सुझाव अस्वीकार गरेर बन्द गर्ने?', 'अस्वीकार गर्नुहोस्', 'सुझाव अस्वीकार'))) return;
+  for (const n of nums) await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!');
+  App._sgList = App._sgList.filter(x => !nums.includes(x.number)); _sgBadge(); renderAdminSuggest(); toast('अस्वीकार गरियो');
+}
 async function adminSuggestReject(n) {
   if (!(await showConfirm('यो सुझाव अस्वीकार गरेर बन्द गर्ने?', 'अस्वीकार गर्नुहोस्', 'सुझाव अस्वीकार'))) return;
   await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!');
-  toast('सुझाव अस्वीकार गरियो'); _sgDone(n);
+  App._sgList = App._sgList.filter(x => x.number !== n); _sgBadge(); renderAdminSuggest(); toast('अस्वीकार गरियो');
 }
-window.adminSuggestReject = adminSuggestReject;
+window.adminSuggestApprove = adminSuggestApprove; window.adminSuggestBulk = adminSuggestBulk; window.adminSuggestReject = adminSuggestReject;

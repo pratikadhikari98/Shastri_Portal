@@ -588,6 +588,11 @@
     <div class="m-handle"></div>
     <div class="m-title">📨 User Request</div>
     <div id="sgStatus" class="sg-status"></div>
+    <div class="sg-bar" id="sgBar" hidden>
+      <label class="sg-all"><input type="checkbox" id="sgAll" onchange="adminSuggestSelAll(this.checked)"> सबै छान्ने</label>
+      <button class="btn-p" id="sgBulkOk" onclick="adminSuggestBulk('ok')" disabled>✅ स्वीकार</button>
+      <button class="btn-s" id="sgBulkNo" onclick="adminSuggestBulk('no')" disabled aria-label="छानेका अस्वीकार">❌</button>
+    </div>
     <div id="adminSuggestList" style="margin:6px 0 12px;max-height:62vh;overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
     <div class="m-btns"><button class="btn-s" onclick="adminSuggestTest()">🧪 परीक्षण</button><button class="btn-s" style="flex:1" onclick="closeOv('adminSuggestModal')">बन्द गर्नुहोस्</button></div>
   </div>

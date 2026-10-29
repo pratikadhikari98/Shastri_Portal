@@ -2838,3 +2838,25 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .sg-status:empty { display: none; }
 .sg-status.ok { background: color-mix(in srgb, #2E9E5B 12%, var(--surface)); }
 .sg-status.bad { background: color-mix(in srgb, #E53935 10%, var(--surface)); }
+
+/* ✏️ पप-अप: माथि (किबोर्डले नढाक्ने) + बोल्ड/रङ विकल्प */
+.overlay.sg-ovc { align-items: flex-start; padding: calc(env(safe-area-inset-top, 0px) + 74px) 16px 16px; }
+.sg-fmt { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin: 2px 0 8px; }
+.sg-b { width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--divider); background: var(--surface); color: var(--text-2); font-size: 1rem; cursor: pointer; }
+.sg-b.on { background: var(--accent); color: #fff; border-color: transparent; }
+.sg-sw { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; box-shadow: 0 0 0 1px var(--divider); cursor: pointer; padding: 0; }
+.sg-sw.on { border-color: var(--surface); box-shadow: 0 0 0 2.5px var(--text-1); }
+/* 📨 User Request: सरल सूची */
+.sg-bar { display: flex; align-items: center; gap: 8px; margin: 2px 0 8px; }
+.sg-bar[hidden] { display: none; }
+.sg-all { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; font-weight: 700; color: var(--text-2); flex: 1; }
+.sg-bar .btn-p { flex: 0 0 auto; padding: 8px 14px; font-size: 0.82rem; } .sg-bar .btn-s { padding: 8px 12px; }
+.sg-row { display: flex; align-items: center; gap: 9px; padding: 9px 4px; border-bottom: 1px solid var(--divider); }
+.sg-ck, .sg-all input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--accent); }
+.sg-rb { flex: 1; min-width: 0; }
+.sg-rt { font-size: 0.7rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-rd { font-size: 0.92rem; line-height: 1.5; word-break: break-word; }
+.sg-rd del { color: #C62828; opacity: 0.85; } .sg-rd ins { text-decoration: none; color: #2E7D32; font-weight: 700; }
+.sg-ra { display: flex; gap: 4px; flex-shrink: 0; }
+.sg-ib { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--divider); background: var(--surface); font-size: 1rem; cursor: pointer; }
+.sg-ib.ok { background: color-mix(in srgb, #2E9E5B 14%, var(--surface)); }

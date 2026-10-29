@@ -39,6 +39,7 @@ export async function onRequestPost({ request, env }) {
       chTitle: str(d.chTitle, 200), bookTitle: str(d.bookTitle, 200),
       old: str(d.old, 1600), new: str(d.new, 3200), note: str(d.note, 400), name: str(d.name, 80),
       before: str(d.before, 80), after: str(d.after, 80),
+      bold: d.bold === true, color: /^#[0-9a-fA-F]{6}$/.test(d.color || '') ? d.color : '',
       s: Number.isFinite(d.s) ? d.s : 0, total: Number.isFinite(d.total) ? d.total : 0,
       at: new Date().toISOString()
     };
@@ -61,7 +62,7 @@ export async function onRequestPost({ request, env }) {
       '**पुस्तक:** ' + (req.bookTitle || req.bookId) + '\n**अध्याय:** ' + req.chTitle + '\n' +
       (req.name ? '**पठाउने:** ' + req.name.replace(/[<>]/g, '') + '\n' : '') +
       (req.note ? '**कारण:** ' + req.note.replace(/[<>]/g, '') + '\n' : '') +
-      '\n**पुरानो पाठ:**\n' + fence(req.old) + '\n**नयाँ पाठ:**\n' + fence(req.new) +
+      '\n**पुरानो पाठ:**\n' + fence(req.old) + '\n**नयाँ पाठ:**' + (req.bold || req.color ? ' (' + (req.bold ? 'बोल्ड ' : '') + (req.color ? 'रङ ' + req.color : '') + ')' : '') + '\n' + fence(req.new) +
       '\n\n_यो Issue "शास्त्री पोर्टल" Admin Panel → User Request बाट स्वीकार/अस्वीकार गर्नुहोस्।_\n' +
       '<!--SP-REQ ' + b64(JSON.stringify(req)) + ' -->';
 
