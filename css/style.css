@@ -2889,3 +2889,11 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .dots-menu .dm-item:hover { background: var(--bg); }
 .dots-menu .dm-item:active { transform: scale(.985); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
 .dots-menu.open { height: calc(100dvh - var(--hdr-h, 62px)); }
+
+/* भाषा छान्नुस् — उठेको बटन (छुँदा दबेको), छानिएको भाषा भित्र धसेको र निलो अक्षर */
+.dots-menu .lang-chips { gap: 10px; padding: 4px 10px 8px; flex-wrap: nowrap; }
+.dots-menu .lang-chip { flex: 1; text-align: center; padding: 11px 8px; border-radius: 16px; border: 1px solid var(--divider); background: var(--bg); color: var(--text-1); font-size: .86rem;
+  box-shadow: 3px 3px 8px var(--shadow), -3px -3px 8px var(--surface-high); transition: transform .12s ease-out, box-shadow .12s ease-out !important; }
+.dots-menu .lang-chip:hover { transform: none; }
+.dots-menu .lang-chip:active, .dots-menu .lang-chip.active { transform: scale(.985); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
+.dots-menu .lang-chip.active { background: var(--bg); border-color: var(--accent); color: var(--accent); }
