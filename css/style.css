@@ -2930,3 +2930,11 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 /* पाठ छान्दा देखिने बार: अध्याय-नेभिगेसन (▲ ▼ ☰) का बटन जस्तै — उही neumorphic बटन (36px, उही कुना/छाया/बोर्डर) */
 .tr-bar .neu-btn { font-size: 1rem; }
 .tr-bar .neu-btn.on { box-shadow: inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 14px var(--shadow); }
+
+/* Admin Login: बाहिरबाट पप-अप होइन, सेटिङ कार्डभित्रै अध्याय खुले जस्तै खुल्छ */
+.admin-chev { display:inline-block; font-size:20px; line-height:1; transition:transform .25s var(--ease-spring) !important; }
+#adminLoginBox.open .admin-chev { transform: rotate(90deg); }
+.admin-inline { display:none; padding:4px 14px 16px; border-top:1px solid var(--divider); }
+#adminLoginBox.open .admin-inline { display:block; animation:chBodyIn .2s ease-out; }
+.admin-inline .form-panel { background:none !important; box-shadow:none !important; border:0 !important; outline:0 !important; padding:0; margin:10px 0 0; border-radius:0 !important; }
+.admin-inline .m-btns { margin-top:12px; }

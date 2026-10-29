@@ -55,7 +55,20 @@ function pvSubstitute(html) {
 /* ════════════════════════════════════
    LOGIN (GitHub token)
    ════════════════════════════════════ */
+/* Admin Login — सेटिङ पेजकै कार्डभित्र (अध्याय खुले जस्तै: चेभ्रन घुम्छ, भाग त्यहीँ खुल्छ) */
+function adminInlineToggle(on) {
+  const box = document.getElementById('adminLoginBox'), row = document.getElementById('adminLoginRow');
+  if (!box) return;
+  box.classList.toggle('open', !!on);
+  if (row) row.setAttribute('aria-expanded', on ? 'true' : 'false');
+  if (on) setTimeout(() => { try { box.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }, 60);
+}
+function adminInlineClose() { adminInlineToggle(false); }
+window.adminInlineClose = adminInlineClose;
+
 function openAdminLogin() {
+  const bx = document.getElementById('adminLoginBox');
+  if (bx && bx.classList.contains('open')) { adminInlineClose(); return; }    // फेरि थिच्दा बन्द
   const cfg = GH.cfg();
   document.getElementById('adminGhOwner').value = cfg.owner || '';
   document.getElementById('adminGhRepo').value  = cfg.repo  || '';
@@ -66,7 +79,7 @@ function openAdminLogin() {
   /* सर्भर (Cloudflare) मा PIN/Fingerprint सेटअप भएको छ भने त्यही देखाउने, नत्र पुरानो token फारम */
   window.__adminModeChosen = false;
   adminLoginMode(localStorage.getItem('sp_admin_fn') === '1' ? 'pin' : 'token');
-  openOv('adminLoginModal');
+  adminInlineToggle(true);
   fetch('/api/admin/status', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(j => {
     const on = !!(j && j.configured);
     localStorage.setItem('sp_admin_fn', on ? '1' : '0');
@@ -115,7 +128,7 @@ async function adminProxyIn(j) {
   GH.setSession(j.token, j.exp);
   GH.saveCfg(j.owner, String(j.repo).split('/')[1], 'main');
   document.getElementById('adminPin').value = '';
-  closeOv('adminLoginModal');
+  adminInlineClose();
   await activateAdmin(j.owner);
 }
 
@@ -200,7 +213,7 @@ async function adminConnect() {
   GH.saveCfg(owner, repo, r.defaultBranch || 'main');
   GH.setToken(token, remember);
   document.getElementById('adminGhToken').value = '';
-  closeOv('adminLoginModal');
+  adminInlineClose();
   await activateAdmin(r.login);
 }
 window.adminConnect = adminConnect;

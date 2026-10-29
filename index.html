@@ -300,11 +300,40 @@
 
     <div class="sett-group s4b" id="adminLoginBox">
       <div class="sett-grp-lbl"><svg class="grp-ico" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg> Admin</div>
-      <div class="sett-row" onclick="openAdminLogin()">
+      <div class="sett-row" onclick="openAdminLogin()" aria-expanded="false" id="adminLoginRow">
         <div class="sett-left">
           <div class="sett-ico sett-ico-line"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/><circle cx="12" cy="15.5" r="1.2"/></svg></div>
           <div><div class="sett-name">Admin Login</div></div>
-        </div><span style="color:var(--text-3)">→</span>
+        </div><span class="admin-chev" style="color:var(--text-3)">›</span>
+      </div>
+      <div class="admin-inline" id="adminLoginInline">
+    <!-- PIN / Fingerprint (Cloudflare सेटअप भएपछि) -->
+    <div class="form-panel" id="adminPinBox" style="display:none">
+      <div class="f-group"><label class="f-label">PIN</label>
+        <input class="f-input" id="adminPin" type="password" inputmode="numeric" autocomplete="off" maxlength="32" style="text-align:center;letter-spacing:.35em;font-size:1.3rem" onkeydown="if(event.key==='Enter')adminPinLogin()">
+      </div>
+      <div id="adminPinError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;display:none"></div>
+      <button class="btn-s" id="adminFpBtn" style="width:100%;margin-bottom:10px;display:none" onclick="adminFpLogin()">👆 Fingerprint ले खोल्नुस्</button>
+      <button type="button" onclick="adminLoginMode('token',true)" style="background:none;border:none;color:var(--text-3);font-size:0.76rem;cursor:pointer;font-family:var(--font);padding:4px 0">Token राखेर लगइन</button>
+    </div>
+    <div class="m-btns" id="adminPinBtns" style="display:none">
+      <button class="btn-s" onclick="adminInlineClose()">रद्द</button>
+      <button class="btn-p" id="adminPinBtn" onclick="adminPinLogin()">🔓 खोल्नुस्</button>
+    </div>
+
+    <!-- Token (पुरानो तरिका) -->
+    <div class="form-panel" id="adminTokenBox">
+      <div class="f-group"><label class="f-label">Username</label><input class="f-input" id="adminGhOwner" type="text" autocapitalize="off" autocomplete="off"></div>
+      <div class="f-group"><label class="f-label">Repository नाम</label><input class="f-input" id="adminGhRepo" type="text" autocapitalize="off" autocomplete="off"></div>
+      <div class="f-group"><label class="f-label">Token</label><input class="f-input" id="adminGhToken" type="password" autocomplete="off"></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;margin-bottom:8px"><input type="checkbox" id="adminGhRemember" checked style="width:16px;height:16px"> यो फोनमा याद राख्नुस्</label>
+      <div id="adminGhError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;display:none"></div>
+      <button type="button" id="adminToPin" onclick="adminLoginMode('pin',true)" style="display:none;background:none;border:none;color:var(--text-3);font-size:0.76rem;cursor:pointer;font-family:var(--font);padding:4px 0">← PIN / Fingerprint</button>
+    </div>
+    <div class="m-btns" id="adminTokenBtns">
+      <button class="btn-s" onclick="adminInlineClose()">रद्द</button>
+      <button class="btn-p" id="adminGhBtn" onclick="adminConnect()">✅ जोड्नुस्</button>
+    </div>
       </div>
     </div>
 
@@ -565,42 +594,6 @@
       </select>
     </div>
     <button class="btn-p" style="width:100%" onclick="doPrintChapter()">🖨️ Print गर्नुहोस्</button>
-  </div>
-</div>
-
-<!-- Admin Login -->
-<div class="overlay" id="adminLoginModal" onclick="if(event.target===this)closeOv('adminLoginModal')">
-  <div class="modal-sheet">
-    <div class="m-handle"></div>
-    <div class="m-title">🔐 Admin Login</div>
-
-    <!-- PIN / Fingerprint (Cloudflare सेटअप भएपछि) -->
-    <div class="form-panel" id="adminPinBox" style="display:none">
-      <div class="f-group"><label class="f-label">PIN</label>
-        <input class="f-input" id="adminPin" type="password" inputmode="numeric" autocomplete="off" maxlength="32" style="text-align:center;letter-spacing:.35em;font-size:1.3rem" onkeydown="if(event.key==='Enter')adminPinLogin()">
-      </div>
-      <div id="adminPinError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;display:none"></div>
-      <button class="btn-s" id="adminFpBtn" style="width:100%;margin-bottom:10px;display:none" onclick="adminFpLogin()">👆 Fingerprint ले खोल्नुस्</button>
-      <button type="button" onclick="adminLoginMode('token',true)" style="background:none;border:none;color:var(--text-3);font-size:0.76rem;cursor:pointer;font-family:var(--font);padding:4px 0">Token राखेर लगइन</button>
-    </div>
-    <div class="m-btns" id="adminPinBtns" style="display:none">
-      <button class="btn-s" onclick="closeOv('adminLoginModal')">रद्द</button>
-      <button class="btn-p" id="adminPinBtn" onclick="adminPinLogin()">🔓 खोल्नुस्</button>
-    </div>
-
-    <!-- Token (पुरानो तरिका) -->
-    <div class="form-panel" id="adminTokenBox">
-      <div class="f-group"><label class="f-label">Username</label><input class="f-input" id="adminGhOwner" type="text" autocapitalize="off" autocomplete="off"></div>
-      <div class="f-group"><label class="f-label">Repository नाम</label><input class="f-input" id="adminGhRepo" type="text" autocapitalize="off" autocomplete="off"></div>
-      <div class="f-group"><label class="f-label">Token</label><input class="f-input" id="adminGhToken" type="password" autocomplete="off"></div>
-      <label style="display:flex;align-items:center;gap:8px;font-size:0.8rem;margin-bottom:8px"><input type="checkbox" id="adminGhRemember" checked style="width:16px;height:16px"> यो फोनमा याद राख्नुस्</label>
-      <div id="adminGhError" style="color:#D6303F;font-size:0.8rem;margin:4px 0 10px;display:none"></div>
-      <button type="button" id="adminToPin" onclick="adminLoginMode('pin',true)" style="display:none;background:none;border:none;color:var(--text-3);font-size:0.76rem;cursor:pointer;font-family:var(--font);padding:4px 0">← PIN / Fingerprint</button>
-    </div>
-    <div class="m-btns" id="adminTokenBtns">
-      <button class="btn-s" onclick="closeOv('adminLoginModal')">रद्द</button>
-      <button class="btn-p" id="adminGhBtn" onclick="adminConnect()">✅ जोड्नुस्</button>
-    </div>
   </div>
 </div>
 
