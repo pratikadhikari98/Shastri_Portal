@@ -2508,8 +2508,8 @@ function initAdminInline() {
     row.after(ov); row.classList.add('sett-row-exp');
     row.addEventListener('click', () => {
       if (ov.classList.contains('open')) { closeOv(ovId); row.classList.remove('exp'); return; }
-      row.classList.add('exp'); (new Function(open))();
-      setTimeout(() => ov.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 60);
+      row.classList.add('exp');
+      requestAnimationFrame(() => requestAnimationFrame(() => (new Function(open))()));   // पहिले दबेको स्थिति देखाएर मात्र सामग्री बनाउने — छुँदा अड्किँदैन
     });
   });
 }

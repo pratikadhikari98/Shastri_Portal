@@ -2874,7 +2874,9 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .sett-row-exp > span:last-child { transition: transform .2s; }
 .sett-row-exp.exp > span:last-child { transform: rotate(90deg); }
 
-/* inline खुल्दा: ठाउँ झटपट बन्छ, भित्रको सामग्री मात्र हल्का माथि उठेर आउने (transform/opacity — GPU, झट्का नहुने) */
-.overlay.ov-inline.open .modal-sheet { animation: ovRise .32s cubic-bezier(.2,.8,.25,1) both; }
-@keyframes ovRise { from { opacity: 0; transform: translate3d(0, 18px, 0); } to { opacity: 1; transform: translate3d(0, 0, 0); } }
-@media (prefers-reduced-motion: reduce) { .overlay.ov-inline.open .modal-sheet { animation: none; } }
+/* Admin Panel पङ्क्ति: उठेको (raised) देखिने, छुँदा/खुल्दा दबेको (pressed) — केवल transform/box-shadow, खुल्दा सामग्रीमा animation छैन (फ्रेम नझर्न) */
+#adminPanelBox .sett-row.sett-row-exp { position: relative; margin: 8px 10px; border-radius: 16px; border: 1px solid var(--divider); background: var(--bg);
+  box-shadow: 3px 3px 8px var(--shadow), -3px -3px 8px var(--surface-high); transition: transform .12s ease-out, box-shadow .12s ease-out; will-change: transform; }
+#adminPanelBox .sett-row.sett-row-exp .sett-name { text-shadow: 0 1px 0 var(--surface-high); }
+#adminPanelBox .sett-row.sett-row-exp:active, #adminPanelBox .sett-row.sett-row-exp.exp { transform: scale(.985); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
+#adminPanelBox .sett-row.sett-row-exp:active .sett-name, #adminPanelBox .sett-row.sett-row-exp.exp .sett-name { text-shadow: none; }
