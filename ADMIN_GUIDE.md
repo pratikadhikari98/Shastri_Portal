@@ -130,3 +130,5 @@ Website → ⚙️ सेटिङ र Profile → **Admin Login** → username,
 1. GitHub → Settings → Developer settings → Fine-grained tokens → यही repo मात्र छानेर **Issues: Read and write** अनुमति (Contents अनुमति नदिनुहोस्) भएको नयाँ token बनाउनुहोस्।
 2. Cloudflare → Pages → Shastri Portal → Settings → Variables and Secrets → **GH_TOKEN** नामको Secret मा त्यो token राखेर Deploy गर्नुहोस्।
 3. (वैकल्पिक) KV namespace **SUGG_KV** जोडे प्रति IP दिनको १० सुझाव सीमा लाग्छ (स्प्याम रोक्न)।
+
+> **सुझाव "बन्द" नभएर सूचीमै रहने समस्या:** Admin token मा **Issues: Read and write** अनुमति छैन भने GitHub मा सुझाव बन्द हुँदैन। अब `functions/api/suggest-close.js` ले (सुझाव-सेवाको `GH_TOKEN` बाट) बन्द गरिदिन्छ, त्यसैले अनुमति बदल्नु पर्दैन। त्यो पनि नभए त्यो फोनको सूचीबाट मात्र लुकाइन्छ। सबैभन्दा सफा तरिका: Admin token (GitHub → Settings → Developer settings → Fine-grained tokens) मा **Issues: Read and write** थप्नुहोस्।

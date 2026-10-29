@@ -1112,8 +1112,12 @@ function _sgParse(issue) {
 async function _sgFetch() {
   const res = await GH.req(`issues?labels=${SG_LABEL}&state=open&per_page=50&sort=created&direction=desc`);
   if (!res.ok) throw new Error(await GH.errMsg(res));
-  return (await res.json()).filter(i => !i.pull_request);
+  const done = _sgDoneSet();
+  return (await res.json()).filter(i => !i.pull_request && !done.has(i.number));     // यो फोनमा पहिल्यै निपटाइएका फेरि नदेखाउने
 }
+/* निपटाइएका (स्वीकार/अस्वीकार) सुझावको नम्बर — GitHub मा बन्द हुन नसके पनि सूचीमा फेरि नदेखिन */
+function _sgDoneSet() { try { return new Set(JSON.parse(localStorage.getItem('sp_sg_done') || '[]')); } catch (e) { return new Set(); } }
+function _sgMarkDone(n) { try { const s = _sgDoneSet(); s.add(n); localStorage.setItem('sp_sg_done', JSON.stringify([...s].slice(-300))); } catch (e) {} }
 function _sgBadge() {
   const b = document.getElementById('sgBadge'); if (!b) return;
   const n = App._sgList.length; b.textContent = n; b.hidden = !n;
@@ -1232,12 +1236,22 @@ function _sgBalanced(t) {
   return c(/\*\*/g) % 2 === 0 && c(/==/g) % 2 === 0 && c(/~~/g) % 2 === 0 && c(/__/g) % 2 === 0 && c(/`/g) % 2 === 0 && c(/\{\{/g) === c(/\}\}/g);
 }
 
+/* Issue बन्द: पहिले सिधै GitHub बाट; token मा "Issues: write" छैन (403) भने /api/suggest-close (सर्भर फङ्सन) बाट। जे भए पनि यो फोनको सूचीबाट हटाइन्छ */
 async function _sgClose(n, reason, comment) {
+  let ok = false;
   try {
-    if (comment) await GH.req(`issues/${n}/comments`, { method: 'POST', body: JSON.stringify({ body: comment }) });
-    const r = await GH.req(`issues/${n}`, { method: 'PATCH', body: JSON.stringify({ state: 'closed', state_reason: reason }) });
-    return r.ok;
-  } catch (e) { return false; }
+    const c = comment ? await GH.req(`issues/${n}/comments`, { method: 'POST', body: JSON.stringify({ body: comment }) }) : { ok: true };
+    const r = c.ok ? await GH.req(`issues/${n}`, { method: 'PATCH', body: JSON.stringify({ state: 'closed', state_reason: reason }) }) : { ok: false };
+    ok = r.ok;
+  } catch (e) {}
+  if (!ok) {
+    try {
+      const r = await fetch('/api/suggest-close', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + GH.token() }, body: JSON.stringify({ number: n, reason, comment }) });
+      ok = r.ok;
+    } catch (e) {}
+  }
+  _sgMarkDone(n);
+  return ok;
 }
 /* पाठकको सुझावलाई markdown बनाउने: बोल्ड → **पाठ**, रङ → {{#रङ:पाठ}} (साइटकै चिन्ह) */
 function _sgMd(d, content, m) {
@@ -1276,10 +1290,11 @@ async function _sgApply(nums, interactive) {
       if (ok) applied.push(...done); else { list.forEach((c, i) => { c.content = backup[i]; }); done.forEach(n => skipped.push(n)); }
     }
   }
-  for (const n of applied) await _sgClose(n, 'completed', '✅ स्वीकार गरियो र अध्यायमा लागू गरियो। धन्यवाद!');
+  let closeFail = 0;
+  for (const n of applied) { if (!(await _sgClose(n, 'completed', '✅ स्वीकार गरियो र अध्यायमा लागू गरियो। धन्यवाद!'))) closeFail++; }
   App._sgList = App._sgList.filter(x => !applied.includes(x.number)); _sgBadge(); renderAdminSuggest();
   byBookRefresh(Object.keys(byBook));
-  toast(applied.length ? '✅ ' + applied.length + ' सुझाव लागू भयो' + (skipped.length ? ' · ' + skipped.length + ' एक-एक गरेर हेर्नुहोस्' : '') : (skipped.length ? '⚠️ ' + skipped.length + ' स्वतः लागू भएन — ✅ एक-एक गरेर थिच्नुहोस्' : ''));
+  toast(applied.length ? '✅ ' + applied.length + ' सुझाव लागू भयो' + (skipped.length ? ' · ' + skipped.length + ' एक-एक गरेर हेर्नुहोस्' : '') + (closeFail ? ' · ⚠️ GitHub मा बन्द हुन सकेन (यहाँबाट हटाइयो)' : '') : (skipped.length ? '⚠️ ' + skipped.length + ' स्वतः लागू भएन — ✅ एक-एक गरेर थिच्नुहोस्' : ''));
 }
 function byBookRefresh(ids) { ids.forEach(id => { try { if (typeof refreshInlineChapterView === 'function') refreshInlineChapterView(id); } catch (e) {} }); }
 
@@ -1288,12 +1303,12 @@ async function adminSuggestBulk(kind) {
   const nums = _sgSelected(); if (!nums.length) return;
   if (kind === 'ok') { await _sgApply(nums, false); return; }
   if (!(await showConfirm(nums.length + ' सुझाव अस्वीकार गरेर बन्द गर्ने?', 'अस्वीकार गर्नुहोस्', 'सुझाव अस्वीकार'))) return;
-  for (const n of nums) await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!');
-  App._sgList = App._sgList.filter(x => !nums.includes(x.number)); _sgBadge(); renderAdminSuggest(); toast('अस्वीकार गरियो');
+  let bad = 0; for (const n of nums) { if (!(await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!'))) bad++; }
+  App._sgList = App._sgList.filter(x => !nums.includes(x.number)); _sgBadge(); renderAdminSuggest(); toast(bad ? 'अस्वीकार गरियो · ⚠️ GitHub मा बन्द हुन सकेन (यहाँबाट हटाइयो)' : 'अस्वीकार गरियो');
 }
 async function adminSuggestReject(n) {
   if (!(await showConfirm('यो सुझाव अस्वीकार गरेर बन्द गर्ने?', 'अस्वीकार गर्नुहोस्', 'सुझाव अस्वीकार'))) return;
-  await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!');
-  App._sgList = App._sgList.filter(x => x.number !== n); _sgBadge(); renderAdminSuggest(); toast('अस्वीकार गरियो');
+  const okc = await _sgClose(n, 'not_planned', 'यो सुझाव यसपटक लागू गरिएन। सहभागिताका लागि धन्यवाद!');
+  App._sgList = App._sgList.filter(x => x.number !== n); _sgBadge(); renderAdminSuggest(); toast(okc ? 'अस्वीकार गरियो' : 'अस्वीकार गरियो · ⚠️ GitHub मा बन्द हुन सकेन (यहाँबाट हटाइयो)');
 }
 window.adminSuggestApprove = adminSuggestApprove; window.adminSuggestBulk = adminSuggestBulk; window.adminSuggestReject = adminSuggestReject;
