@@ -1221,15 +1221,17 @@ function _sgLocate(content, d) {
     while ((m = re.exec(content)) && cand.length < 50) { if (!m[0].length) { re.lastIndex++; continue; } cand.push({ start: m.index, end: m.index + m[0].length }); }
   }
   if (!cand.length) return null;
-  let best = cand[0];
-  if (cand.length > 1) {                                                          // सन्दर्भ र अनुमानित स्थानले नजिकको छान्ने
+  let best = cand[0], confident = true;
+  if (cand.length > 1) {                                                          // सन्दर्भ (अघिल्लो/पछिल्लो शब्द) र अनुमानित स्थानले छान्ने
     const bf = (d.before || '').trim().slice(-8), af = (d.after || '').trim().slice(0, 8);
     const hint = d.total ? (d.s / d.total) * content.length : 0;
-    cand.map(c => ({ c, sc: (bf && content.slice(Math.max(0, c.start - 40), c.start).includes(bf) ? 2 : 0) + (af && content.slice(c.end, c.end + 40).includes(af) ? 2 : 0), dist: Math.abs(c.start - hint) }))
-        .sort((a, b) => b.sc - a.sc || a.dist - b.dist).forEach((x, k) => { if (!k) best = x.c; });
+    const sc = cand.map(c => ({ c, sc: (bf && content.slice(Math.max(0, c.start - 40), c.start).includes(bf) ? 2 : 0) + (af && content.slice(c.end, c.end + 40).includes(af) ? 2 : 0), dist: Math.abs(c.start - hint) }))
+                   .sort((a, b) => b.sc - a.sc || a.dist - b.dist);
+    best = sc[0].c;
+    confident = sc[0].sc > sc[1].sc || (!!d.total && sc[0].sc === sc[1].sc && sc[0].dist * 2 < sc[1].dist);   // स्पष्ट रूपमा एउटा मात्र नजिक भए "विश्वस्त"
   }
   if (loose && !_sgBalanced(content.slice(best.start, best.end))) return null;     // markdown चिन्ह (** == {{ }}) आधा काटिने भए स्वतः नबदल्ने
-  return { start: best.start, end: best.end, count: cand.length, loose };
+  return { start: best.start, end: best.end, count: cand.length, loose, confident };
 }
 function _sgBalanced(t) {
   const c = (re) => (t.match(re) || []).length;
@@ -1276,10 +1278,10 @@ async function _sgApply(nums, interactive) {
       const ci = _sgFindChapter(list, d); if (ci < 0) { skipped.push(n); continue; }
       const content = list[ci].content || '', m = _sgLocate(content, d);
       if (!m) { skipped.push(n); continue; }
-      if (m.count > 1 || m.loose) {
+      if (!m.confident) {
         if (!interactive) { skipped.push(n); continue; }
         const ctx = '…' + content.slice(Math.max(0, m.start - 30), m.start) + '【' + content.slice(m.start, m.end) + ' → ' + d.new + '】' + content.slice(m.end, m.end + 30) + '…';
-        const ok = await showConfirm((m.count > 1 ? 'यो पाठ ' + m.count + ' ठाउँमा भेटियो; सबैभन्दा मिल्दो ठाउँ मात्र बदलिन्छ।\n' : 'पाठ ठ्याक्कै मिलेन (चिन्ह/खाली-ठाउँ फरक)।\n') + ctx, 'हो, बदल्नुहोस्', 'पुष्टि गर्नुहोस्');
+        const ok = await showConfirm('यो पाठ ' + m.count + ' ठाउँमा भेटियो र कुन हो भनी पक्का भएन; तलको ठाउँ मात्र बदलिन्छ।\n' + ctx, 'हो, बदल्नुहोस्', 'पुष्टि गर्नुहोस्');
         if (!ok) { skipped.push(n); continue; }
       }
       list[ci].content = content.slice(0, m.start) + _sgMd(d, content, m) + content.slice(m.end);

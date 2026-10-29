@@ -155,8 +155,9 @@
     if (!old) return;
     if (old.length > LIM_OLD) { if (window.toast) toast('⚠️ छोटो भाग (शब्द/वाक्य) छान्नुहोस्'); return; }
     const k = parseKey(info.key), ch = chapterOf(k.bookId, k.idx);
+    const oldSrv = String(info.oldNl || old).replace(/^\s+|\s+$/g, '').slice(0, 1500);
     ctx = { el: info.el, key: info.key, bookId: k.bookId, idx: k.idx, chTitle: ch.title || '', bookTitle: bookTitleOf(k.bookId),
-            old, before: info.before || '', after: info.after || '', s: info.s || 0, e: info.e != null ? info.e : (info.s || 0) + old.length, total: info.total || 0 };
+            old, oldSrv, before: info.before || '', after: info.after || '', s: info.s || 0, e: info.e != null ? info.e : (info.s || 0) + old.length, total: info.total || 0 };
     ensureOv();
     fmt = { b: false, c: '' }; paintFmt();
     $('sgNew').value = old; $('sgMsg').textContent = '';
@@ -181,7 +182,7 @@
     const fx = jget(FX, []); fx.push({ b: c.bookId, t: c.chTitle, old: c.old, neu: nw, before: c.before, after: c.after, bold: rich.b, color: rich.c, at: Date.now() });
     jset(FX, fx.slice(-200));
     // ३) एडमिनलाई चुपचाप
-    enqueue({ v: 1, bookId: c.bookId, idx: c.idx, chTitle: c.chTitle, bookTitle: c.bookTitle, old: c.old, new: nw,
+    enqueue({ v: 1, bookId: c.bookId, idx: c.idx, chTitle: c.chTitle, bookTitle: c.bookTitle, old: c.oldSrv || c.old, new: nw,
               before: c.before, after: c.after, s: c.s, total: c.total, bold: rich.b, color: rich.c, hp: $('sgHp').value });
     closeOv('sgOv');
     if (window.toast) toast(ok ? '✅ सच्याइयो' : '✅ सुरक्षित भयो');

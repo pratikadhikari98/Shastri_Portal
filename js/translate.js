@@ -49,7 +49,14 @@
     if (key) { try { st = off(rg.startContainer, rg.startOffset); en = off(rg.endContainer, rg.endOffset); } catch (e) { st = en = 0; } }
     let before = '', after = '', total = 0;
     if (key && en > st) { try { const tc = ra.textContent; total = tc.length; before = tc.slice(Math.max(0, st - 40), st); after = tc.slice(en, en + 40); } catch (e) {} }
-    return { text, raw: rg.toString(), before, after, total, rect, el: ra, key: key && en > st ? key : '', s: st, e: en };
+    let rawNl = '';                                                    // <br>/अनुच्छेदमा नयाँ लाइन सहितको पाठ (markdown मा खोज्न)
+    try {
+      const fr = rg.cloneContents();
+      fr.querySelectorAll('br').forEach(b => b.replaceWith('\n'));
+      fr.querySelectorAll('p,div,li,h1,h2,h3,h4,h5,blockquote').forEach(b => b.append('\n'));
+      rawNl = fr.textContent.replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n');
+    } catch (e) {}
+    return { text, raw: rg.toString(), rawNl, before, after, total, rect, el: ra, key: key && en > st ? key : '', s: st, e: en };
   }
 
   /* ── तैरिने पट्टी (zipper-बटन .neu-btn जस्तै; बोर्डर थिम अनुसार) ── */
@@ -109,7 +116,7 @@
     bar.addEventListener('mousedown', e => e.preventDefault());
     bar.addEventListener('click', e => {
       const t = e.target.closest('button'); if (!t) return;
-      const info = selInfo(); if (info) { cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e; cur.raw = info.raw; cur.before = info.before; cur.after = info.after; cur.total = info.total; }
+      const info = selInfo(); if (info) { cur.text = info.text; cur.el = info.el; cur.key = info.key; cur.s = info.s; cur.e = info.e; cur.raw = info.raw; cur.rawNl = info.rawNl; cur.before = info.before; cur.after = info.after; cur.total = info.total; }
       if (t.dataset.act === 'suggest') { openSuggestFromSel(); return; }
       if (t.dataset.tl) { if (cur.text) showOut(t.dataset.tl); return; }
       if (t.dataset.act === 'closeout') { closeOut(); return; }
@@ -126,7 +133,7 @@
   }
   function openSuggestFromSel() {
     if (!window.openSuggest || !cur.key) return;
-    const info = { key: cur.key, el: cur.el, old: cur.raw || cur.text, before: cur.before, after: cur.after, s: cur.s, e: cur.e, total: cur.total };
+    const info = { key: cur.key, el: cur.el, old: cur.raw || cur.text, oldNl: cur.rawNl, before: cur.before, after: cur.after, s: cur.s, e: cur.e, total: cur.total };
     done();                                                           // छनौट/टुलबार हटाउने (फारम खुल्छ)
     window.openSuggest(info);
   }
