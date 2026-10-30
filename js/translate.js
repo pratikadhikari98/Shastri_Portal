@@ -138,6 +138,15 @@
     window.openSuggest(info);
   }
   function hide() { if (bar) { bar.hidden = true; view = 'main'; out = null; outText = ''; showOut._n = (showOut._n || 0) + 1; } }
+  /* अनुवादको कार्ड पट्टीबाट बाहिर (तल, ठाउँ नभए माथि) खुल्छ — पट्टीको आकार नबढोस्; स्क्रिनबाहिर नजाओस् */
+  function fitOut() {
+    const b = bar, o = b && b.querySelector('.tr-out'); if (!o) return;
+    b.classList.remove('out-up'); o.style.left = '0px'; o.style.right = 'auto';
+    const br = b.getBoundingClientRect(), ow = o.offsetWidth, oh = o.offsetHeight, vw = innerWidth, vh = innerHeight;
+    let l = 0; if (br.left + ow > vw - 8) l = (vw - 8) - (br.left + ow); if (br.left + l < 8) l = 8 - br.left;
+    o.style.left = l + 'px';
+    if (br.bottom + 6 + oh > vh - 8 && br.top - 6 - oh > 8) b.classList.add('out-up');
+  }
   function place() {
     const info = selInfo();
     if (!info) { hide(); return; }
@@ -152,7 +161,7 @@
     if (userPos) {                                                     // प्रयोगकर्ताले सारेको ठाउँमा
       b.style.left = (4 + userPos.fx * Math.max(0, vw - bw - 8)) + 'px';
       b.style.top = (4 + userPos.fy * Math.max(0, vh - bh - 8)) + 'px';
-      return;
+      fitOut(); return;
     }
     let top = info.rect.bottom + (COARSE ? 44 : 16);                   // फोनको select-थोप्ला (handle) मुनि पट्टी आओस्, थोप्लामाथि नपरोस्
     if (top + bh > vh - 8) top = info.rect.top - bh - 16;
@@ -160,6 +169,7 @@
     let left = info.rect.left + info.rect.width / 2 - bw / 2;
     left = Math.max(8, Math.min(vw - bw - 8, left));
     b.style.top = top + 'px'; b.style.left = left + 'px';
+    fitOut();
   }
   const schedule = () => { clearTimeout(timer); timer = setTimeout(place, COARSE ? 380 : 220); };
   /* फोनको थोप्ला तान्दै गर्दा पट्टी सँगसँगै उफ्रिन्न/थोप्लामाथि पर्दैन — लुकेर बस्छ, छान्न रोकिएपछि मात्र आउँछ */
