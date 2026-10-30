@@ -33,14 +33,8 @@ jobs:
 
       - name: App icon (from site icon)
         run: |
-          for d in mipmap-mdpi:48 mipmap-hdpi:72 mipmap-xhdpi:96 mipmap-xxhdpi:144 mipmap-xxxhdpi:192; do
-            name=${d%%:*}; size=${d##*:}
-            dir=android/app/src/main/res/$name
-            convert ../images/icon-512.png -resize ${size}x${size} $dir/ic_launcher.png
-            cp $dir/ic_launcher.png $dir/ic_launcher_round.png
-            cp $dir/ic_launcher.png $dir/ic_launcher_foreground.png
-          done
-        continue-on-error: true
+          pip install pillow
+          python make-icons.py
 
       - name: Sync
         run: npx cap sync android
