@@ -2988,3 +2988,9 @@ body.is-admin #myFixBox { display: none; }
 
 .adm-more-menu { position: static; margin-top: 10px; min-width: 0; width: 100%; box-shadow: none; background: var(--bg); }
 .adm-pin-row .f-input, #adminPin { background: var(--bg) !important; border: 1px solid var(--divider) !important; border-radius: 14px; min-height: 48px; box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
+
+/* Admin Login: भित्रको दोस्रो बाकस (form-panel) हटाएर एउटै बाकस — बोर्डर/इन्द्रेणी/पृष्ठभूमि सबै बन्द */
+html .admin-inline .form-panel, html.borders-on .admin-inline .form-panel, html.bd-rainbow .admin-inline .form-panel, html.borders-on.bd-grad-on .admin-inline .form-panel {
+  border: 0 !important; border-image: none !important; background: none !important; background-image: none !important; box-shadow: none !important; outline: 0 !important;
+  margin: 0 !important; padding: 4px 4px 0 !important; border-radius: 0 !important; }
+html .admin-inline .form-panel::before, html .admin-inline .form-panel::after { display: none !important; }
