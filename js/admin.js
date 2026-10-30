@@ -1360,32 +1360,46 @@ function _sgFindChapter(list, d) {
   if (byTitle >= 0) return byTitle;
   return list[d.idx] ? d.idx : -1;
 }
-/* पुरानो पाठ markdown मा खोज्ने: पहिले ठ्याक्कै, नभए खाली-ठाउँ/markup (** == आदि) सहने तरिका */
+/* markdown मा \* \= \{ जस्ता "escape" गरिएका चिन्ह (पाठमा जस्ताको तस्तै देखिने) हटाएर खोज्न: unescaped पाठ + मूल स्थानको नक्सा */
+function _sgUnesc(content) {
+  let t = '', map = [];
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i];
+    if (ch === '\\' && i + 1 < content.length && /[\\`*_{}\[\]()#+\-.!|=~<>:"']/.test(content[i + 1])) { map.push(i); t += content[i + 1]; i++; }
+    else { map.push(i); t += ch; }
+  }
+  map.push(content.length);
+  return { t, map };
+}
+/* पुरानो पाठ markdown मा खोज्ने: पहिले ठ्याक्कै, नभए खाली-ठाउँ/markup (** == आदि) सहने तरिका (escape हटाएर) */
 function _sgLocate(content, d) {
   const old = String(d.old || ''); if (!old) return null;
+  const U = _sgUnesc(content), T = U.t;
   let cand = [], loose = false, i = -1;
-  while ((i = content.indexOf(old, i + 1)) >= 0 && cand.length < 50) cand.push({ start: i, end: i + old.length });
+  while ((i = T.indexOf(old, i + 1)) >= 0 && cand.length < 50) cand.push({ start: i, end: i + old.length });
   if (!cand.length) {
     const toks = old.split(/\s+/).filter(Boolean).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    if (!toks.length || toks.length > 400) return null;
+    if (!toks.length || toks.length > 4000) return null;
     const re = new RegExp(toks.join('(?:[\\s*_=~`>|#-]|<[^>]{0,60}>|\\{\\{[^:{}\\n]{0,24}:|\\}\\})*'), 'g');
     let m; loose = true;
-    while ((m = re.exec(content)) && cand.length < 50) { if (!m[0].length) { re.lastIndex++; continue; } cand.push({ start: m.index, end: m.index + m[0].length }); }
+    while ((m = re.exec(T)) && cand.length < 50) { if (!m[0].length) { re.lastIndex++; continue; } cand.push({ start: m.index, end: m.index + m[0].length }); }
   }
   if (!cand.length) return null;
   let best = cand[0], confident = true;
   if (cand.length > 1) {                                                          // सन्दर्भ (अघिल्लो/पछिल्लो शब्द) र अनुमानित स्थानले छान्ने
     const bf = (d.before || '').trim().slice(-8), af = (d.after || '').trim().slice(0, 8);
-    const hint = d.total ? (d.s / d.total) * content.length : 0;
-    const sc = cand.map(c => ({ c, sc: (bf && content.slice(Math.max(0, c.start - 40), c.start).includes(bf) ? 2 : 0) + (af && content.slice(c.end, c.end + 40).includes(af) ? 2 : 0), dist: Math.abs(c.start - hint) }))
+    const hint = d.total ? (d.s / d.total) * T.length : 0;
+    const sc = cand.map(c => ({ c, sc: (bf && T.slice(Math.max(0, c.start - 40), c.start).includes(bf) ? 2 : 0) + (af && T.slice(c.end, c.end + 40).includes(af) ? 2 : 0), dist: Math.abs(c.start - hint) }))
                    .sort((a, b) => b.sc - a.sc || a.dist - b.dist);
     best = sc[0].c;
     confident = sc[0].sc > sc[1].sc || (!!d.total && sc[0].sc === sc[1].sc && sc[0].dist * 2 < sc[1].dist);   // स्पष्ट रूपमा एउटा मात्र नजिक भए "विश्वस्त"
   }
-  if (loose && !_sgBalanced(content.slice(best.start, best.end))) return null;     // markdown चिन्ह (** == {{ }}) आधा काटिने भए स्वतः नबदल्ने
-  return { start: best.start, end: best.end, count: cand.length, loose, confident };
+  const start = U.map[best.start], end = U.map[best.end];                         // मूल (escape सहितको) markdown को स्थान
+  if (loose && !_sgBalanced(content.slice(start, end))) return null;               // markdown चिन्ह (** == {{ }}) आधा काटिने भए स्वतः नबदल्ने
+  return { start, end, count: cand.length, loose, confident, hadEsc: /\\[*_={}\[\]~`#]/.test(content.slice(start, end)) };
 }
 function _sgBalanced(t) {
+  t = t.replace(/\\[\s\S]/g, '');                                  // escape गरिएका (\\* आदि) चिन्ह साधारण अक्षर हुन् — नगन्ने
   const c = (re) => (t.match(re) || []).length;
   return c(/\*\*/g) % 2 === 0 && c(/==/g) % 2 === 0 && c(/~~/g) % 2 === 0 && c(/__/g) % 2 === 0 && c(/`/g) % 2 === 0 && c(/\{\{/g) === c(/\}\}/g);
 }
@@ -1412,6 +1426,7 @@ async function _sgClose(n, reason, comment) {
 /* पाठकको सुझावलाई markdown बनाउने: बोल्ड → **पाठ**, रङ → {{#रङ:पाठ}} (साइटकै चिन्ह) */
 function _sgMd(d, content, m) {
   let t = String(d.new || '');
+  if (m && m.hadEsc && !d.bold && !d.color) t = t.replace(/([*_={}~`])/g, '\\$1');   // पुरानो भाग अक्षरशः (escape गरिएको) थियो — नयाँमा पनि चिन्ह अक्षरशः राख्ने
   if (d.bold || d.color) {
     t = t.replace(/[{}*]/g, '');
     if (/^#[0-9a-fA-F]{6}$/.test(d.color || '')) t = '{{' + d.color + ':' + t + '}}';
