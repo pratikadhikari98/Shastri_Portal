@@ -1483,3 +1483,12 @@ async function adminSuggestReject(n) {
   App._sgList = App._sgList.filter(x => x.number !== n); _sgBadge(); renderAdminSuggest(); toast(okc ? 'अस्वीकार गरियो' : 'अस्वीकार गरियो · ⚠️ GitHub मा बन्द हुन सकेन (' + (App._sgWhy || '?') + ') — यहाँबाट हटाइयो');
 }
 window.adminSuggestApprove = adminSuggestApprove; window.adminSuggestBulk = adminSuggestBulk; window.adminSuggestReject = adminSuggestReject;
+
+/* PIN को छेउको ⋮ — "Token राखेर लगइन" विकल्प */
+function admPinMoreToggle(force) {
+  const m = document.getElementById('adminPinMoreMenu'), b = document.getElementById('adminPinMore'); if (!m || !b) return;
+  const open = typeof force === 'boolean' ? force : m.hidden;
+  m.hidden = !open; b.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+window.admPinMoreToggle = admPinMoreToggle;
+document.addEventListener('click', e => { if (!e.target.closest('.adm-more-wrap')) admPinMoreToggle(false); });

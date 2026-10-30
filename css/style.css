@@ -2968,3 +2968,23 @@ body.is-admin #myFixBox { display: none; }
 .mf-cu { border: 1px solid var(--divider); background: var(--bg); color: #b3261e; font: inherit; font-size: .78rem; font-weight: 800; padding: 6px 12px; border-radius: 12px; cursor: pointer;
   box-shadow: 2px 2px 6px var(--shadow), -2px -2px 6px var(--surface-high); }
 .mf-cu:active { box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--surface-high); }
+
+/* Admin Login (PIN मोड): माथि ठूलो Fingerprint आइकन (गृह/पछाडि/खोज जस्तै), तल PIN + ⋮ (Token विकल्प) */
+.adm-fp { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; background: none; border: 0; padding: 6px 0 14px; cursor: pointer; font: inherit; color: var(--text-2); }
+.adm-fp-ico { width: 96px; height: 96px; border-radius: 30px; display: flex; align-items: center; justify-content: center; color: var(--accent); background: var(--bg); border: 1px solid var(--divider);
+  box-shadow: 4px 4px 10px var(--shadow), -4px -4px 10px var(--surface-high); transition: transform .12s ease-out, box-shadow .12s ease-out; }
+.adm-fp:active .adm-fp-ico { transform: scale(.96); box-shadow: inset 3px 3px 7px var(--shadow), inset -3px -3px 7px var(--surface-high); }
+.adm-fp-lbl { font-size: .84rem; font-weight: 700; }
+.adm-pin-row { display: flex; align-items: center; gap: 10px; }
+.adm-pin-row .f-input { flex: 1; min-width: 0; }
+.adm-more-wrap { position: relative; flex: none; }
+.adm-more { width: 44px; height: 44px; font-size: 1.25rem; }
+.adm-more-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 20; min-width: 210px; padding: 6px; border-radius: 16px; background: var(--surface-opaque, var(--bg)); border: 1px solid var(--divider);
+  box-shadow: 0 8px 24px var(--shadow-lg, rgba(0,0,0,.2)); }
+.adm-more-menu[hidden] { display: none; }
+.adm-more-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 0; background: transparent; border-radius: 12px; font: inherit; font-size: .86rem; font-weight: 700; color: var(--text-1); cursor: pointer; text-align: left; }
+.adm-more-menu button:active { background: var(--divider); }
+.adm-more-menu svg { color: var(--accent); }
+
+.adm-more-menu { position: static; margin-top: 10px; min-width: 0; width: 100%; box-shadow: none; background: var(--bg); }
+.adm-pin-row .f-input, #adminPin { background: var(--bg) !important; border: 1px solid var(--divider) !important; border-radius: 14px; min-height: 48px; box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
