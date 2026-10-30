@@ -1,0 +1,9 @@
+{
+  "appId": "np.com.pratikadhikari98.shastri",
+  "appName": "शास्त्री पोर्टल",
+  "webDir": "www",
+  "server": {
+    "url": "https://shastri-portal.pratikadhikari98.com.np",
+    "allowNavigation": ["shastri-portal.pratikadhikari98.com.np"]
+  }
+}
