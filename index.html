@@ -383,6 +383,18 @@
       </div>
     </div>
 
+
+    <div class="sett-group s4b" id="myFixBox">
+      <div class="sett-grp-lbl"><svg viewBox="0 0 24 24" width="16" height="16" class="grp-ico" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M13.5 7.5l3 3"/></svg> मेरा सुधार</div>
+      <div class="sett-row sett-row-exp" onclick="spMyFixToggle(this)" role="button" tabindex="0">
+        <div class="sett-left">
+          <div class="sett-ico sett-ico-line"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M13.5 7.5l3 3"/></svg></div>
+          <div><div class="sett-name">मैले गरेको त्रुटि सुधार <span class="sg-badge" id="myFixBadge" hidden>0</span></div></div>
+        </div><span style="color:var(--text-3)">→</span>
+      </div>
+      <div class="mf-body" id="myFixBody"><div class="mf-in" id="myFixList"></div></div>
+    </div>
+
     <div class="sec-head" style="margin-top:6px"><div class="sec-title" data-i18n="reading_history">पढ्ने इतिहास</div>
       <button onclick="App.history=[];localStorage.setItem('sp_history','[]');renderHistory()" style="font-size:0.72rem;color:var(--text-3);background:none;border:none;cursor:pointer;font-family:var(--font)" data-i18n="clear">सफा</button>
     </div>

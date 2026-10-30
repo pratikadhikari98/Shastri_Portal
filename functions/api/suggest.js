@@ -21,6 +21,7 @@ const b64 = (text) => {                       // UTF-8 सुरक्षित 
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
   return btoa(bin);
 };
+const sha256 = async (t) => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, '0')).join('');
 const fence = (t) => '```\n' + t.replace(/```/g, "'''") + '\n```';
 
 export async function onRequestPost({ request, env }) {
@@ -43,6 +44,9 @@ export async function onRequestPost({ request, env }) {
       s: Number.isFinite(d.s) ? d.s : 0, total: Number.isFinite(d.total) ? d.total : 0,
       at: new Date().toISOString()
     };
+    // पाठकले पछि आफ्नै सुझाव रद्द गर्न: गोप्य कुञ्जी (ck) को hash मात्र राख्ने — कुञ्जी आफैं कहिल्यै राखिँदैन
+    const ck = typeof d.ck === 'string' && /^[0-9a-f]{16,64}$/.test(d.ck) ? d.ck : '';
+    if (ck) req.ckh = await sha256(ck);
     if (!req.bookId || !req.old.trim() || !req.new.trim() || req.old === req.new) return json({ error: 'invalid' }, 400);
 
     const token = env.GH_TOKEN;

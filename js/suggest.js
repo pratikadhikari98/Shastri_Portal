@@ -6,7 +6,7 @@
    ================================================ */
 (function () {
   'use strict';
-  const EP = '/api/suggest', FX = 'sp_fixes', QK = 'sp_sg_q', LOG = 'sp_sg_log';
+  const EP = '/api/suggest', FX = 'sp_fixes', QK = 'sp_sg_q', LOG = 'sp_sg_log', HK = 'sp_sg_hist';
   const LIM_OLD = 600, LIM_NEW = 1200;
   const COLORS = ['#F44336', '#FB8C00', '#4CAF50', '#2196F3', '#9C27B0', '#EC407A', '#8D6E63'];
   let ctx = null, fmt = { b: false, c: '' };
@@ -14,6 +14,10 @@
   const jget = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 'null') || d; } catch (e) { return d; } };
   const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
   const norm = s => String(s).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+  /* ── पाठकको "मेरा सुधार" इतिहास (फोनमै): pending · approved · rejected · cancelled · failed ── */
+  const hist = () => jget(HK, []);
+  const setHist = (u, patch) => { const h = hist(), r = h.find(x => x.u === u); if (r) { Object.assign(r, patch); jset(HK, h); } };
+  const rndKey = () => { const a = new Uint8Array(16); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach((_, i) => { a[i] = Math.random() * 256; }); return Array.from(a, b => b.toString(16).padStart(2, '0')).join(''); };
 
   function parseKey(key) {                                    // chi-<bookId>-<idx>
     const p = key.lastIndexOf('-');
@@ -98,18 +102,22 @@
         const ac = new AbortController(), to = setTimeout(() => ac.abort(), 15000);
         const res = await fetch(EP, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(it.d), signal: ac.signal });
         clearTimeout(to);
-        if (res.ok) continue;                                                    // पुग्यो
-        if (res.status >= 400 && res.status < 500 && res.status !== 404 && res.status !== 405) continue;   // अमान्य/सीमा — फेरि नपठाउने
-        it.n = (it.n || 0) + 1; if (it.n < 8) rest.push(it);                      // सेवा अझै तयार छैन — पछि फेरि
-      } catch (e) { it.n = (it.n || 0) + 1; if (it.n < 8) rest.push(it); }
+        if (res.ok) { let j = {}; try { j = await res.json(); } catch (e) {} if (it.u) setHist(it.u, { n: j.id || null, sent: 1 }); continue; }   // पुग्यो
+        if (res.status >= 400 && res.status < 500 && res.status !== 404 && res.status !== 405) { if (it.u) setHist(it.u, { st: 'failed' }); continue; }   // अमान्य/सीमा — फेरि नपठाउने
+        it.n = (it.n || 0) + 1; if (it.n < 8) rest.push(it); else if (it.u) setHist(it.u, { st: 'failed' });   // सेवा अझै तयार छैन — पछि फेरि
+      } catch (e) { it.n = (it.n || 0) + 1; if (it.n < 8) rest.push(it); else if (it.u) setHist(it.u, { st: 'failed' }); }
     }
     jset(QK, rest);
   }
-  function enqueue(d) {
+  function enqueue(d, shown) {
     const recent = jget(LOG, []).filter(t => Date.now() - t < 3600e3);
     if (recent.length >= 8) return;                                              // स्प्याम सीमा (चुपचाप)
     recent.push(Date.now()); jset(LOG, recent);
-    const q = jget(QK, []); q.push({ d, n: 0, t: Date.now() }); jset(QK, q.slice(-20));
+    const u = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ck = rndKey();
+    d.ck = ck;                                                                    // रद्द गर्ने गोप्य कुञ्जी — सर्भरमा hash मात्र जान्छ
+    const h = hist(); h.unshift({ u, ck, n: null, st: 'pending', at: Date.now(), bookId: d.bookId, bookTitle: d.bookTitle, chTitle: d.chTitle, old: shown.old, neu: shown.neu, bold: d.bold, color: d.color });
+    jset(HK, h.slice(0, 60));
+    const q = jget(QK, []); q.push({ d, u, n: 0, t: Date.now() }); jset(QK, q.slice(-20));
     flushQueue();
   }
   window.addEventListener('online', flushQueue);
@@ -183,8 +191,70 @@
     jset(FX, fx.slice(-200));
     // ३) एडमिनलाई चुपचाप
     enqueue({ v: 1, bookId: c.bookId, idx: c.idx, chTitle: c.chTitle, bookTitle: c.bookTitle, old: c.oldSrv || c.old, new: nw,
-              before: c.before, after: c.after, s: c.s, total: c.total, bold: rich.b, color: rich.c, hp: $('sgHp').value });
+              before: c.before, after: c.after, s: c.s, total: c.total, bold: rich.b, color: rich.c, hp: $('sgHp').value }, { old: c.old, neu: nw });
     closeOv('sgOv');
     if (window.toast) toast(ok ? '✅ सच्याइयो' : '✅ सुरक्षित भयो');
   }
+
+  /* ══════ सेटिङ → "मेरा सुधार": पाठकले पठाएका सुधार, तिनको अवस्था, र रद्द गर्ने ══════ */
+  const ST = { pending: ['⏳', 'प्रतीक्षामा', 'sg-st-p'], approved: ['✅', 'स्वीकृत', 'sg-st-a'], rejected: ['❌', 'अस्वीकृत', 'sg-st-r'], cancelled: ['🚫', 'रद्द गरियो', 'sg-st-c'], failed: ['⚠️', 'पठाउन सकिएन', 'sg-st-r'] };
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const clip = (t, n) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n) + '…' : t; };
+  const dateOf = ms => { try { return new Date(ms).toLocaleDateString('ne-NP', { year: 'numeric', month: 'short', day: 'numeric' }); } catch (e) { return ''; } };
+
+  async function refreshHist() {
+    const h = hist(), nums = h.filter(x => x.n && (x.st === 'pending')).map(x => x.n);
+    if (!nums.length || !navigator.onLine) return false;
+    try {
+      const res = await fetch('/api/suggest-status?n=' + nums.slice(0, 30).join(','), { cache: 'no-store' });
+      if (!res.ok) return false;
+      const j = await res.json(), m = j.s || {}; let ch = false;
+      const all = hist();
+      all.forEach(x => { if (x.n && m[x.n] && m[x.n] !== x.st) { x.st = m[x.n]; ch = true; } });
+      if (ch) jset(HK, all);
+      return ch;
+    } catch (e) { return false; }
+  }
+  function dropLocalFix(r) {                                                     // रद्द गरेपछि उसकै फोनमा देखिने बदलाव पनि हटाउने
+    const fx = jget(FX, []).filter(f => !(f.b === r.bookId && f.old === r.old && f.neu === r.neu));
+    jset(FX, fx);
+  }
+  window.spMyFixCancel = async function (u) {
+    const r = hist().find(x => x.u === u); if (!r || r.st !== 'pending') return;
+    if (window.showConfirm && !(await showConfirm('यो सुधार रद्द गर्ने? (तपाईंको फोनमा पनि पुरानै पाठ फर्किन्छ)', 'रद्द गर्नुस्', 'सुधार रद्द')))  return;
+    const btn = document.querySelector('[data-cu="' + u + '"]'); if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    if (!r.n) {                                                                  // अझै एडमिनलाई पुगेको छैन (queue मा) — फोनबाटै हटाउने
+      jset(QK, jget(QK, []).filter(it => it.u !== u));
+      if (!r.sent) { setHist(u, { st: 'cancelled' }); dropLocalFix(r); if (window.toast) toast('🚫 रद्द गरियो'); renderMyFixes(); return; }
+    }
+    try {
+      const res = await fetch('/api/suggest-cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ number: r.n, ck: r.ck }) });
+      if (res.ok) { setHist(u, { st: 'cancelled' }); dropLocalFix(r); if (window.toast) toast('🚫 रद्द गरियो'); }
+      else if (res.status === 409) { await refreshHist(); if (window.toast) toast('एडमिनले यो सुधारमा निर्णय गरिसक्यो — अब रद्द हुँदैन'); }
+      else if (window.toast) toast('⚠️ रद्द गर्न सकिएन — पछि फेरि प्रयास गर्नुहोस्');
+    } catch (e) { if (window.toast) toast('⚠️ इन्टरनेट जाँच्नुहोस्'); }
+    renderMyFixes();
+  };
+  function renderMyFixes() {
+    const box = $('myFixList'); if (!box) return;
+    const h = hist(), pend = h.filter(x => x.st === 'pending').length, badge = $('myFixBadge');
+    if (badge) { badge.textContent = pend; badge.hidden = !pend; }
+    if (!h.length) { box.innerHTML = '<div class="mf-empty">तपाईंले अहिलेसम्म कुनै त्रुटि सच्याएको छैन।<br><small>अध्यायको शब्द छानेर ✏️ थिच्नुहोस्।</small></div>'; return; }
+    box.innerHTML = h.map(r => {
+      const st = ST[r.st] || ST.pending, can = r.st === 'pending';
+      return '<div class="mf-it"><div class="mf-top"><span class="mf-bk">' + esc(clip(r.chTitle || r.bookTitle || r.bookId, 46)) + '</span><span class="mf-st ' + st[2] + '">' + st[0] + ' ' + st[1] + '</span></div>' +
+        '<div class="mf-diff"><span class="mf-old">' + esc(clip(r.old, 70)) + '</span><span class="mf-ar">→</span><span class="mf-new">' + esc(clip(r.neu, 70)) + '</span></div>' +
+        '<div class="mf-bot"><span class="mf-dt">' + esc(dateOf(r.at)) + '</span>' +
+        (can ? '<button type="button" class="mf-cu" data-cu="' + esc(r.u) + '" onclick="spMyFixCancel(\'' + esc(r.u) + '\')">रद्द गर्नुहोस्</button>'
+             : r.st === 'approved' ? '<span class="mf-lock">🔒 स्वीकृत भइसक्यो — रद्द हुँदैन</span>' : '') + '</div></div>';
+    }).join('');
+  }
+  window.spMyFixToggle = async function (row) {
+    const box = $('myFixBody'); if (!box) return;
+    const open = !box.classList.contains('open');
+    box.classList.toggle('open', open); row.classList.toggle('exp', open);
+    if (open) { renderMyFixes(); if (await refreshHist()) renderMyFixes(); }
+  };
+  document.addEventListener('DOMContentLoaded', () => { renderMyFixes(); refreshHist().then(c => c && renderMyFixes()); });
+  if (document.readyState !== 'loading') renderMyFixes();
 })();

@@ -2931,6 +2931,7 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 .tr-bar .neu-btn { font-size: 1rem; }
 .tr-bar .neu-btn.on { box-shadow: inset 0 0 2px var(--shadow-lg), inset 0 0 4px var(--shadow), inset 0 0 14px var(--shadow); }
 
+<<<<<<< Updated upstream
 /* Admin Login: बाहिरबाट पप-अप होइन, सेटिङ कार्डभित्रै अध्याय खुले जस्तै खुल्छ */
 .admin-chev { display:inline-block; font-size:20px; line-height:1; transition:transform .25s var(--ease-spring) !important; }
 #adminLoginBox.open .admin-chev { transform: rotate(90deg); }
@@ -2938,3 +2939,34 @@ html.lite .np-fx .np-wd { animation-duration: 11s !important; animation-delay: v
 #adminLoginBox.open .admin-inline { display:block; animation:chBodyIn .2s ease-out; }
 .admin-inline .form-panel { background:none !important; box-shadow:none !important; border:0 !important; outline:0 !important; padding:0; margin:10px 0 0; border-radius:0 !important; }
 .admin-inline .m-btns { margin-top:12px; }
+=======
+/* ══ सेटिङ → मेरा सुधार (पाठकको त्रुटि-सुधार इतिहास) ══ */
+#myFixBox.sett-group { margin-left: 0; margin-right: 0; border-radius: 22px !important; border-left-width: 1px; border-right-width: 1px; }
+body.is-admin #myFixBox { display: none; }
+#myFixBox .sett-row { position: relative; margin: 8px 10px; border-radius: 16px; border: 1px solid var(--divider); background: var(--bg);
+  box-shadow: 3px 3px 8px var(--shadow), -3px -3px 8px var(--surface-high); transition: transform .12s ease-out, box-shadow .12s ease-out; }
+#myFixBox .sett-row:active, #myFixBox .sett-row.exp { transform: scale(.985); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 5px var(--surface-high); }
+#myFixBox .sett-row.exp > span:last-child { transform: rotate(90deg); }
+.mf-body { display: none; }
+.mf-body.open { display: block; }
+.mf-in { padding: 2px 10px 10px; }
+.mf-empty { padding: 18px 8px; text-align: center; color: var(--text-3); font-size: .86rem; line-height: 1.6; }
+.mf-it { padding: 10px 12px; margin: 6px 0; border: 1px solid var(--divider); border-radius: 14px; background: var(--bg); }
+.mf-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mf-bk { font-weight: 700; font-size: .84rem; color: var(--text-1); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mf-st { flex: none; font-size: .72rem; font-weight: 800; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--divider); }
+.mf-st.sg-st-p { color: #b26a00; background: rgba(251,140,0,.12); }
+.mf-st.sg-st-a { color: #1b7a3a; background: rgba(76,175,80,.14); }
+.mf-st.sg-st-r { color: #b3261e; background: rgba(244,67,54,.12); }
+.mf-st.sg-st-c { color: var(--text-3); background: var(--surface-b); }
+.mf-diff { margin: 8px 0 6px; font-size: .84rem; line-height: 1.55; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.mf-old { color: var(--text-3); text-decoration: line-through; }
+.mf-new { color: var(--text-1); font-weight: 700; }
+.mf-ar { color: var(--text-3); }
+.mf-bot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mf-dt { font-size: .72rem; color: var(--text-3); }
+.mf-lock { font-size: .72rem; color: #1b7a3a; font-weight: 700; }
+.mf-cu { border: 1px solid var(--divider); background: var(--bg); color: #b3261e; font: inherit; font-size: .78rem; font-weight: 800; padding: 6px 12px; border-radius: 12px; cursor: pointer;
+  box-shadow: 2px 2px 6px var(--shadow), -2px -2px 6px var(--surface-high); }
+.mf-cu:active { box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--surface-high); }
+>>>>>>> Stashed changes
