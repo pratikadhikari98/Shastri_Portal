@@ -36,6 +36,9 @@ jobs:
           pip install pillow
           python make-icons.py
 
+      - name: Back button handling (go back in website history)
+        run: cp MainActivity.java android/app/src/main/java/np/com/pratikadhikari98/shastri/MainActivity.java
+
       - name: Sync
         run: npx cap sync android
 
