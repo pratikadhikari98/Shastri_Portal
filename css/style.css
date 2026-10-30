@@ -2994,3 +2994,14 @@ html .admin-inline .form-panel, html.borders-on .admin-inline .form-panel, html.
   border: 0 !important; border-image: none !important; background: none !important; background-image: none !important; box-shadow: none !important; outline: 0 !important;
   margin: 0 !important; padding: 4px 4px 0 !important; border-radius: 0 !important; }
 html .admin-inline .form-panel::before, html .admin-inline .form-panel::after { display: none !important; }
+
+/* पाठ छान्दा आउने पट्टी — सानो, र आइकन गृह/पछाडि/खोज जस्तै (निलो रेखा, भित्र धसिएको गोलो-कुने बाकस) */
+.tr-bar { padding: 5px 7px; gap: 4px 6px; border-radius: 14px; }
+.tr-bar .neu-btn { --neu-r: 10px; width: 30px; height: 30px; font-size: .86rem; color: var(--accent); background: var(--bg); border: 1px solid var(--divider);
+  box-shadow: inset 2px 2px 4px var(--shadow), inset -2px -2px 4px var(--surface-high); }
+.tr-bar .neu-btn.on { background: var(--accent-glow, rgba(33,150,243,.14)); border-color: var(--accent); box-shadow: inset 2px 2px 5px var(--shadow), inset -2px -2px 4px var(--surface-high); }
+.tr-bar .neu-btn:active { transform: scale(.94); }
+.tr-grp { gap: 5px; }
+.tr-grp + .tr-grp { padding-left: 6px; }
+.tr-grip { width: 10px; min-height: 24px; background-size: 6px 7px; }
+.tr-sw { width: 24px; height: 24px; border-radius: 7px; }
